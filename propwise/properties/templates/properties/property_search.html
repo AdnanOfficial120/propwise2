@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Properties - PropWise</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { display: flex; }
+        .filters { flex: 1; padding: 20px; background: #f9f9f9; border-radius: 8px; }
+        .results { flex: 3; padding-left: 30px; }
+        .property-card { border: 1px solid #ccc; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
+        .property-card img { max-width: 150px; height: auto; border-radius: 4px; float: left; margin-right: 15px; }
+    </style>
+</head>
+<body>
+    <h1>Search Properties</h1>
+    <p><a href="/"> &larr; Back to Homepage</a></p>
+
+    <div class="container">
+        <div class="filters">
+            <h3>Find Your Property</h3>
+            
+            <form method="get">
+                
+                {{ filter.form.as_p }}
+                
+                <button type="submit">Search</button>
+            </form>
+        </div>
+        
+        <div class="results">
+            <h3>Results</h3>
+            
+            {% for prop in filter.qs %}
+                <div class="property-card">
+                    {% if prop.main_image %}
+                        <img src="{{ prop.main_image.url }}" alt="{{ prop.title }}">
+                    {% endif %}
+                    <h4>
+                        <a href="{% url 'property_detail' pk=prop.pk %}">
+                            {{ prop.title }}
+                        </a>
+                    </h4>
+                    <p><strong>Price:</strong> PKR {{ prop.price }}</p>
+                    <p><strong>Location:</strong> {{ prop.area }}</p>
+                    <p><strong>Type:</strong> {{ prop.get_property_type_display }}</foo></p>
+                </div>
+            {% empty %}
+                <p>No properties match your search. Try broadening your criteria.</p>
+            {% endfor %}
+        </div>
+    </div>
+</body>
+</html>

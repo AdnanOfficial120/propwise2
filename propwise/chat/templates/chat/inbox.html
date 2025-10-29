@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container" style="margin-top: 20px;">
+    <div style="max-width: 800px; margin: auto;">
+
+        <h2 style="margin-bottom: 20px;">Your Chat Inbox</h2>
+
+        <div class="list-group">
+            {% for thread in threads %}
+                <a href="{% url 'chat_detail' thread_id=thread.id %}" class="list-group-item list-group-item-action" style="padding: 15px; border: 1px solid #ccc; border-radius: 8px; margin-bottom: 10px; text-decoration: none; color: inherit;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <h5 style="margin-bottom: 5px;">
+                                {% comment %} 
+                                  This logic finds the *other* person in the chat
+                                {% endcomment %}
+                                Chat with 
+                                {% if thread.buyer == user %}
+                                    <strong>{{ thread.agent.username }}</strong>
+                                {% else %}
+                                    <strong>{{ thread.buyer.username }}</strong>
+                                {% endif %}
+                            </h5>
+                            <p style="margin-bottom: 5px; color: #555;">
+                                Regarding: <strong>{{ thread.property.title|default:"Deleted Property" }}</strong>
+                            </p>
+                            <small style="color: #777;">Last activity: {{ thread.updated_at|timesince }} ago</small>
+                        </div>
+
+                        {% comment %} We will add unread message count here later {% endcomment %}
+                        <span style="background: #eee; padding: 5px 10px; border-radius: 8px;">View</span>
+                    </div>
+                </a>
+            {% empty %}
+                <p>You have no active chat conversations.</p>
+            {% endfor %}
+        </div>
+
+    </div>
+</div>
+{% endblock content %}

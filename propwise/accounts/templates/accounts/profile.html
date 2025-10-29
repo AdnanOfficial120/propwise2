@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="container" style="margin-top: 20px;">
+    <div style="max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ccc; border-radius: 8px; background: #f9f9f9;">
+
+        <h2 style="text-align: center; margin-bottom: 20px;">Edit Your Profile</h2>
+
+        <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            
+            {% comment %} 
+              .as_p will make each form field a paragraph.
+              We can style this better later.
+            {% endcomment %}
+            {{ form.as_p }}
+            
+            <div>
+                <button type="submit" style="width: 100%; padding: 10px; background: #0066cc; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px;">
+                    Save Changes
+                </button>
+            </div>
+        </form>
+
+    </div>
+</div>
+
+{% endblock content %}

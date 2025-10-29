@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ property.title }} - PropWise</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 900px; margin: auto; }
+        .main-image { max-width: 100%; height: auto; border-radius: 8px; }
+        .gallery { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 15px; }
+        .gallery img { max-width: 100%; border-radius: 4px; }
+        .specs { background: #f4f4f4; padding: 15px; border-radius: 8px; margin: 20px 0; }
+        .specs-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        a { color: #0066cc; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <p><a href="/"> &larr; Back to Homepage</a></p>
+
+        <h1>{{ property.title }}</h1>
+        <h3>{{ property.area }}</h3>
+        
+        <h2>PKR {{ property.price }}</h2>
+
+        {% if property.main_image %}
+            <img class="main-image" src="{{ property.main_image.url }}" alt="{{ property.title }}">
+        {% endif %}
+
+        <div class="specs">
+            <h4>Property Details</h4>
+            <div class="specs-grid">
+                <span><strong>Purpose:</strong> {{ property.get_purpose_display }}</span>
+                <span><strong>Type:</strong> {{ property.get_property_type_display }}</span>
+                <span><strong>Bedrooms:</strong> {{ property.bedrooms|default:"N/A" }}</span>
+                <span><strong>Bathrooms:</strong> {{ property.bathrooms|default:"N/A" }}</span>
+                <span><strong>Size:</strong> {{ property.area_size }} {{ property.get_area_unit_display }}</span>
+                <span><strong>Agent:</strong> {{ property.agent.username }}</span>
+                {% comment %}
+  This goes in: properties/templates/properties/property_detail.html
+{% endcomment %}
+
+{% if user.is_authenticated %}
+    {% comment %} 
+      This is the key logic: Only show this button if the logged-in user
+      is NOT the agent who owns the property.
+    {% endcomment %}
+    {% if property.agent != user %}
+        <div style="margin-top: 20px; padding: 15px; background: #f4f4f4; border-radius: 8px;">
+            <h4>Contact the Agent</h4>
+            <p>Start a conversation with <strong>{{ property.agent.username }}</strong> about this property.</p>
+            
+            {% comment %} 
+              This is a form, not a link, because it *creates* a new
+              object (a chat thread). This is a professional best practice.
+            {% endcomment %}
+            <form action="{% url 'start_chat' property_pk=property.pk %}" method="POST">
+                {% csrf_token %}
+                <button type="submit" style="background: #0066cc; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px;">
+                    Start Chat
+                </button>
+            </form>
+        </div>
+    {% endif %}
+{% else %}
+    {% comment %} 
+      If the user is logged out, show a simple link to the login page.
+    {% endcomment %}
+    <div style="margin-top: 20px; padding: 15px; background: #f4f4f4; border-radius: 8px;">
+        <p>
+            <a href="{% url 'login' %}?next={{ request.path }}">Log in</a> to contact the agent.
+        </p>
+    </div>
+{% endif %}
+            </div>
+        </div>
+
+        <h3>Description</h3>
+        <p>{{ property.description|linebreaks }}</p>
+
+        <h3>Photo Gallery</h3>
+        <div class="gallery">
+            {% for image in gallery_images %}
+                <img src="{{ image.image.url }}" alt="Gallery image">
+            {% empty %}
+                <p>No other images in the gallery.</p>
+            {% endfor %}
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confirm Deletion - PropWise</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ccc; border-radius: 8px; }
+        .btn-danger { background-color: #dc3545; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; text-decoration: none; }
+        .btn-secondary { background-color: #6c757d; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; text-decoration: none; margin-left: 10px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <form method="post">
+            {% csrf_token %}
+            
+            <h2>Are you sure?</h2>
+            <p>
+                You are about to permanently delete the listing for: 
+                <strong>"{{ object.title }}"</strong>
+            </p>
+            <p>This action cannot be undone.</p>
+            
+            <hr>
+            
+            <button type="submit" class="btn-danger">Yes, Delete This Property</button>
+            <a href="{% url 'agent_dashboard' %}" class="btn-secondary">No, Go Back</a>
+        </form>
+    </div>
+</body>
+</html>

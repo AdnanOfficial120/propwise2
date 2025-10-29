@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+    <h1>Welcome to PropWise</h1>
+    
+    <div style="background: #eee; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+        <h3>Find a Property</h3>
+        <form action="{% url 'property_search' %}" method="get">
+            <input type="text" name="keyword" placeholder="Enter a keyword (e.g., 'new house')" style="width: 300px; padding: 8px;">
+            <button type="submit">Search</button>
+        </form>
+        <p>
+            <a href="{% url 'property_search' %}">Go to Advanced Search &rarr;</a>
+        </p>
+    </div>
+    
+    
+    <h3>See Our Latest Listings</h3>
+
+    <div class="property-list">
+        {% for prop in properties %}
+            <div class="property-card">
+                
+                {% if prop.main_image %}
+                    <img src="{{ prop.main_image.url }}" alt="{{ prop.title }}">
+                {% endif %}
+                
+                <h4>
+                    <a href="{% url 'property_detail' pk=prop.pk %}">
+                        {{ prop.title }}
+                    </a>
+                </h4>
+
+                <p><strong>Price:</strong> PKR {{ prop.price }}</p>
+                <p><strong>Location:</strong> {{ prop.area }}</p>
+                <p><strong>Type:</strong> {{ prop.get_property_type_display }}</p>
+                {% comment %} This is the new button {% endcomment %}
+        <p style="margin-top: 10px;">
+            <a href="{% url 'property_detail' pk=prop.pk %}" style="
+                display: inline-block;
+                padding: 8px 16px;
+                background-color: #0066cc;
+                color: white;
+                text-decoration: none;
+                border-radius: 4px;
+                font-size: 14px;
+            ">
+                View Details
+            </a>
+        </p>
+            </div>
+        {% empty %}
+            <p>No properties have been listed yet. Please check back soon!</p>
+        {% endfor %}
+    </div>
+
+{% endblock content %}

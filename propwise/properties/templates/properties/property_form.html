@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create New Listing - PropWise</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        
+        /* This style now applies to all form-like boxes */
+        .form-box {
+            max-width: 600px; 
+            margin: 20px auto; 
+            padding: 20px; 
+            border: 1px solid #ccc; 
+            border-radius: 8px;
+        }
+
+        /* Form row styles */
+        .form-row { 
+            display: grid; 
+            grid-template-columns: 1fr 2fr; 
+            gap: 10px; 
+            align-items: center; 
+            margin-bottom: 15px;
+        }
+        
+        form label { font-weight: bold; }
+        form input, form select, form textarea { padding: 8px; width: 100%; box-sizing: border-box; }
+        .field-errors { color: red; font-size: 0.9em; grid-column: 2; }
+        button { background-color: #28a745; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; }
+
+        /* Image manager styles */
+        .image-manager {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .image-card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+            background: #f9f9f9;
+        }
+        .image-card img {
+            height: 100px;
+            width: 100px;
+            object-fit: cover;
+            display: block;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+        /* Style for the delete button (inside its form) */
+        .image-card form button {
+            color: #dc3545;
+            font-size: 0.9em;
+            text-decoration: none;
+            font-weight: bold;
+            background: none;
+            border: none;
+            padding: 0;
+            cursor: pointer;
+            font-family: inherit;
+        }
+    </style>
+</head>
+<body>
+    <div style="max-width: 600px; margin: auto; margin-bottom: 10px;">
+        <a href="/"> &larr; Back to Homepage</a>
+    </div>
+
+    {% if form.instance.pk %}
+        <div class="form-box"> <h3>Manage Existing Images</h3>
+            <div class="image-manager">
+                {% for image in form.instance.images.all %}
+                <div class="image-card">
+                    <img src="{{ image.image.url }}" alt="Gallery Image">
+                    
+                    <form action="{% url 'delete_property_image' image_pk=image.pk %}" method="POST" style="margin: 0;">
+                        {% csrf_token %}
+                        <button type="submit">Delete Image</button>
+                    </form>
+                </div>
+                {% empty %}
+                <p>No gallery images have been uploaded yet.</p>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+    <form method="post" enctype="multipart/form-data" class="form-box">
+        <h2>{{ title|default:"Post Your Property" }}</h2>
+        
+        {% csrf_token %}
+        
+        {% for field in form %}
+            <div class="form-row">
+                {{ field.label_tag }}
+                
+                <div>
+                    {% if field.name == 'gallery_images' %}
+                        <input type="file" 
+                               name="gallery_images" 
+                               id="{{ field.id_for_label }}" 
+                               class="form-control" 
+                               multiple>
+                    {% else %}
+                        {{ field }}
+                    {% endif %}
+
+                    {% if field.errors %}
+                        <div class="field-errors">
+                            {{ field.errors|striptags }}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+        
+        <button type="submit">Submit Listing</button>
+    </form>
+    </body>
+</html>
