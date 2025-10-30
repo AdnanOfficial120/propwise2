@@ -16,67 +16,165 @@
             {% endif %}
         </p>
 
-        {% comment %} This is the chat message display area {% endcomment %}
-        <div class="chat-messages" style="height: 400px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; background: #f9f9f9; border-radius: 8px; margin-bottom: 20px;">
-            
-            {% for message in thread.messages.all %}
-                {% if message.sender == user %}
-                    <div class="my-message" style="text-align: right; margin-bottom: 10px;">
-                        <div style="background: #0066cc; color: white; display: inline-block; padding: 10px; border-radius: 8px; max-width: 70%;">
-                            <strong>You</strong><br>
-                            {{ message.body }}
-                            <br>
-                            <small style="color: #ddd;">{{ message.timestamp|timesince }} ago</small>
-                        </div>
-                    </div>
-                {% else %}
-                    <div class="other-message" style="text-align: left; margin-bottom: 10px;">
-                        <div style="background: #e9e9e9; color: black; display: inline-block; padding: 10px; border-radius: 8px; max-width: 70%;">
-                            <strong>{{ message.sender.username|default:"Deleted User" }}</strong><br>
-                            {{ message.body }}
-                            <br>
-                            <small style="color: #555;">{{ message.timestamp|timesince }} ago</small>
-                        </div>
-                    </div>
-                {% endif %}
-            {% empty %}
-                <p style="text-align: center; color: #777;">This is the beginning of your conversation.</p>
-            {% endfor %}
-        </div>
-
-       {% comment %} This is the new "Send Message" form {% endcomment %}
-<div class="send-message-form">
-    <form method="POST" style="display: flex; gap: 10px;">
-        {% csrf_token %}
-
         {% comment %} 
-          This renders our stylish form field.
-          'as_p' isn't needed since we styled it in forms.py
+          This is the chat message display area.
+          We give it an ID so the JavaScript can find it.
         {% endcomment %}
-        <div style="flex-grow: 1;">
-            {{ form.body }}
+        <div id="chat-messages-box" class="chat-messages" style="height: 400px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; background: #f9f9f9; border-radius: 8px; margin-bottom: 20px;">
+            
+            <p style="text-align: center; color: #777;">Loading messages...</p>
+            
         </div>
 
-        <button type="submit" style="background: #0066cc; color: white; padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; height: min-content;">
-            Send
-        </button>
-    </form>
-</div>
-
-{% comment %} 
-  --- Professional Touch (Optional but Recommended) ---
-  Add this script to the bottom of the file (after the form)
-  to auto-scroll the chat box to the newest message.
-{% endcomment %}
-<script>
-    document.addEventListener("DOMContentLoaded", function() {
-        var chatBox = document.querySelector(".chat-messages");
-        if (chatBox) {
-            chatBox.scrollTop = chatBox.scrollHeight;
-        }
-    });
-</script>
+        {% comment %}
+          This is the "Send Message" form.
+          We give it an ID so the JavaScript can find it.
+        {% endcomment %}
+        <div class="send-message-form">
+            <form id="send-message-form" method="POST" action="{% url 'chat_detail' thread_id=thread.id %}" style="display: flex; gap: 10px;">
+                {% csrf_token %}
+                
+                <div style="flex-grow: 1;">
+                    {% comment %} 
+                      The form field from Django {{ form.body }}
+                      will automatically have an ID of "id_body"
+                    {% endcomment %}
+                    {{ form.body }}
+                </div>
+                
+                <button type="submit" style="background: #0066cc; color: white; padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; height: min-content;">
+                    Send
+                </button>
+            </form>
+        </div>
         
     </div>
 </div>
+
+{% comment %}
+=====================================================
+ THIS IS THE NEW JAVASCRIPT FOR REAL-TIME CHAT
+=====================================================
+{% endcomment %}
+<script>
+    // This code will run after the whole page has loaded
+    document.addEventListener("DOMContentLoaded", function() {
+        
+        // --- 1. Get all the HTML elements we need ---
+        const chatBox = document.getElementById('chat-messages-box');
+        const messageForm = document.getElementById('send-message-form');
+        const messageInput = document.getElementById('id_body');
+        
+        // --- 2. Get important data from Django ---
+        const threadId = "{{ thread.id }}";
+        const currentUsername = "{{ user.username }}";
+        const apiURL = `{% url 'chat_api_messages' thread_id=thread.id %}`;
+        const formURL = messageForm.getAttribute('action');
+        const csrfToken = document.querySelector('input[name="csrfmiddlewaretoken"]').value;
+
+        // --- 3. Function to scroll to the bottom of the chat ---
+        function scrollToBottom() {
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        // --- 4. Function to draw messages on the screen ---
+        function renderMessages(messages) {
+            chatBox.innerHTML = ''; // Clear the "Loading..." text
+            
+            if (messages.length === 0) {
+                chatBox.innerHTML = '<p style="text-align: center; color: #777;">This is the beginning of your conversation.</p>';
+                return;
+            }
+
+            messages.forEach(function(message) {
+                let messageHTML = '';
+                if (message.is_sender) {
+                    // This is a message from ME
+                    messageHTML = `
+                    <div class="my-message" style="text-align: right; margin-bottom: 10px;">
+                        <div style="background: #0066cc; color: white; display: inline-block; padding: 10px; border-radius: 8px; max-width: 70%;">
+                            <strong>You</strong><br>
+                            ${message.body}
+                            <br>
+                            <small style="color: #ddd;">${message.timestamp}</small>
+                        </div>
+                    </div>
+                    `;
+                } else {
+                    // This is a message from the OTHER person
+                    messageHTML = `
+                    <div class="other-message" style="text-align: left; margin-bottom: 10px;">
+                        <div style="background: #e9e9e9; color: black; display: inline-block; padding: 10px; border-radius: 8px; max-width: 70%;">
+                            <strong>${message.sender_username}</strong><br>
+                            ${message.body}
+                            <br>
+                            <small style="color: #555;">${message.timestamp}</small>
+                        </div>
+                    </div>
+                    `;
+                }
+                chatBox.innerHTML += messageHTML;
+            });
+        }
+
+        // --- 5. Function to fetch new messages from our API ---
+        async function fetchMessages() {
+            try {
+                const response = await fetch(apiURL);
+                const data = await response.json();
+                renderMessages(data.messages);
+            } catch (error) {
+                console.error("Error fetching messages:", error);
+            }
+        }
+        
+        // --- 6. Function to handle sending a new message ---
+        async function handleFormSubmit(event) {
+            // Stop the form from doing a full page reload
+            event.preventDefault(); 
+            
+            const messageBody = messageInput.value;
+            if (messageBody.trim() === '') {
+                return; // Don't send empty messages
+            }
+
+            try {
+                const response = await fetch(formURL, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrfToken,
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: `body=${encodeURIComponent(messageBody)}`
+                });
+
+                const data = await response.json();
+
+                if (data.status === 'success') {
+                    // Message sent!
+                    messageInput.value = ''; // Clear the input box
+                    await fetchMessages(); // Instantly get new messages
+                    scrollToBottom(); // Scroll down
+                } else {
+                    // Handle form errors (e.g., "body is required")
+                    console.error("Error sending message:", data.errors);
+                }
+            } catch (error) {
+                console.error("Network error:", error);
+            }
+        }
+
+        // --- 7. Start everything! ---
+        
+        // Add the "submit" listener to our form
+        messageForm.addEventListener('submit', handleFormSubmit);
+        
+        // Fetch messages for the first time
+        fetchMessages().then(scrollToBottom); // Load and scroll
+        
+        // Start "polling" - check for new messages every 3 seconds
+        setInterval(fetchMessages, 3000); 
+    });
+</script>
+
 {% endblock content %}

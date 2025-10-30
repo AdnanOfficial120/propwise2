@@ -8,6 +8,7 @@ from .models import ChatThread, ChatMessage # Import ChatMessage
 from properties.models import Property # Import Property
 from django.http import HttpResponseForbidden # To block bad requests
 from .forms import ChatMessageForm
+from django.http import JsonResponse
 
 
 @login_required(login_url='login')
@@ -67,50 +68,83 @@ def start_chat_view(request, property_pk):
     return redirect('chat_detail', thread_id=thread.id)
 
 
-# ---    chat_detail_view  ---
+# ---    chat_detail_view  with live jason ---
+# --- REPLACE your old chat_detail_view WITH THIS ---
 
 @login_required(login_url='login')
 def chat_detail_view(request, thread_id):
     """
     Displays the chat room and handles sending new messages.
+    This view is now AJAX-aware.
     """
     thread = get_object_or_404(ChatThread, id=thread_id)
-
-    # --- Security Check ---
+    
     if request.user != thread.buyer and request.user != thread.agent:
         return HttpResponseForbidden("You do not have permission to view this chat.")
 
-    # --- Mark Messages as Read ---
-    thread.messages.filter(is_read=False).exclude(sender=request.user).update(is_read=True)
+    # Mark messages as read (only on GET, when the page *loads*)
+    if request.method == 'GET':
+        thread.messages.filter(is_read=False).exclude(sender=request.user).update(is_read=True)
 
-    # --- THIS IS THE NEW LOGIC FOR SENDING A MESSAGE ---
+    # --- THIS IS THE UPDATED LOGIC FOR SENDING ---
     if request.method == 'POST':
         form = ChatMessageForm(request.POST)
         if form.is_valid():
-            # Create the message object but don't save to DB yet
             message = form.save(commit=False)
-
-            # Assign the correct thread and sender
             message.thread = thread
             message.sender = request.user
             message.save()
-
-            # --- Professional Touch ---
+            
             # Update the thread's 'updated_at' timestamp
-            # This makes the inbox sort correctly (newest on top)
             thread.save() 
-
-            # Redirect back to the same page to show the new message
-            return redirect('chat_detail', thread_id=thread.id)
-    else:
-        # This is a GET request, so just show a blank form
-        form = ChatMessageForm()
-
-    # --- End of new logic ---
-
+            
+            # --- PROFESSIONAL FIX ---
+            # Instead of redirecting, we return a simple JSON response.
+            # Our JavaScript will catch this and know the message was sent.
+            return JsonResponse({"status": "success", "message": "Message sent!"})
+        else:
+            # If the form is invalid (e.g., empty message)
+            return JsonResponse({"status": "error", "errors": form.errors}, status=400)
+    
+    # --- This is for the GET request (loading the page) ---
+    form = ChatMessageForm()
+    
     context = {
         'thread': thread,
-        'form': form  # <-- Pass the form into the template
+        'form': form
     }
-
+    
     return render(request, 'chat/chat_detail.html', context)
+
+
+
+# --- ADD THIS NEW VIEW to make chat app reload , live ---
+
+@login_required(login_url='login')
+def get_messages_api(request, thread_id):
+    """
+    An "API" view that returns all messages for a
+    chat thread in JSON format.
+    """
+    thread = get_object_or_404(ChatThread, id=thread_id)
+    
+    # Security check: User must be part of this thread
+    if request.user != thread.buyer and request.user != thread.agent:
+        return JsonResponse({"error": "Not authorized"}, status=403)
+        
+    # Mark messages as read (we'll keep this logic)
+    thread.messages.filter(is_read=False).exclude(sender=request.user).update(is_read=True)
+
+    # Convert the messages into a list of "safe" dictionaries
+    message_list = []
+    for message in thread.messages.all():
+        message_list.append({
+            'id': message.id,
+            'sender_username': message.sender.username if message.sender else "Deleted User",
+            'body': message.body,
+            'timestamp': message.timestamp.strftime("%b %d, %Y, %I:%M %p"), # "Oct 30, 2025, 11:30 AM"
+            'is_sender': message.sender == request.user # True if the current user sent it
+        })
+    
+    # Return the list as a JSON object
+    return JsonResponse({'messages': message_list})

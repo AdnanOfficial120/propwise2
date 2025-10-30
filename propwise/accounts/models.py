@@ -2,16 +2,10 @@
 
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+from properties.models import Property
 
 class User(AbstractUser):
-    """
-    Custom User Model for PropWise.
-    
-    We inherit from AbstractUser to get all of Django's built-in
-    authentication features (password handling, groups, permissions, etc.).
-    
-    We can add our own custom fields here.
-    """
+   
     
     # We will use the default `username`, `email`, `first_name`, `last_name`
     # from AbstractUser.
@@ -23,6 +17,12 @@ class User(AbstractUser):
     # Other profile fields
     phone_number = models.CharField(max_length=20, blank=True)
     profile_picture = models.ImageField(upload_to='profile_pics/', blank=True, null=True)
+    # --- ADD THIS NEW FIELD  for as add to fovorites---
+    favorites = models.ManyToManyField(
+        Property, 
+        related_name="favorited_by", 
+        blank=True
+    )
 
     def __str__(self):
         return self.username

@@ -188,3 +188,45 @@ class PropertyDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     def test_func(self):
         property = self.get_object()
         return self.request.user == property.agent
+    
+
+
+    # --- ADD THESE TWO NEW VIEWS for add to favourites and remove ---
+
+@login_required(login_url='login')
+def add_to_favorites_view(request, pk):
+    """
+    Adds a property to the user's favorites list.
+    """
+    # We only accept POST requests for this action
+    if request.method != 'POST':
+        return HttpResponseForbidden()
+
+    property = get_object_or_404(Property, pk=pk)
+    
+    # This is the magic: add the property to the user's favorites
+    request.user.favorites.add(property)
+    
+    messages.success(request, f"'{property.title}' has been added to your favorites.")
+    
+    # This is a pro-trick: redirect the user back to whatever
+    # page they were on (e.g., the homepage or the detail page).
+    return redirect(request.META.get('HTTP_REFERER', 'homepage'))
+
+
+@login_required(login_url='login')
+def remove_from_favorites_view(request, pk):
+    """
+    Removes a property from the user's favorites list.
+    """
+    if request.method != 'POST':
+        return HttpResponseForbidden()
+
+    property = get_object_or_404(Property, pk=pk)
+    
+    # This is the magic: remove the property from the user's favorites
+    request.user.favorites.remove(property)
+    
+    messages.success(request, f"'{property.title}' has been removed from your favorites.")
+    
+    return redirect(request.META.get('HTTP_REFERER', 'homepage'))

@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container" style="margin-top: 20px;">
+    <div style="max-width: 800px; margin: auto;">
+
+        <h2 style="margin-bottom: 20px;">Areas in {{ city.name }}</h2>
+
+        <div class="list-group">
+            {% for area in areas %}
+                <a href="{% url 'area_detail' area_pk=area.pk %}" class="list-group-item list-group-item-action" style="padding: 15px; border: 1px solid #ccc; border-radius: 8px; margin-bottom: 10px; text-decoration: none; color: inherit;">
+                    {{ area.name }}
+                </a>
+            {% empty %}
+                <p>No areas have been added for this city yet.</p>
+            {% endfor %}
+        </div>
+
+    </div>
+</div>
+{% endblock content %}

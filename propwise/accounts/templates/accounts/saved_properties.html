@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container" style="margin-top: 20px;">
+    
+    <h2>My Saved Properties</h2>
+    <p>All the listings you've saved, all in one place.</p>
+
+    <hr style="margin: 20px 0;">
+
+    <div class="property-list">
+        {% for prop in properties %}
+            <div class="property-card">
+                
+                {% if prop.main_image %}
+                    <img src="{{ prop.main_image.url }}" alt="{{ prop.title }}">
+                {% endif %}
+                
+                <h4>
+                    <a href="{% url 'property_detail' pk=prop.pk %}">
+                        {{ prop.title }}
+                    </a>
+                </h4>
+
+                <p><strong>Price:</strong> PKR {{ prop.price }}</p>
+                <p><strong>Location:</strong> {{ prop.area }}</p>
+                <p><strong>Type:</strong> {{ prop.get_property_type_display }}</p>
+                
+                <p style="margin-top: 10px;">
+                    <a href="{% url 'property_detail' pk=prop.pk %}" style="
+                        display: inline-block;
+                        padding: 8px 16px;
+                        background-color: #0066cc;
+                        color: white;
+                        text-decoration: none;
+                        border-radius: 4px;
+                        font-size: 14px;
+                    ">
+                        View Details
+                    </a>
+                    
+                    {% comment %} 
+                      This is the same "Unsave" button from the other pages.
+                      It will work perfectly here.
+                    {% endcomment %}
+                    {% if user.is_authenticated and prop in user.favorites.all %}
+                        <form action="{% url 'remove_from_favorites' pk=prop.pk %}" method="POST" style="display: inline;">
+                            {% csrf_token %}
+                            <button type="submit" style="
+                                background: #dc3545; /* Red */
+                                color: white;
+                                padding: 5px 10px;
+                                border: none;
+                                border-radius: 4px;
+                                cursor: pointer;
+                                font-size: 14px;
+                                margin-left: 10px;
+                            ">
+                                Unsave
+                            </button>
+                        </form>
+                    {% endif %}
+
+                </p>
+            </div>
+        {% empty %}
+            <p>You have not saved any properties yet.</p>
+            <p>Click the "Save" button on any listing to add it to this list.</p>
+        {% endfor %}
+    </div>
+
+</div>
+{% endblock content %}

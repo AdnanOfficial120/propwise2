@@ -49,8 +49,12 @@
     {% if property.agent != user %}
         <div style="margin-top: 20px; padding: 15px; background: #f4f4f4; border-radius: 8px;">
             <h4>Contact the Agent</h4>
-            <p>Start a conversation with <strong>{{ property.agent.username }}</strong> about this property.</p>
-            
+<p>Start a conversation with 
+    <a href="{% url 'agent_profile' pk=property.agent.pk %}" style="font-weight: bold; text-decoration: none; color: #0066cc;">
+        <strong>{{ property.agent.first_name|default:property.agent.username }}</strong>
+    </a> 
+    about this property.
+</p>            
             {% comment %} 
               This is a form, not a link, because it *creates* a new
               object (a chat thread). This is a professional best practice.

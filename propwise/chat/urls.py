@@ -12,4 +12,7 @@ urlpatterns = [
     
     # /chat/detail/<int:thread_id>/
     path('detail/<int:thread_id>/', views.chat_detail_view, name='chat_detail'),
+    # This is the special URL for our JavaScript to use
+    # e.g., /chat/api/messages/5/
+    path('api/messages/<int:thread_id>/', views.get_messages_api, name='chat_api_messages'),
 ]

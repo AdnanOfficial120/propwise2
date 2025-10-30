@@ -1,22 +1,29 @@
 # core/views.py
 
 from django.shortcuts import render
-from properties.models import Property  # Import our Property model
+from properties.models import Property       # Import our Property model
+from properties.filters import PropertyFilter  # <-- 1. IMPORT YOUR FILTER
 
 def homepage(request):
     """
     View for the homepage.
     Fetches the 12 most recent property listings.
+    Also provides the filter form for the search box.
     """
     
-    # We query the Property model, order by the newest first, 
-    # and take the first 12.
+    # This query is the same as before
     latest_properties = Property.objects.order_by('-created_at')[:12]
     
-    # We create a "context" dictionary to send this data to our HTML template.
+    # --- 2. CREATE AN INSTANCE OF THE FILTER ---
+    # We create an unbound filter form to display on the page.
+    # We don't pass 'request.GET' here, because we are not
+    # *displaying* results on the homepage, just the form itself.
+    filter_form = PropertyFilter()
+    
+    # --- 3. ADD THE FORM TO THE CONTEXT ---
     context = {
-        'properties': latest_properties
+        'properties': latest_properties,
+        'filter_form': filter_form  # <-- Pass the form to the template
     }
     
-    # We render the 'homepage.html' template and pass it the context.
     return render(request, 'core/homepage.html', context)

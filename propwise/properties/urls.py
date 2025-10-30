@@ -17,5 +17,9 @@ urlpatterns = [
     path('delete/<int:pk>/', views.PropertyDeleteView.as_view(), name='property_delete'),
     # e.g., /listings/image/delete/123/
     path('image/delete/<int:image_pk>/', views.delete_property_image, name='delete_property_image'),
+    # /listings/add-favorite/5/
+    path('add-favorite/<int:pk>/', views.add_to_favorites_view, name='add_to_favorites'),
+    # /listings/remove-favorite/5/
+    path('remove-favorite/<int:pk>/', views.remove_from_favorites_view, name='remove_from_favorites'),
 
 ]

@@ -30,11 +30,12 @@
                 <a href="{% url 'agent_dashboard' %}" style="margin-left: 15px;">My Dashboard</a>
                 <a href="{% url 'property_create' %}" style="margin-left: 15px;">+ Create Listing</a>
             {% else %}
-                <a href="#" style="margin-left: 15px;">My Saved Properties</a>
+                <a href="{% url 'saved_properties' %}" style="margin-left: 15px;">My Saved Properties</a>
             {% endif %}
             
             <a href="{% url 'profile' %}" style="margin-left: 15px;">My Profile</a>
             <a href="{% url 'chat_inbox' %}" style="margin-left: 15px;">Inbox</a>
+            <a href="{% url 'all_cities' %}" style="margin-left: 15px;">Locations</a>
 
             <form action="{% url 'logout' %}" method="post" style="display: inline; margin-left: 15px;">
                 {% csrf_token %}
