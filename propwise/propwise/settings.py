@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-$#**psj1z2a-p=aw2=ddy0jklw-0=3&i19$&4%yz076j&%u76(
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['127.0.0.1']
 
 
 # Application definition
@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'debug_toolbar',
 
     # Third-party apps (we will install these later)
     'rest_framework',
@@ -63,6 +64,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'debug_toolbar.middleware.DebugToolbarMiddleware',
+
 ]
 
 ROOT_URLCONF = 'propwise.urls'
@@ -150,3 +153,9 @@ AUTH_USER_MODEL = 'accounts.User'
 # Authentication URLs
 LOGIN_REDIRECT_URL = 'homepage'  # After login, go to the homepage
 LOGOUT_REDIRECT_URL = 'homepage' # After logout, go to the homepage
+
+
+
+INTERNAL_IPS = [
+    '127.0.0.1',
+]

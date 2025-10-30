@@ -30,3 +30,14 @@ urlpatterns = [
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+
+
+
+# --- 2. ADD THIS NEW BLOCK ---
+    # This adds the Debug Toolbar's URLs ONLY in debug mode
+    import debug_toolbar
+    urlpatterns += [
+        path('__debug__/', include(debug_toolbar.urls)),
+    ]
+    # --- END OF NEW BLOCK -

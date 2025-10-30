@@ -36,10 +36,10 @@ class CustomUserChangeForm(forms.ModelForm): # <-- 1. Inherit from ModelForm
         fields = ['first_name', 'last_name', 'email', 'phone_number', 'profile_picture']
         
         # 3. Add widgets to make it look good
+     
         widgets = {
             'first_name': forms.TextInput(attrs={'class': 'form-control'}),
             'last_name': forms.TextInput(attrs={'class': 'form-control'}),
             'email': forms.EmailInput(attrs={'class': 'form-control'}),
             'phone_number': forms.TextInput(attrs={'class': 'form-control'}),
-            'profile_picture': forms.FileInput(attrs={'class': 'form-control'}),
         }

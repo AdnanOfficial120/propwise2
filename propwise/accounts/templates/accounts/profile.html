@@ -1,20 +1,55 @@
 {% extends 'base.html' %}
 
 {% block content %}
-
 <div class="container" style="margin-top: 20px;">
     <div style="max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ccc; border-radius: 8px; background: #f9f9f9;">
 
         <h2 style="text-align: center; margin-bottom: 20px;">Edit Your Profile</h2>
 
+        {% comment %}
+        ===========================================
+         NEW: Show the current profile picture
+        ===========================================
+        {% endcomment %}
+        {% if user.profile_picture %}
+            <div style="text-align: center; margin-bottom: 20px;">
+                <p style="font-weight: bold; margin-bottom: 10px;">Current Image:</p>
+                <img src="{{ user.profile_picture.url }}" alt="Current profile picture" style="
+                    height: 150px;
+                    width: 150px;
+                    object-fit: cover;
+                    border-radius: 50%;
+                    border: 3px solid #ccc;
+                ">
+            </div>
+        {% endif %}
+        [Image of a user profile avatar]
+
         <form method="POST" enctype="multipart/form-data">
             {% csrf_token %}
             
             {% comment %} 
-              .as_p will make each form field a paragraph.
-              We can style this better later.
+            ===========================================
+             NEW: Manual form rendering
+            ===========================================
             {% endcomment %}
-            {{ form.as_p }}
+            {% for field in form %}
+                <div style="margin-bottom: 15px;">
+                    <label for="{{ field.id_for_label }}" style="font-weight: bold; display: block; margin-bottom: 5px;">{{ field.label }}</label>
+                    
+                    {% comment %} 
+                      This renders the field (e.g., <input> tag)
+                      and the ClearableFileInput widget will show up here.
+                    {% endcomment %}
+                    {{ field }}
+                    
+                    {% if field.errors %}
+                        <div style="color: red; font-size: 0.9em; margin-top: 5px;">
+                            {{ field.errors|striptags }}
+                        </div>
+                    {% endif %}
+                </div>
+            {% endfor %}
             
             <div>
                 <button type="submit" style="width: 100%; padding: 10px; background: #0066cc; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px;">
@@ -25,5 +60,4 @@
 
     </div>
 </div>
-
 {% endblock content %}
