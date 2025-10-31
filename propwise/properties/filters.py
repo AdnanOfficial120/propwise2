@@ -37,6 +37,8 @@ class PropertyFilter(django_filters.FilterSet):
     # Filter 5: Min/Max Price Range
     # This will automatically create two fields: 'price_min' and 'price_max'
     price = RangeFilter(label='Price Range')
+    # --- ADD THIS NEW FILTER ---
+    bedrooms = RangeFilter(label='Bedrooms (e.g., Min/Max)')
 
     class Meta:
         model = Property

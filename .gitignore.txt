@@ -1,23 +1,50 @@
-# Django specific
-*.pyc
-__pycache__/
+# ===================================================================
+# Secrets & Environment
+# ===================================================================
+# CRITICAL: Ignores .env, .env.local, .env.prod, etc.
+.env
+*.env
+
+# ===================================================================
+# Local Database
+# ===================================================================
+# Ignores the database and its temporary "journal" file
 db.sqlite3
-/staticfiles/
-/media/
-/.env
+*.sqlite3
+*.sqlite3-journal
 
-# Virtual environment
-venv/
-env/
-Scripts/
+# ===================================================================
+# Django Generated & User-Uploaded Files
+# ===================================================================
+# Ignores all user-uploaded images/files (no leading slash)
+media/
 
-# VS Code and IDE settings
-.vscode/
-.idea/
+# Ignores the folder created by the 'collectstatic' command
+staticfiles/
 
-# Logs and temporary files
+# ===================================================================
+# Django & Python Generated Files
+# ===================================================================
+__pycache__/
+*.pyc
+*.py[co]
 *.log
 *.pot
-*.py[co]
+
+# ===================================================================
+# Virtual Environment
+# ===================================================================
+# Ignores all common venv folder names
+venv/
+env/
+.venv/
+virtualenv/
+Scripts/
+
+# ===================================================================
+# Operating System & IDE Files
+# ===================================================================
+.vscode/
+.idea/
 .DS_Store
 Thumbs.db

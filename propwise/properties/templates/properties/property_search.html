@@ -18,15 +18,53 @@
     <p><a href="/"> &larr; Back to Homepage</a></p>
 
     <div class="container">
-        <div class="filters">
-            <h3>Find Your Property</h3>
-            
-            <form method="get">
-                
-                {{ filter.form.as_p }}
-                
-                <button type="submit">Search</button>
-            </form>
+       <hr style="margin: 25px 0;">
+
+{% if user.is_authenticated %}
+    
+    <h4>Save This Search</h4>
+    <p style="font-size: 14px; color: #555;">
+        Get email alerts for new properties that match these filters.
+    </p>
+
+    <form method="post" style="margin-top: 10px;">
+        {% csrf_token %}
+        
+        {{ saved_search_form.as_p }}
+        
+        <button type="submit" style="
+            background-color: #28a745; 
+            color: white; 
+            padding: 10px 15px; 
+            border: none; 
+            border-radius: 4px; 
+            cursor: pointer;
+            width: 100%;
+        ">
+            Save Search & Get Alerts
+        </button>
+    </form>
+
+{% else %}
+
+    <h4>Save This Search</h4>
+    <p style="font-size: 14px; color: #555;">
+        Want alerts for new properties?
+    </p>
+    
+    <a href="{% url 'login' %}?next={{ request.get_full_path|urlencode }}" style="
+        display: block;
+        text-align: center;
+        background-color: #007bff;
+        color: white;
+        padding: 10px 15px;
+        border-radius: 4px;
+        text-decoration: none;
+    ">
+        Login to Save This Search
+    </a>
+
+{% endif %}
         </div>
         
         <div class="results">

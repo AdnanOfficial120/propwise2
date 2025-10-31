@@ -10,11 +10,19 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
-from pathlib import Path
 
+from pathlib import Path
+import os
+
+# propwise/settings.py  for sending gmail 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# --- PASTE THE NEW LINES *HERE* ---
+from dotenv import load_dotenv
+load_dotenv(os.path.join(BASE_DIR, '.env'))
+# --- END OF NEW LINES ---
 
 
 # Quick-start development settings - unsuitable for production
@@ -42,6 +50,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'debug_toolbar',
+    'django.contrib.humanize', #added for {% load humanize %}: At the top. This lets us use {{ property.price|intcomma }},
+     # which will format a price like 50000000 into the much more readable 50,000,000
 
     # Third-party apps (we will install these later)
     'rest_framework',
@@ -159,3 +169,14 @@ LOGOUT_REDIRECT_URL = 'homepage' # After logout, go to the homepage
 INTERNAL_IPS = [
     '127.0.0.1',
 ]
+
+# propwise/settings.py 
+
+# --- EMAIL CONFIGURATION (for Saved Search Alerts) ---
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = os.environ.get('EMAIL_USER')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_PASS')
+DEFAULT_FROM_EMAIL = os.environ.get('EMAIL_USER')

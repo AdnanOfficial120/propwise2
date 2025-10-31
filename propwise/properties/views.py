@@ -10,6 +10,11 @@ from django.urls import reverse_lazy
 from django.views.generic import DeleteView
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib import messages
+# properties/views.py for notification of saved serches
+
+from accounts.forms import SavedSearchForm
+from django.db import IntegrityError
+from decimal import Decimal
 
 def property_detail(request, pk):
     property = get_object_or_404(Property, pk=pk)
@@ -22,19 +27,94 @@ def property_detail(request, pk):
     
     return render(request, 'properties/property_detail.html', context)
 
+# properties/views.py
+
+# --- REPLACE YOUR OLD 'property_search' FUNCTION WITH THIS ---
+
 def property_search(request):
     """
     View for searching and filtering properties.
+    NOW ALSO HANDLES SAVING THE SEARCH via a POST request.
     """
+    
+    # --- 1. Existing Filter/Search Logic (GET) ---
+    # This part is exactly the same as your old code
     queryset = Property.objects.all().order_by('-created_at')
     property_filter = PropertyFilter(request.GET, queryset=queryset)
     
+    # --- 2. New Logic for Saving the Search (POST) ---
+    saved_search_form = SavedSearchForm() # Initialize empty form for the template
+
+    # We only save a search if the user is logged in AND is submitting the save form
+    if request.method == 'POST' and request.user.is_authenticated:
+        saved_search_form = SavedSearchForm(request.POST)
+        
+        if saved_search_form.is_valid():
+            try:
+                # Get the filter data *from the URL query string* (request.GET)
+                query_params = request.GET
+                
+                search = saved_search_form.save(commit=False)
+                search.user = request.user
+                
+                # --- Populate the search object from the URL filters ---
+                search.keyword = query_params.get('keyword', None)
+                
+                city_id = query_params.get('city', None)
+                if city_id:
+                    search.city_id = int(city_id)
+                    
+                search.property_type = query_params.get('property_type', None)
+                search.purpose = query_params.get('purpose', None)
+                
+                # --- Safely convert numeric fields ---
+                # This stops the site from crashing if the URL has bad data
+                try:
+                    min_price_str = query_params.get('price_min', None)
+                    if min_price_str:
+                        search.min_price = Decimal(min_price_str.replace(',', ''))
+                except (ValueError, TypeError):
+                    pass # Ignore invalid min_price data
+                    
+                try:
+                    max_price_str = query_params.get('price_max', None)
+                    if max_price_str:
+                        search.max_price = Decimal(max_price_str.replace(',', ''))
+                except (ValueError, TypeError):
+                    pass # Ignore invalid max_price data
+                
+                try:
+                    min_bed_str = query_params.get('bedrooms_min', None)
+                    if min_bed_str:
+                        search.min_bedrooms = int(min_bed_str)
+                except (ValueError, TypeError):
+                    pass # Ignore invalid bedroom data
+                
+                # --- End of populating ---
+                
+                search.save()
+                messages.success(request, f"Your search '{search.name}' has been saved!")
+                
+                # Redirect back to the exact same page (with query string)
+                # This stops a re-post if the user hits "refresh"
+                return redirect(request.get_full_path())
+                
+            except IntegrityError:
+                messages.error(request, "You already have a search with that name. Please choose a different name.")
+        
+        else:
+            # Form was invalid (user likely didn't enter a name)
+            messages.error(request, "To save a search, you must give it a name.")
+    
+    
+    # --- 3. Context for the template ---
+    # We now pass the form into the template
     context = {
-        'filter': property_filter
+        'filter': property_filter,
+        'saved_search_form': saved_search_form, # Pass the form to the template
     }
     
     return render(request, 'properties/property_search.html', context)
-
 @login_required(login_url='login') 
 def property_create(request):
     """

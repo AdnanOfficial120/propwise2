@@ -1,0 +1,68 @@
+{% load humanize %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PropWise Alert</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0;">
+    <div style="width: 90%; max-width: 600px; margin: 20px auto; border: 1px solid #ddd; border-radius: 8px;">
+
+        <div style="background-color: #f9f9f9; padding: 20px; border-bottom: 1px solid #ddd;">
+            <h2 style="margin: 0; color: #005a9c;">PropWise Alerts</h2>
+        </div>
+
+        <div style="padding: 30px;">
+            <p style="font-size: 16px;">Hi {{ user.username }},</p>
+            
+            <p style="font-size: 16px;">
+                Good news! We found **{{ new_properties_count }}** new property/properties that match your saved search:
+            </p>
+            
+            <div style="background-color: #f4f4f4; padding: 15px; border-radius: 5px; text-align: center; margin: 20px 0;">
+                <strong style="font-size: 18px; color: #333;">"{{ search.name }}"</strong>
+            </div>
+
+            <hr style="border: 0; border-top: 1px solid #eee; margin: 30px 0;">
+
+            {% for property in new_properties %}
+                <div style="margin-bottom: 25px;">
+                    <a href="http://{{ domain }}{% url 'property_detail' pk=property.pk %}" style="text-decoration: none;">
+                        {% if property.main_image %}
+                            <img src="http://{{ domain }}{{ property.main_image.url }}" alt="{{ property.title }}" style="width: 100%; height: auto; border-radius: 8px;">
+                        {% endif %}
+                        
+                        <h3 style="margin: 10px 0 5px 0; color: #005a9c;">{{ property.title }}</h3>
+                    </a>
+
+                    <p style="margin: 5px 0; font-size: 16px; color: #333;">
+                        <strong>Price:</strong> PKR {{ property.price|intcomma }}
+                    </p>
+                    <p style="margin: 5px 0; font-size: 16px; color: #333;">
+                        <strong>Location:</strong> {{ property.area }}
+                    </p>
+                    
+                    <a href="http://{{ domain }}{% url 'property_detail' pk=property.pk %}" style="display: inline-block; background-color: #007bff; color: #ffffff; padding: 10px 15px; text-decoration: none; border-radius: 5px; margin-top: 10px; font-weight: bold;">
+                        View Details
+                    </a>
+                </div>
+                
+                {% if not forloop.last %}
+                    <hr style="border: 0; border-top: 1px dashed #ccc; margin: 25px 0;">
+                {% endif %}
+            {% endfor %}
+            </div>
+
+        <div style="background-color: #f9f9f9; padding: 20px; border-top: 1px solid #ddd; font-size: 12px; color: #777;">
+            <p style="margin: 0;">
+                You are receiving this email because you saved this search on PropWise.
+            </p>
+            <p style="margin: 5px 0 0 0;">
+                To manage your alerts, log in to your account and visit your profile page.
+            </p>
+        </div>
+
+    </div>
+</body>
+</html>
