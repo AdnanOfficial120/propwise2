@@ -36,6 +36,8 @@
             <a href="{% url 'profile' %}" style="margin-left: 15px;">My Profile</a>
             <a href="{% url 'chat_inbox' %}" style="margin-left: 15px;">Inbox</a>
             <a href="{% url 'all_cities' %}" style="margin-left: 15px;">Locations</a>
+            <a href="{% url 'map_search' %}" style="margin-left: 15px;">Map Search</a>
+
 
             <form action="{% url 'logout' %}" method="post" style="display: inline; margin-left: 15px;">
                 {% csrf_token %}
@@ -51,8 +53,11 @@
                 ">Log Out</button>
             </form>
             {% else %}
+                <a href="{% url 'all_cities' %}" style="margin-left: 15px;">Locations</a>
+                <a href="{% url 'map_search' %}" style="margin-left: 15px;">Map Search</a>
                 <a href="{% url 'login' %}">Log In</a>
                 <a href="{% url 'signup' %}" style="margin-left: 15px;">Sign Up</a>
+                
             {% endif %}
         </nav>
     </header>

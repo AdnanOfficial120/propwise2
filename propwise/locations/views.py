@@ -3,7 +3,7 @@
 from django.shortcuts import render, get_object_or_404
 from .models import City, Area
 from properties.models import Property # We'll need this for Page 3 later
-
+from django.http import JsonResponse
 def all_cities_view(request):
     """
     Page 1: Displays a list of all cities.
@@ -54,3 +54,29 @@ def area_detail_view(request, area_pk):
         'properties': properties_in_area  # We pass the list of properties to the template
     }
     return render(request, 'locations/area_detail.html', context)
+
+
+
+# locations/views.py (at the bottom for show only areas of city to create listing)
+
+def ajax_load_areas(request):
+    """
+    An "API" view that returns a list of areas for a given city_id.
+    Called by JavaScript to populate the 'Area' dropdown.
+    """
+    # Get the city_id from the 'GET' request's query parameters
+    city_id = request.GET.get('city_id')
+
+    if city_id:
+        # Get all areas for that city
+        areas = Area.objects.filter(city_id=city_id).order_by('name')
+
+        # Format the data as a list of simple objects
+        # Our JavaScript will expect 'id' and 'name'
+        data = [{'id': area.id, 'name': area.name} for area in areas]
+
+        # Return the data as a JSON response
+        return JsonResponse(data, safe=False)
+
+    # If no city_id is provided, return an empty list
+    return JsonResponse([], safe=False)

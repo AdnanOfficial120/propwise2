@@ -120,5 +120,68 @@
         
         <button type="submit">Submit Listing</button>
     </form>
+
+
+
+    <button type="submit">Submit Listing</button>
+</form>
+
+<script>
+    // This script runs after the page is loaded
+    document.addEventListener('DOMContentLoaded', function() {
+        
+        // 1. Get references to our two dropdowns
+        const cityDropdown = document.getElementById('id_city');
+        const areaDropdown = document.getElementById('id_area');
+        
+        // 2. Set the URL for our new API view.
+        //    The '0' is a placeholder that we will replace.
+        const ajaxUrl = "{% url 'ajax_load_areas' %}";
+
+        // 3. Listen for a 'change' event on the City dropdown
+        cityDropdown.addEventListener('change', function() {
+            
+            // Get the ID of the selected city
+            const cityId = this.value;
+            
+            // Clear the Area dropdown and add a "Loading..." message
+            areaDropdown.innerHTML = '<option value="">Loading...</option>';
+
+            if (cityId) {
+                // --- If a real city is selected ---
+                
+                // Use the fetch API to call our view
+                // This creates a URL like: /locations/ajax/load-areas/?city_id=1
+                fetch(`${ajaxUrl}?city_id=${cityId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        // The server has sent us the list of areas
+                        
+                        // Clear the "Loading..." message
+                        areaDropdown.innerHTML = '<option value="">---------</option>';
+                        
+                        // Loop through the data and add each area as an <option>
+                        data.forEach(function(area) {
+                            const option = document.createElement('option');
+                            option.value = area.id;
+                            option.textContent = area.name;
+                            areaDropdown.appendChild(option);
+                        });
+                    })
+                    .catch(error => {
+                        console.error('Error loading areas:', error);
+                        areaDropdown.innerHTML = '<option value="">Error loading areas</option>';
+                    });
+            } else {
+                // --- If the user selected the blank "---" option ---
+                // Clear the Area dropdown
+                areaDropdown.innerHTML = '<option value="">---------</option>';
+            }
+        });
+    });
+</script>
+
+</body>
+</html>
     </body>
 </html>

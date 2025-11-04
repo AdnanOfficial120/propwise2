@@ -11,10 +11,14 @@ from django.views.generic import DeleteView
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib import messages
 # properties/views.py for notification of saved serches
-
 from accounts.forms import SavedSearchForm
 from django.db import IntegrityError
 from decimal import Decimal
+# properties/views.py (for map view)
+from django.http import JsonResponse
+from django.urls import reverse
+from django.contrib.humanize.templatetags.humanize import intcomma
+
 
 def property_detail(request, pk):
     property = get_object_or_404(Property, pk=pk)
@@ -310,3 +314,58 @@ def remove_from_favorites_view(request, pk):
     messages.success(request, f"'{property.title}' has been removed from your favorites.")
     
     return redirect(request.META.get('HTTP_REFERER', 'homepage'))
+
+
+
+# properties/views.py 
+
+# ---  TWO VIEWS FOR THE INTERACTIVE MAP ---
+
+def map_search_view(request):
+    """
+    Step 2: Serves the main interactive map search page.
+    This view just renders the template. The template's JavaScript
+    will then call the 'property_api_view' to get the data.
+    """
+    # We will create this template in the next step
+    return render(request, 'properties/map_search.html')
+
+
+def property_api_view(request):
+    """
+    Step 1: This is the "Data Source" or "API" view.
+    It returns a JSON list of all properties that have coordinates.
+    """
+    try:
+        # 1. Efficiently query properties.
+        # We use select_related('area') to fetch the related Area
+        # in the same database query. This is a huge performance win.
+        properties = Property.objects.select_related('area').filter(
+            area__latitude__isnull=False,  # Only include properties with a latitude
+            area__longitude__isnull=False # Only include properties with a longitude
+        ).order_by('-created_at')
+
+        # 2. Build the list of data for the map
+        data_list = []
+        for prop in properties:
+            data_list.append({
+                'id': prop.pk,
+                'title': prop.title,
+                'lat': prop.area.latitude,
+                'lng': prop.area.longitude,
+                'price': f"PKR {intcomma(prop.price)}", # e.g., "PKR 50,000,000"
+                'area_name': str(prop.area),
+                
+                # Get image URL, but check if main_image exists first
+                'image_url': prop.main_image.url if prop.main_image else None,
+                
+                # Get the URL to the property's detail page
+                'detail_url': reverse('property_detail', args=[prop.pk])
+            })
+        
+        # 3. Return the list as a JSON response
+        return JsonResponse(data_list, safe=False)
+    
+    except Exception as e:
+        # Handle any potential errors
+        return JsonResponse({'error': str(e)}, status=500)

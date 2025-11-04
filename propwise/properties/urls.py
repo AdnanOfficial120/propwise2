@@ -21,5 +21,12 @@ urlpatterns = [
     path('add-favorite/<int:pk>/', views.add_to_favorites_view, name='add_to_favorites'),
     # /listings/remove-favorite/5/
     path('remove-favorite/<int:pk>/', views.remove_from_favorites_view, name='remove_from_favorites'),
+    # --- TWO NEW URLS FOR THE MAP SEARCH ---
+    # 1. The public-facing page that shows the map
+    # 1. The page that shows the map (You probably have this one)
+    path('map/', views.map_search_view, name='map_search'),
+    
+    # 2. The data source for the map (THIS IS THE MISSING ONE)
+    path('api/properties/', views.property_api_view, name='property_api'),
 
 ]

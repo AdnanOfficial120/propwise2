@@ -118,7 +118,7 @@ def chat_detail_view(request, thread_id):
 
 
 
-# --- ADD THIS NEW VIEW to make chat app reload , live ---
+# --- Added THIS NEW VIEW to make chat app reload , live ---
 
 @login_required(login_url='login')
 def get_messages_api(request, thread_id):

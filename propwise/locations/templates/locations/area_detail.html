@@ -11,6 +11,58 @@
     </p>
 
     <hr style="margin: 20px 0;">
+    <!-- thisi  is added for nieghbehood... -->
+    <div class="insights-container" style="margin-bottom: 30px;">
+
+    {% comment %} 
+      SECTION 1: THE DESCRIPTION
+      This will only show if you have entered a description in the admin.
+    {% endcomment %}
+    {% if area.description %}
+        <div class="neighborhood-about" style="margin-bottom: 25px;">
+            <h3>About {{ area.name }}</h3>
+            
+            {% comment %} 
+              The |linebreaksbr filter is very important. 
+              It turns the paragraphs you wrote in the admin 
+              into proper HTML line breaks so it's not one giant block of text.
+            {% endcomment %}
+            <p style="font-size: 16px; line-height: 1.6;">
+                {{ area.description|linebreaksbr }}
+            </p>
+        </div>
+    {% endif %}
+
+    {% comment %} 
+      SECTION 2: THE INTERACTIVE MAP
+      This will only show if you have entered BOTH latitude AND longitude.
+    {% endcomment %}
+    {% if area.latitude and area.longitude %}
+        <div class="neighborhood-map">
+            <h3>Location Map</h3>
+            
+            {% comment %}
+              This is the 100% free Google Maps embed.
+              It works by using your latitude and longitude in the 'q' parameter.
+              - q={{ area.latitude }},{{ area.longitude }} (This is the pin location)
+              - z=15 (This sets the zoom level. 15 is good for a neighborhood)
+              - output=embed (This tells Google to send the map)
+            {% endcomment %}
+            <iframe
+                width="100%"
+                height="450"
+                style="border:0; border-radius: 8px;"
+                loading="lazy"
+                allowfullscreen
+                referrerpolicy="no-referrer-when-downgrade"
+                src="https://maps.google.com/maps?q={{ area.latitude }},{{ area.longitude }}&z=15&output=embed">
+            </iframe>
+        </div>
+    {% endif %}
+
+</div>
+
+<hr style="margin: 20px 0;">
 
     <div class="property-list">
         {% for prop in properties %}
