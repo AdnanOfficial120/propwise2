@@ -11,7 +11,11 @@ from django.contrib.auth.decorators import login_required
 # these import to show agent info   
 from django.contrib.auth import get_user_model
 from properties.models import Property
-
+#  for rating system 
+from .models import AgentRating # Our new database model
+from .forms import AgentRatingForm # Our new review form
+from django.db.models import Avg, Count # To calculate the average rating
+from django.db import IntegrityError # To catch duplicate reviews
 
 
 User = get_user_model() # Make sure this is defined for agent info..
@@ -91,25 +95,138 @@ def saved_properties_view(request):
 
 # this is for show agent info# --- ADD THIS NEW VIEW ---
 
+# accounts/views.py
+
+# --- REPLACE YOUR OLD 'agent_profile_view' WITH THIS NEW VERSION ---
+
 def agent_profile_view(request, pk):
     """
     Displays the public profile for a single agent,
-    including all of their active listings.
+    including all of their active listings,
+    AND handles the review/rating system.
     """
     
-    # --- Professional Query ---
-    # We get the User, but we also *require* them to be an agent.
-    # If a user tries to view a profile of a non-agent, they get a 404.
+    # 1. Get the agent (same as before)
     agent = get_object_or_404(User, pk=pk, is_agent=True)
     
-    # --- Get all properties listed by this one agent ---
-    agent_properties = Property.objects.filter(agent=agent).order_by('-created_at')
+    # --- 2. Handle a New Review Submission (POST Request) ---
     
+    # We initialize review_form as None here.
+    # If the request is GET, we'll create an empty one later.
+    # If the request is POST, we'll populate it here.
+    review_form = None 
+    
+    if request.method == 'POST':
+        # Security: User must be logged in to post a review
+        if not request.user.is_authenticated:
+            messages.error(request, 'You must be logged in to leave a review.')
+            return redirect('login') # Redirect to login
+
+        # Security: An agent cannot review themselves
+        if request.user == agent:
+            messages.error(request, "You cannot review your own profile.")
+            return redirect('agent_profile', pk=agent.pk)
+        
+        # Security: Only buyers can leave reviews (optional, but good practice)
+        if not request.user.is_buyer:
+            messages.error(request, "Only buyers are eligible to leave reviews.")
+            return redirect('agent_profile', pk=agent.pk)
+
+        # Process the form
+        review_form = AgentRatingForm(request.POST)
+        if review_form.is_valid():
+            try:
+                # We use 'try/except' to catch the 'unique_together'
+                # constraint from our model. This stops duplicate reviews.
+                new_review = review_form.save(commit=False)
+                new_review.agent = agent       # The agent being reviewed
+                new_review.reviewer = request.user # The user writing the review
+                new_review.save()
+                
+                messages.success(request, 'Your review has been submitted successfully!')
+            
+            except IntegrityError:
+                # This error happens if the (agent, reviewer) pair already exists
+                messages.error(request, 'You have already reviewed this agent.')
+            
+            # Always redirect after a successful POST to prevent re-submission
+            return redirect('agent_profile', pk=agent.pk)
+        
+        # If review_form is NOT valid, we just fall through to the
+        # GET logic, and the *invalid* form (with error messages)
+        # will be passed to the template.
+
+    # --- 3. Prepare Data for Page Load (GET Request) ---
+
+    # Get properties (same as before)
+    agent_properties = Property.objects.filter(agent=agent).order_by('-created_at')
+
+    # Get all reviews for this agent
+    all_reviews = AgentRating.objects.filter(agent=agent)
+    
+    # Calculate the average rating and total count
+    # .aggregate() is the most efficient way to do this
+    rating_stats = all_reviews.aggregate(
+        avg_rating=Avg('rating'), 
+        total_reviews=Count('rating')
+    )
+    
+    # --- 4. Determine if the current user can post a review ---
+    
+    user_can_review = False
+    user_has_reviewed = False
+    
+    if request.user.is_authenticated:
+        # Check if the user has already left a review
+        if all_reviews.filter(reviewer=request.user).exists():
+            user_has_reviewed = True
+        
+        # Check if user is eligible to review:
+        # They must be a buyer, not be the agent, and not have reviewed yet.
+        if request.user.is_buyer and request.user != agent and not user_has_reviewed:
+            user_can_review = True
+
+    # --- 5. Create the review form for the template ---
+    
+    # If this is a GET request, create a new, empty form
+    if review_form is None:
+        review_form = AgentRatingForm()
+
+    # --- 6. Build the final context ---
     context = {
         'agent': agent,
-        'properties': agent_properties # Pass the properties to the template
+        'properties': agent_properties,
+        
+        # New context variables for the rating system
+        'all_reviews': all_reviews,
+        'rating_stats': rating_stats,        # e.g., {'avg_rating': 4.5, 'total_reviews': 10}
+        'user_can_review': user_can_review,  # True/False
+        'user_has_reviewed': user_has_reviewed, # True/False
+        'review_form': review_form,          # The form to add a review
     }
     
-    # We'll create this template in the next step
     return render(request, 'accounts/agent_profile.html', context)
+
+# --- ADD THIS NEW VIEW FOR THE AGENT DIRECTORY  reviewing system start---
+
+def agent_directory_view(request):
+    """
+    Displays a public-facing list of all registered agents.
+    This is Part 1 of our "Agent Directory" feature.
+    """
+
+    # 1. Get all users who have 'is_agent' set to True
+    # We also order them by first name, last name, and username
+    # so the list is neatly organized.
+    all_agents = User.objects.filter(
+        is_agent=True
+    ).order_by('first_name', 'last_name', 'username')
+
+    # 2. Pass this list of agents into the template context
+    context = {
+        'agents': all_agents
+    }
+
+    # 3. We will create this template in the next step
+    return render(request, 'accounts/agent_directory.html', context)
     

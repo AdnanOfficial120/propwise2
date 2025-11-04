@@ -4,7 +4,7 @@ from django.contrib.auth.forms import UserCreationForm
 from django import forms  # <-- Make sure this is imported
 from django.contrib.auth import get_user_model
 # accounts/forms.py notification to show 
-from .models import SavedSearch
+from .models import SavedSearch,AgentRating
 
 # This gets your custom user model (accounts.User)
 User = get_user_model()
@@ -46,9 +46,6 @@ class CustomUserChangeForm(forms.ModelForm): # <-- 1. Inherit from ModelForm
             'phone_number': forms.TextInput(attrs={'class': 'form-control'}),
         }
 
-
-
-
     # accounts/forms.py for notificanton o fsaved
 
 class SavedSearchForm(forms.ModelForm):
@@ -68,3 +65,42 @@ class SavedSearchForm(forms.ModelForm):
         labels = {
             'name': 'Save Search As:'
         }
+# accounts/forms.py 
+# --- ADD THIS NEW FORM FOR AGENT RATINGS ---
+
+class AgentRatingForm(forms.ModelForm):
+    """
+    A form for a user to submit a rating and review for an agent.
+    """
+    class Meta:
+        model = AgentRating
+        
+        # We only want the user to fill out these two fields
+        fields = ['rating', 'comment']
+        
+        widgets = {
+            'rating': forms.Select(
+                attrs={
+                    'class': 'form-select', 
+                }
+            ),
+            'comment': forms.Textarea(
+                attrs={
+                    'class': 'form-control', 
+                    'rows': 4,
+                    'placeholder': 'Share your experience with this agent...'
+                }
+            ),
+        }
+        
+        labels = {
+            'rating': 'Your Rating (1-5 Stars)',
+            'comment': 'Your Review',
+        }
+
+    def __init__(self, *args, **kwargs):
+        """
+        Make the comment field optional.
+        """
+        super().__init__(*args, **kwargs)
+        self.fields['comment'].required = False

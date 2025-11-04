@@ -8,6 +8,9 @@ from properties.models import Property
 from django.utils import timezone
 from locations.models import City
 from properties.models import PropertyType, PropertyPurpose
+# accounts/models.py This is a tool from Django that will help us ensure the rating field must be a number between 1 and 5.
+
+from django.core.validators import MinValueValidator, MaxValueValidator
 
 class User(AbstractUser):
    
@@ -31,11 +34,6 @@ class User(AbstractUser):
 
     def __str__(self):
         return self.username
-    
-
-
-
-
 
     # accounts/models.py for notification 
 
@@ -68,3 +66,60 @@ class SavedSearch(models.Model):
     class Meta:
         # A user can't have two saved searches with the same name
         unique_together = ('user', 'name')
+
+
+
+
+# accounts/models.py  for rating system
+class AgentRating(models.Model):
+    """
+    Stores a single rating and review given by a user to an agent.
+    """
+    # --- Choices for the 5-star rating ---
+    RATING_CHOICES = (
+        (1, '1 Star'),
+        (2, '2 Stars'),
+        (3, '3 Stars'),
+        (4, '4 Stars'),
+        (5, '5 Stars'),
+    )
+
+    agent = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="ratings_received",
+        limit_choices_to={'is_agent': True}, # Ensures this MUST be an agent
+        help_text="The agent being rated."
+    )
+    
+    reviewer = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL, # If reviewer is deleted, keep the review
+        null=True,
+        related_name="ratings_given",
+        help_text="The user who wrote the review."
+    )
+    
+    rating = models.PositiveSmallIntegerField(
+        choices=RATING_CHOICES,
+        validators=[MinValueValidator(1), MaxValueValidator(5)],
+        help_text="Rating from 1 (Poor) to 5 (Excellent)."
+    )
+    
+    comment = models.TextField(
+        blank=True,
+        null=True,
+        help_text="The text review/comment."
+    )
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        # A user can only rate an agent one time
+        unique_together = ('agent', 'reviewer')
+        # By default, show the newest reviews first
+        ordering = ['-created_at']
+
+    def __str__(self):
+        # This is what will show up in the Django Admin
+        return f"{self.reviewer.username} rated {self.agent.username}: {self.rating} stars"

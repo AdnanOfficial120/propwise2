@@ -24,6 +24,9 @@ urlpatterns = [
     path('profile/', account_views.profile_view, name='profile'),
     # /accounts/saved/
     path('saved/', account_views.saved_properties_view, name='saved_properties'),
+   
+    # This is the new page that lists ALL agents
+    path('agents/', account_views.agent_directory_view, name='agent_directory'),
     # --- ADDed THIS NEW LINE for show agent info ---
     # /accounts/agent/5/
     path('agent/<int:pk>/', account_views.agent_profile_view, name='agent_profile'),

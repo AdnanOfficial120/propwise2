@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+
+<style>
+    /* Styles for our new Agent Directory */
+    .agent-directory-container {
+        max-width: 900px;
+        margin: 20px auto;
+    }
+
+    .agent-grid {
+        display: grid;
+        /* Create 3 columns on desktop, 2 on tablet, 1 on mobile */
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 20px;
+    }
+
+    .agent-card {
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        padding: 20px;
+        text-align: center;
+        background: #fff;
+        transition: all 0.2s ease-in-out;
+    }
+
+    .agent-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .agent-card img {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%; /* Makes the image a circle */
+        object-fit: cover;
+        border: 3px solid #f0f0f0;
+        margin-bottom: 15px;
+    }
+
+    .agent-card h3 {
+        margin: 10px 0 5px 0;
+        color: #333;
+    }
+
+    .agent-card p {
+        margin: 5px 0;
+        color: #666;
+        font-size: 0.95em;
+    }
+
+    .agent-card-link {
+        display: inline-block;
+        margin-top: 15px;
+        padding: 10px 20px;
+        background-color: #007bff;
+        color: white;
+        text-decoration: none;
+        border-radius: 5px;
+        font-weight: bold;
+    }
+    .agent-card-link:hover {
+        background-color: #0056b3;
+    }
+
+</style>
+
+<div class="agent-directory-container">
+    <h2 style="text-align: center; margin-bottom: 25px;">Find a Professional Agent</h2>
+
+    <div class="agent-grid">
+        {% for agent in agents %}
+            <div class="agent-card">
+
+                {% if agent.profile_picture %}
+                    <img src="{{ agent.profile_picture.url }}" alt="{{ agent.username }}'s profile picture">
+                {% else %}
+                    <img src="https" alt="Default profile picture">
+                {% endif %}
+
+                <h3>
+                    {% if agent.first_name and agent.last_name %}
+                        {{ agent.get_full_name }}
+                    {% else %}
+                        {{ agent.username }}
+                    {% endif %}
+                </h3>
+
+                {% if agent.phone_number %}
+                    <p>Phone: {{ agent.phone_number }}</p>
+                {% endif %}
+
+                <a href="{% url 'agent_profile' pk=agent.pk %}" class="agent-card-link">
+                    View Profile
+                </a>
+            </div>
+        {% empty %}
+            <p>No agents have registered yet. Check back soon!</p>
+        {% endfor %}
+    </div>
+
+</div>
+
+{% endblock content %}
