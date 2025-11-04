@@ -1,9 +1,14 @@
 # locations/views.py
 
 from django.shortcuts import render, get_object_or_404
-from .models import City, Area
+from .models import City, Area,Amenity
 from properties.models import Property # We'll need this for Page 3 later
 from django.http import JsonResponse
+# locations/views.py 
+from django.http import JsonResponse
+import json
+
+
 def all_cities_view(request):
     """
     Page 1: Displays a list of all cities.
@@ -37,24 +42,60 @@ def city_detail_view(request, city_pk):
 # 
 
 
+# locations/views.py
+
+# --- REPLACE YOUR OLD 'area_detail_view' WITH THIS ---
+
+# locations/views.py
+
+# --- REPLACE YOUR OLD 'area_detail_view' WITH THIS ---
+
 def area_detail_view(request, area_pk):
     """
-    Page 3: Displays all properties for a specific area.
+    Page 3: Displays all properties for a specific area,
+    PLUS the new "Neighborhood Insights" and "What's Nearby" data.
     """
-    # Get the specific area, or show a 404 error
+    # 1. Get the specific area
     area = get_object_or_404(Area, pk=area_pk)
     
-    # --- THIS IS THE KEY ---
-    # We find all properties that have a foreign key
-    # pointing to this specific 'area' object.
+    # 2. Get all properties in this area
     properties_in_area = Property.objects.filter(area=area).order_by('-created_at')
     
+    # 3. Get all amenities and group them by type (for the list)
+    all_amenities = area.amenities.all().order_by('amenity_type', 'name')
+    
+    amenities_by_type = {}
+    
+    # --- 4. NEW: Create a JSON list of amenities *for the map* ---
+    amenities_for_map = []
+    
+    for amenity in all_amenities:
+        # Group amenities for the list display
+        type_name = amenity.get_amenity_type_display()
+        if type_name not in amenities_by_type:
+            amenities_by_type[type_name] = []
+        amenities_by_type[type_name].append(amenity)
+        
+        # Add amenity to the map list *only if* it has coordinates
+        if amenity.latitude and amenity.longitude:
+            amenities_for_map.append({
+                'name': amenity.name,
+                'type': amenity.get_amenity_type_display(),
+                'lat': float(amenity.latitude),  # <--- THIS IS THE FIX
+                'lng': float(amenity.longitude), # <--- THIS IS THE FIX
+            })
+
+    # --- 5. Build the final context ---
     context = {
         'area': area,
-        'properties': properties_in_area  # We pass the list of properties to the template
+        'properties': properties_in_area,
+        'amenities_by_type': amenities_by_type,
+        
+        # This is the new, safe JSON string for our JavaScript
+        'amenities_json': json.dumps(amenities_for_map)
     }
+    
     return render(request, 'locations/area_detail.html', context)
-
 
 
 # locations/views.py (at the bottom for show only areas of city to create listing)

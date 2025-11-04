@@ -28,9 +28,21 @@ urlpatterns = [
     path('locations/', include('locations.urls')),
 ]
 
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# propwise/urls.py
 
+# --- Import this at the top with your other imports ---
+from django.contrib.staticfiles.urls import staticfiles_urlpatterns
+
+# ... (your main urlpatterns list) ...
+
+if settings.DEBUG:
+    # This serves your user-uploaded media files (like profile pictures)
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    
+    # --- THIS IS THE NEW FIX ---
+    # This manually adds the serving of static files (like .js and .css)
+    # This will fix the 404 error for both your file and the debug toolbar
+    urlpatterns += staticfiles_urlpatterns()
 
 
 

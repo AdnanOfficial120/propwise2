@@ -147,6 +147,13 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
+# --- ADD THIS NEW BLOCK ---
+# This tells Django to look for a folder named "static"
+# in your main project directory.
+STATICFILES_DIRS = [
+    BASE_DIR / 'static',
+]
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 

@@ -1,68 +1,126 @@
 {% extends 'base.html' %}
+{% load static %} {% block content %}
 
-{% block content %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<style>
+    #area-map {
+        height: 450px;
+        width: 100%;
+        border-radius: 8px;
+        border: 1px solid #ddd;
+    }
+    .amenities-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    @media (min-width: 768px) {
+        .amenities-grid {
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+    .amenity-group {
+        background: #f9f9f9;
+        border: 1px solid #eee;
+        border-radius: 8px;
+        padding: 15px 20px;
+    }
+    .amenity-group h4 {
+        margin-top: 0;
+        border-bottom: 2px solid #007bff;
+        padding-bottom: 8px;
+        font-size: 1.2em;
+    }
+    .amenity-group ul {
+        list-style-type: none;
+        padding-left: 0;
+        margin: 0;
+    }
+    .amenity-group li {
+        padding: 6px 0;
+        border-bottom: 1px dashed #ddd;
+    }
+    .amenity-group li:last-child {
+        border-bottom: none;
+    }
+    .property-list { 
+        display: grid; 
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px; 
+    }
+    .property-card { 
+        border: 1px solid #ccc; 
+        padding: 15px; 
+        border-radius: 8px; 
+    }
+    .property-card img { 
+        max-width: 100%; 
+        height: 200px;
+        object-fit: cover;
+        border-radius: 4px; 
+    }
+</style>
+
 <div class="container" style="margin-top: 20px;">
     
     <h2>Properties in {{ area.name }}, {{ area.city.name }}</h2>
     <p>
         <a href="{% url 'city_detail' city_pk=area.city.pk %}">
-            &larr; Back to all areas in {{ area.city.name }}
+            ← Back to all areas in {{ area.city.name }}
         </a>
     </p>
 
     <hr style="margin: 20px 0;">
-    <!-- thisi  is added for nieghbehood... -->
+    
     <div class="insights-container" style="margin-bottom: 30px;">
 
-    {% comment %} 
-      SECTION 1: THE DESCRIPTION
-      This will only show if you have entered a description in the admin.
-    {% endcomment %}
-    {% if area.description %}
-        <div class="neighborhood-about" style="margin-bottom: 25px;">
-            <h3>About {{ area.name }}</h3>
-            
-            {% comment %} 
-              The |linebreaksbr filter is very important. 
-              It turns the paragraphs you wrote in the admin 
-              into proper HTML line breaks so it's not one giant block of text.
-            {% endcomment %}
-            <p style="font-size: 16px; line-height: 1.6;">
-                {{ area.description|linebreaksbr }}
-            </p>
-        </div>
-    {% endif %}
+        {% if area.description %}
+            <div class="neighborhood-about" style="margin-bottom: 25px;">
+                <h3>About {{ area.name }}</h3>
+                <p style="font-size: 16px; line-height: 1.6;">
+                    {{ area.description|linebreaksbr }}
+                </p>
+            </div>
+        {% endif %}
 
-    {% comment %} 
-      SECTION 2: THE INTERACTIVE MAP
-      This will only show if you have entered BOTH latitude AND longitude.
-    {% endcomment %}
-    {% if area.latitude and area.longitude %}
-        <div class="neighborhood-map">
-            <h3>Location Map</h3>
-            
-            {% comment %}
-              This is the 100% free Google Maps embed.
-              It works by using your latitude and longitude in the 'q' parameter.
-              - q={{ area.latitude }},{{ area.longitude }} (This is the pin location)
-              - z=15 (This sets the zoom level. 15 is good for a neighborhood)
-              - output=embed (This tells Google to send the map)
-            {% endcomment %}
-            <iframe
-                width="100%"
-                height="450"
-                style="border:0; border-radius: 8px;"
-                loading="lazy"
-                allowfullscreen
-                referrerpolicy="no-referrer-when-downgrade"
-                src="https://maps.google.com/maps?q={{ area.latitude }},{{ area.longitude }}&z=15&output=embed">
-            </iframe>
-        </div>
-    {% endif %}
+        {% if area.latitude and area.longitude %}
+            <div class="neighborhood-map" style="margin-bottom: 30px;">
+                <h3>Location Map</h3>
+                
+                <div id="area-map"
+                     data-lat="{{ area.latitude }}"
+                     data-lng="{{ area.longitude }}"
+                     data-area-name="{{ area.name|escapejs }}"
+                     data-amenities-json='{{ amenities_json|safe }}'>
+                </div>
 
-</div>
+            </div>
+        {% endif %}
 
-<hr style="margin: 20px 0;">
+        {% if amenities_by_type %}
+            <div class="neighborhood-nearby" style="margin-top: 30px;">
+                <h3>What's Nearby in {{ area.name }}</h3>
+                
+                <div class="amenities-grid">
+                    {% for type_name, amenity_list in amenities_by_type.items %}
+                        <div class="amenity-group">
+                            <h4>{{ type_name }} ({{ amenity_list|length }})</h4>
+                            <ul>
+                                {% for amenity in amenity_list %}
+                                    <li>{{ amenity.name }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+
+    </div> <hr style="margin: 20px 0;">
+
+    <h3>Properties in {{ area.name }}</h3>
 
     <div class="property-list">
         {% for prop in properties %}
@@ -84,76 +142,37 @@
                 
                 <p style="margin-top: 10px;">
                     <a href="{% url 'property_detail' pk=prop.pk %}" style="
-                        display: inline-block;
-                        padding: 8px 16px;
-                        background-color: #0066cc;
-                        color: white;
-                        text-decoration: none;
-                        border-radius: 4px;
-                        font-size: 14px;
+                        display: inline-block; padding: 8px 16px; background-color: #0066cc;
+                        color: white; text-decoration: none; border-radius: 4px; font-size: 14px;
                     ">
                         View Details
                     </a>
-                    <!-- this id of add to favourite and remove -->
-                     {% comment %} This is the new "Save/Unsave" button logic {% endcomment %}
-
-{% if user.is_authenticated %}
-    {% comment %} Check if this property is in the user's favorites list {% endcomment %}
-    
-    {% if prop in user.favorites.all %}
-        {% comment %} If YES, show the "Unsave" button {% endcomment %}
-        <form action="{% url 'remove_from_favorites' pk=prop.pk %}" method="POST" style="display: inline;">
-            {% csrf_token %}
-            <button type-"submit" style="
-                background: #dc3545; /* Red */
-                color: white;
-                padding: 5px 10px;
-                border: none;
-                border-radius: 4px;
-                cursor: pointer;
-                font-size: 14px;
-                margin-left: 10px;
-            ">
-                Unsave
-            </button>
-        </form>
-        
-    {% else %}
-        {% comment %} If NO, show the "Save" button {% endcomment %}
-        <form action="{% url 'add_to_favorites' pk=prop.pk %}" method="POST" style="display: inline;">
-            {% csrf_token %}
-            <button type="submit" style="
-                background: #007bff; /* Blue */
-                color: white;
-                padding: 5px 10px;
-                border: none;
-                border-radius: 4px;
-                cursor: pointer;
-                font-size: 14px;
-                margin-left: 10px;
-            ">
-                Save
-            </button>
-        </form>
-    {% endif %}
-
-{% else %}
-    {% comment %} If user is NOT logged in, link to login page {% endcomment %}
-    <a href="{% url 'login' %}?next={{ request.path }}" style="
-        background: #007bff; /* Blue */
-        color: white;
-        padding: 5px 10px;
-        border: none;
-        border-radius: 4px;
-        font-size: 14px;
-        margin-left: 10px;
-        text-decoration: none;
-    ">
-        Save
-    </a>
-{% endif %}
+                    
+                    {% if user.is_authenticated %}
+                        {% if prop in user.favorites.all %}
+                            <form action="{% url 'remove_from_favorites' pk=prop.pk %}" method="POST" style="display: inline;">
+                                {% csrf_token %}
+                                <button type="submit" style="
+                                    background: #dc3545; color: white; padding: 5px 10px; border: none; 
+                                    border-radius: 4px; cursor: pointer; font-size: 14px; margin-left: 10px;
+                                ">Unsave</button>
+                            </form>
+                        {% else %}
+                            <form action="{% url 'add_to_favorites' pk=prop.pk %}" method="POST" style="display: inline;">
+                                {% csrf_token %}
+                                <button type="submit" style="
+                                    background: #007bff; color: white; padding: 5px 10px; border: none; 
+                                    border-radius: 4px; cursor: pointer; font-size: 14px; margin-left: 10px;
+                                ">Save</button>
+                            </form>
+                        {% endif %}
+                    {% else %}
+                        <a href="{% url 'login' %}?next={{ request.path }}" style="
+                            background: #007bff; color: white; padding: 5px 10px; border: none; 
+                            border-radius: 4px; font-size: 14px; margin-left: 10px; text-decoration: none;
+                        ">Save</a>
+                    {% endif %}
                 </p>
-
             </div>
         {% empty %}
             <p>No properties have been listed in this area yet. Please check back soon!</p>
@@ -161,4 +180,7 @@
     </div>
 
 </div>
+
+<script src="{% static 'js/area_map.js' %}"></script>
+
 {% endblock content %}

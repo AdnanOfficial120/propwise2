@@ -33,7 +33,15 @@
                 <a href="{% url 'saved_properties' %}" style="margin-left: 15px;">My Saved Properties</a>
             {% endif %}
             
-            <a href="{% url 'profile' %}" style="margin-left: 15px;">My Profile</a>
+            {% if user.is_agent %}
+    <a href="{% url 'agent_profile' pk=user.pk %}" style="margin-left: 15px;">My Public Profile</a>
+    <a href="{% url 'profile' %}" style="margin-left: 15px;">(Edit Profile)</a>
+{% else %}
+    <a href="{% url 'profile' %}" style="margin-left: 15px;">My Profile</a>
+{% endif %}
+
+
+
             <a href="{% url 'chat_inbox' %}" style="margin-left: 15px;">Inbox</a>
             <a href="{% url 'all_cities' %}" style="margin-left: 15px;">Locations</a>
             <a href="{% url 'map_search' %}" style="margin-left: 15px;">Map Search</a>
