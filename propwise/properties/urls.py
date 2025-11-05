@@ -28,5 +28,7 @@ urlpatterns = [
     
     # 2. The data source for the map (THIS IS THE MISSING ONE)
     path('api/properties/', views.property_api_view, name='property_api'),
-
+    # --- ADD THIS NEW LINE FOR THE AI ASSISTANT ---
+    path('api/generate-description/', views.generate_ai_description, name='generate_ai_description'),
 ]
+

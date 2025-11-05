@@ -80,6 +80,66 @@
             </div>
         </div>
 
+
+<!-- this is for shwing distance also  -->
+            </div> </div> {% comment %}
+            This section will ONLY appear if we successfully
+            calculated the distances in our view.
+        {% endcomment %}
+        {% if nearby_amenities %}
+            <div class="specs" style="margin-top: 20px;">
+                <h4>What's Nearby This Property</h4>
+                
+                <style>
+                    .nearby-list { 
+                        list-style-type: none; 
+                        padding-left: 0; 
+                    }
+                    .nearby-list li {
+                        display: flex;
+                        justify-content: space-between;
+                        padding: 8px 0;
+                        border-bottom: 1px dashed #ddd;
+                        font-size: 1.1em;
+                    }
+                    .nearby-list li:last-child {
+                        border-bottom: none;
+                    }
+                    .nearby-list .distance {
+                        font-weight: bold;
+                        color: #0056b3; /* Dark blue */
+                    }
+                </style>
+
+                <ul class="nearby-list">
+                    {% for item in nearby_amenities %}
+                        <li>
+                            <span>
+                                {% if item.amenity.amenity_type == 'school' %}🏫
+                                {% elif item.amenity.amenity_type == 'hospital' %}🏥
+                                {% elif item.amenity.amenity_type == 'park' %}🌳
+                                {% elif item.amenity.amenity_type == 'restaurant' %}🍽️
+                                {% elif item.amenity.amenity_type == 'supermarket' %}🛒
+                                {% else %}ℹ️
+                                {% endif %}
+                                
+                                {{ item.amenity.name }}
+                            </span>
+                            
+                            <span class="distance">
+                                {{ item.distance|floatformat:1 }} km
+                            </span>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+        
+<!-- end of distance showing  -->
+
+
+
+
         <h3>Description</h3>
         <p>{{ property.description|linebreaks }}</p>
 

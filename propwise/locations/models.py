@@ -133,3 +133,37 @@ class Amenity(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.get_amenity_type_display()}) in {self.area.name}"
+    
+
+
+#this is fo rshowing icon in mapppp
+    def get_map_details(self):
+        """
+        This helper function returns the correct color and
+        Font Awesome icon name for each amenity type.
+        """
+        if self.amenity_type == AmenityType.SCHOOL:
+            return {'icon': 'school', 'color': 'blue'}
+        
+        elif self.amenity_type == AmenityType.HOSPITAL:
+            return {'icon': 'hospital-o', 'color': 'red'} # 'hospital-o' is the "H" icon
+        
+        elif self.amenity_type == AmenityType.PARK:
+            return {'icon': 'tree', 'color': 'green'}
+            
+        elif self.amenity_type == AmenityType.RESTAURANT:
+            return {'icon': 'cutlery', 'color': 'orange'} # 'cutlery' is a knife/fork
+            
+        elif self.amenity_type == AmenityType.SUPERMARKET:
+            return {'icon': 'shopping-cart', 'color': 'purple'}
+            
+        else:
+            # Default for "Other"
+            return {'icon': 'info-circle', 'color': 'gray'}
+    # --- END OF NEW FUNCTION ---
+
+    class Meta:
+        # ... (your existing Meta class)
+        verbose_name_plural = "Amenities"
+        ordering = ['amenity_type', 'name']
+    

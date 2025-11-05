@@ -77,12 +77,20 @@ def area_detail_view(request, area_pk):
         amenities_by_type[type_name].append(amenity)
         
         # Add amenity to the map list *only if* it has coordinates
+      # ... (inside the 'for amenity in all_amenities:' loop)
         if amenity.latitude and amenity.longitude:
+            
+            # --- THIS IS THE UPGRADE ---
+            # Call our new helper function
+            map_details = amenity.get_map_details()
+
             amenities_for_map.append({
                 'name': amenity.name,
                 'type': amenity.get_amenity_type_display(),
-                'lat': float(amenity.latitude),  # <--- THIS IS THE FIX
-                'lng': float(amenity.longitude), # <--- THIS IS THE FIX
+                'lat': float(amenity.latitude),
+                'lng': float(amenity.longitude),
+                'icon': map_details['icon'],  # <-- Add the icon name
+                'color': map_details['color'] # <-- Add the color
             })
 
     # --- 5. Build the final context ---

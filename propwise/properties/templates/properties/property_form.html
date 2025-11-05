@@ -97,17 +97,47 @@
         {% for field in form %}
             <div class="form-row">
                 {{ field.label_tag }}
+
+            
+                <!-- also for ai description  -->
+               <div>
+                  {% if field.name == 'gallery_images' %}
+                    <input type="file" 
+                           name="gallery_images" 
+                           id="{{ field.id_for_label }}" 
+                           class="form-control" 
+                           multiple>
                 
-                <div>
-                    {% if field.name == 'gallery_images' %}
-                        <input type="file" 
-                               name="gallery_images" 
-                               id="{{ field.id_for_label }}" 
-                               class="form-control" 
-                               multiple>
-                    {% else %}
-                        {{ field }}
+                {% elif field.name == 'description' %}
+                    
+                    <div style="margin-bottom: 10px; border: 1px dashed #007bff; padding: 10px; border-radius: 5px;">
+                        <button type="button" id="generate-ai-desc-btn" style="background: #007bff; width: 100%;">
+                            ✨ Generate Description with AI
+                        </button>
+                        <p style="font-size: 0.9em; color: #666; margin-top: 8px; margin-bottom: 0;">
+                            <b>Note:</b> Please fill in the City, Area, Price, Beds, Baths, and Size fields *first* for the best results.
+                        </p>
+                        <div id="ai-loading-message" style="display: none; color: #007bff; font-weight: bold; margin-top: 5px;">
+                            Generating...
+                        </div>
+                    </div>
+                    {{ field }} {% else %}
+                    {{ field }} {% endif %}
+                    
+                    {% comment %} --- ADD THIS NEW BLOCK --- {% endcomment %}
+                    {% if field.help_text %}
+                        <p style="font-size: 0.9em; color: #666; margin-top: 5px;">
+                            {{ field.help_text }}
+                        </p>
                     {% endif %}
+                    {% comment %} --- END OF NEW BLOCK --- {% endcomment %}
+
+                    {% if field.errors %}
+                        <div class="field-errors">
+                            {{ field.errors|striptags }}
+                        </div>
+                    {% endif %}
+                </div>
 
                     {% if field.errors %}
                         <div class="field-errors">
@@ -179,6 +209,98 @@
             }
         });
     });
+
+
+// === START: NEW AI ASSISTANT JAVASCRIPT ===
+
+        // 1. Get references to the new elements
+        const genButton = document.getElementById('generate-ai-desc-btn');
+        const descriptionBox = document.getElementById('id_description');
+        const loadingMessage = document.getElementById('ai-loading-message');
+        const aiApiUrl = "{% url 'generate_ai_description' %}";
+        
+        // This function gets the CSRF token, which is required for a POST request
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        const csrftoken = getCookie('csrftoken');
+
+        // 2. Listen for a click on our new button
+        genButton.addEventListener('click', function(e) {
+            e.preventDefault(); // Stop the form from submitting
+
+            // 3. Get all the data from the form
+            // We use .options[...].text to get the *name* (e.g., "Lahore")
+            // not the ID (e.g., "1")
+            const city = document.getElementById('id_city').options[document.getElementById('id_city').selectedIndex].text;
+            const area = document.getElementById('id_area').options[document.getElementById('id_area').selectedIndex].text;
+
+            const data = {
+                purpose: document.getElementById('id_purpose').value,
+                property_type: document.getElementById('id_property_type').value,
+                city: city.includes('---') ? '' : city, // Don't send '---'
+                area: area.includes('---') ? '' : area, // Don't send '---'
+                bedrooms: document.getElementById('id_bedrooms').value,
+                bathrooms: document.getElementById('id_bathrooms').value,
+                area_size: document.getElementById('id_area_size').value,
+                area_unit: document.getElementById('id_area_unit').value,
+                price: document.getElementById('id_price').value,
+            };
+
+            // 4. Show loading message and disable button
+            loadingMessage.style.display = 'block';
+            genButton.disabled = true;
+            genButton.textContent = 'Generating...';
+
+            // 5. Send the data to our new Django API view
+            fetch(aiApiUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken // Include the CSRF token
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.description) {
+                    // 6. Success! Put the text in the box.
+                    descriptionBox.value = result.description;
+                } else {
+                    alert('An error occurred: ' + result.error);
+                }
+                
+                // 7. Re-enable the button
+                loadingMessage.style.display = 'none';
+                genButton.disabled = false;
+                genButton.textContent = '✨ Generate Description with AI';
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('A network error occurred. Please try again.');
+                
+                // 7. Re-enable the button
+                loadingMessage.style.display = 'none';
+                genButton.disabled = false;
+                genButton.textContent = '✨ Generate Description with AI';
+            });
+        });
+
+        // === END: NEW AI ASSISTANT JAVASVCRIPT ===
+    ;
+
+    
 </script>
 
 </body>

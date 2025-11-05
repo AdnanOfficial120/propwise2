@@ -23,6 +23,8 @@ class AreaUnit(models.TextChoices):
     SQ_YARD = 'sq_yard', 'Square Yards'
 
 
+# properties/models.py
+
 class Property(models.Model):
     """
     The main model for a property listing.
@@ -33,8 +35,33 @@ class Property(models.Model):
     description = models.TextField()
     price = models.BigIntegerField()
     
-    # Location
-    area = models.ForeignKey(Area, on_delete=models.SET_NULL, null=True, related_name="properties")
+    # --- UPGRADED LOCATION SECTION ---
+    area = models.ForeignKey(
+        Area, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        related_name="properties"
+    )
+
+    # --- ADD THESE TWO NEW FIELDS ---
+    # We make them null=True, blank=True so that your existing
+    # properties in the database don't cause an error.
+    latitude = models.DecimalField(
+        max_digits=9, 
+        decimal_places=6, 
+        null=True, 
+        blank=True,
+        help_text="Exact latitude of the property (e.g., 31.470510)"
+    )
+    
+    longitude = models.DecimalField(
+        max_digits=9, 
+        decimal_places=6, 
+        null=True, 
+        blank=True,
+        help_text="Exact longitude of the property (e.g., 74.394170)"
+    )
+    # --- END OF NEW FIELDS ---
     
     # Choices
     purpose = models.CharField(max_length=10, choices=PropertyPurpose.choices)
@@ -56,7 +83,6 @@ class Property(models.Model):
     
     def __str__(self):
         return f"{self.title} in {self.area}"
-
 
 class PropertyImage(models.Model):
     """

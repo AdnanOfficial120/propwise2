@@ -18,15 +18,70 @@ from decimal import Decimal
 from django.http import JsonResponse
 from django.urls import reverse
 from django.contrib.humanize.templatetags.humanize import intcomma
+from geopy.distance import geodesic
+from locations.models import Amenity
+#for Ai description extra
+import os
+import json
+import google.generativeai as genai
+from django.views.decorators.http import require_POST
+from django.conf import settings # To get the User model
+# properties/views.py (right after imports)
+genai.configure(api_key=os.environ.get('GEMINI_API_KEY'))
 
+# properties/views.py
+
+# ---  'property_detail' with distance measure---
 
 def property_detail(request, pk):
+    # 1. Get the main property and gallery (same as before)
     property = get_object_or_404(Property, pk=pk)
     gallery_images = property.images.all()
     
+    # --- 2. NEW: CALCULATE NEARBY AMENITIES ---
+    
+    nearby_amenities = [] # Start with an empty list
+
+    # We can only calculate distance if the *property* has coordinates
+    if property.latitude and property.longitude:
+        
+        # This is Point A (the property's location)
+        prop_point = (property.latitude, property.longitude)
+        
+        # Get all amenities that *also* have coordinates
+        all_amenities = Amenity.objects.filter(
+            latitude__isnull=False, 
+            longitude__isnull=False
+        )
+        
+        amenities_with_distance = []
+        
+        # Loop through every amenity to find its distance
+        for amenity in all_amenities:
+            
+            # This is Point B (the amenity's location)
+            amenity_point = (amenity.latitude, amenity.longitude)
+            
+            # Use geopy to calculate the distance
+            distance_km = geodesic(prop_point, amenity_point).km
+            
+            # Add the amenity and its distance to our list
+            amenities_with_distance.append({
+                'amenity': amenity,
+                'distance': distance_km
+            })
+        
+        # Sort the list by distance, from closest to farthest
+        sorted_amenities = sorted(amenities_with_distance, key=lambda x: x['distance'])
+        
+        # Get just the Top 5 closest amenities
+        nearby_amenities = sorted_amenities[:5]
+
+    # --- 3. BUILD THE FINAL CONTEXT ---
     context = {
         'property': property,
         'gallery_images': gallery_images,
+        'nearby_amenities': nearby_amenities, # <-- Add our new list to the context
     }
     
     return render(request, 'properties/property_detail.html', context)
@@ -162,7 +217,7 @@ def agent_dashboard(request):
         'properties': my_properties
     }
     return render(request, 'properties/agent_dashboard.html', context)
-# properties/views.py
+
 
 
 # --- REPLACE YOUR OLD 'property_update' FUNCTION WITH THIS ---
@@ -368,4 +423,68 @@ def property_api_view(request):
     
     except Exception as e:
         # Handle any potential errors
+        return JsonResponse({'error': str(e)}, status=500)
+    
+
+
+
+    #
+
+# --- ADD THIS NEW VIEW FOR THE AI ASSISTANT ---
+# properties/views.py (at the bottom)
+
+
+
+@login_required
+@require_POST # This view should only accept POST requests
+def generate_ai_description(request):
+    """
+    An API view that receives property data (as JSON),
+    sends it to the Gemini AI, and returns a generated description.
+    """
+    try:
+        # 1. Get the data from the JavaScript 'fetch' request
+        data = json.loads(request.body)
+        
+        # 2. Extract the data (with defaults to prevent errors)
+        purpose = data.get('purpose', '')
+        property_type = data.get('property_type', '')
+        city = data.get('city', '')
+        area = data.get('area', '')
+        bedrooms = data.get('bedrooms', 'any')
+        bathrooms = data.get('bathrooms', 'any')
+        area_size = data.get('area_size', '')
+        area_unit = data.get('area_unit', '')
+        price = data.get('price', '')
+
+        # 3. Create a professional prompt for the AI
+        prompt = f"""
+        Write a compelling and professional real estate listing description.
+        - The property is {purpose} and is a {property_type}.
+        - It is located in {area}, {city}.
+        - It has {bedrooms} bedrooms and {bathrooms} bathrooms.
+        - The size is {area_size} {area_unit}.
+        - The price is PKR {price}.
+        
+        Based on this data, write an attractive description.
+        - Use strong, positive adjectives.
+        - Highlight the key features (bedrooms, bathrooms, location).
+        - DO NOT include the price in the final description.
+        - The tone should be professional and inviting.
+        - Do not just list the facts; write 2-3 engaging paragraphs.
+        """
+        
+        # 4. Send the prompt to the AI
+        #
+        # === THIS IS THE FINAL FIX ===
+        # We are using the correct model name you found from the list.
+        #
+        model = genai.GenerativeModel('models/gemini-2.5-pro')
+        response = model.generate_content(prompt)
+        
+        # 5. Return the AI's text as a JSON response
+        return JsonResponse({'description': response.text})
+
+    except Exception as e:
+        # Handle any errors
         return JsonResponse({'error': str(e)}, status=500)
