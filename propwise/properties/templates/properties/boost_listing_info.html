@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    .info-box {
+        max-width: 700px;
+        margin: 40px auto;
+        padding: 30px;
+        background: #f9f9f9;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        line-height: 1.7;
+    }
+    .info-box h2 {
+        margin-top: 0;
+        color: #0056b3;
+    }
+    .info-box ul {
+        padding-left: 20px;
+    }
+    .info-box .contact-details {
+        font-weight: bold;
+        color: #333;
+        font-size: 1.1em;
+    }
+</style>
+
+<div class="info-box">
+    <h2>⭐ Boost Your Property Listing</h2>
+    
+    <p>
+        Get your property in front of thousands of more buyers by featuring it on PropWise!
+        Featured properties are pinned to the top of our homepage and search results.
+    </p>
+
+    <h4>How It Works:</h4>
+    <ul>
+        <li><strong>Price:</strong> 500 PKR (example price)</li>
+        <li><strong>Duration:</strong> 7 Days of top visibility</li>
+    </ul>
+    
+    <h4>How to Pay (Manual Process):</h4>
+    <p>
+        To get started, please contact our admin team directly via one of the methods below.
+        We will activate your featured listing as soon as payment is confirmed.
+    </p>
+
+    <div class="contact-details">
+        <p><strong>Phone:</strong> +92 3277080627</p>
+        <p><strong>Email:</strong> adnanofficial224@gmail.com</p>
+    </div>
+
+    <br>
+    <p>
+        <a href="{% url 'agent_dashboard' %}">← Back to My Dashboard</a>
+    </p>
+
+</div>
+{% endblock content %}

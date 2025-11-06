@@ -16,7 +16,8 @@ class PropertyAdmin(admin.ModelAdmin):
     list_display = (
         'title', 
         'area', 
-        'is_verified',  # <-- ADDED
+        'is_verified', 
+        'is_featured',  # <-- 1. ADD THIS
         'property_type', 
         'purpose', 
         'price', 
@@ -24,7 +25,8 @@ class PropertyAdmin(admin.ModelAdmin):
     )
     
     list_filter = (
-        'is_verified',  # <-- ADDED (This is your new "To-Do List")
+        'is_verified', 
+        'is_featured',  # <-- 2. ADD THIS
         'property_type', 
         'purpose', 
         'area__city'
@@ -45,9 +47,15 @@ class PropertyAdmin(admin.ModelAdmin):
         ('Images', {
             'fields': ('main_image',)
         }),
-        # --- ADD THIS NEW SECTION ---
         ('Admin Verification', {
             'fields': ('is_verified',)
+        }),
+        
+        # --- 3. ADD THIS NEW SECTION FOR MONETIZATION ---
+        ('Monetization (Admin Only)', {
+            'classes': ('collapse',), # Makes this section collapsible
+            'description': 'Check "Is Featured" and set an expiration date to feature this property.',
+            'fields': ('is_featured', 'featured_until')
         }),
         # --- END OF NEW SECTION ---
     )

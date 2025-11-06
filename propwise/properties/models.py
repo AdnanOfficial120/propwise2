@@ -25,6 +25,8 @@ class AreaUnit(models.TextChoices):
 
 # properties/models.py
 
+
+
 class Property(models.Model):
     """
     The main model for a property listing.
@@ -43,9 +45,6 @@ class Property(models.Model):
         related_name="properties"
     )
 
-    # --- ADD THESE TWO NEW FIELDS ---
-    # We make them null=True, blank=True so that your existing
-    # properties in the database don't cause an error.
     latitude = models.DecimalField(
         max_digits=9, 
         decimal_places=6, 
@@ -61,7 +60,6 @@ class Property(models.Model):
         blank=True,
         help_text="Exact longitude of the property (e.g., 74.394170)"
     )
-    # --- END OF NEW FIELDS ---
     
     # Choices
     purpose = models.CharField(max_length=10, choices=PropertyPurpose.choices)
@@ -81,17 +79,28 @@ class Property(models.Model):
     # Main "Cover" Image
     main_image = models.ImageField(upload_to='properties/main_images/', null=True, blank=True)
 
-    # --- ADD THIS NEW for admin verify ---
+    # --- TRUST & MONETIZATION FIELDS ---
     is_verified = models.BooleanField(
         default=False,
         help_text="Mark this listing as verified by the admin (e.g., checked for accuracy)."
     )
-    # --- END OF NEW FIELD ---
+    
+    # --- ADD THESE TWO NEW FIELDS for Monetization ---
+    is_featured = models.BooleanField(
+        default=False,
+        help_text="Mark this listing as 'Featured' to show it at the top."
+    )
+    featured_until = models.DateTimeField(
+        null=True, 
+        blank=True,
+        help_text="When this listing should stop being featured (e.g., 7 days from now)."
+    )
+    # --- END OF NEW FIELDS ---
     
     def __str__(self):
         return f"{self.title} in {self.area}"
 
-class PropertyImage(models.Model):
+class PropertyImage(models.Model): 
     """
     A model to store the image gallery for a property.
     """

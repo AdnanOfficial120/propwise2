@@ -18,31 +18,46 @@
             margin-bottom: 10px; 
         }
         .property-row img { max-width: 80px; border-radius: 4px; margin-right: 15px; }
-        .actions a { 
-            background-color: #007bff; 
-            color: white; 
-            padding: 8px 12px; 
-            text-decoration: none; 
+        .property-info {
+            display: flex;
+            align-items: center;
+        }
+
+        /* --- UPDATED & NEW STYLES --- */
+        .actions {
+            display: flex;
+            align-items: center;
+            gap: 8px; /* Adds space between buttons */
+        }
+        .actions a {
+            display: inline-block;
+            padding: 8px 12px;
+            text-decoration: none;
             border-radius: 4px;
             font-size: 0.9em;
+            color: white;
+            white-space: nowrap; /* Stops button text from wrapping */
         }
-        .actions .btn-edit { 
-            background-color: #007bff; 
-            color: white; 
-            padding: 8px 12px; 
-            text-decoration: none; 
-            border-radius: 4px;
-            font-size: 0.9em;
+        .btn-edit { 
+            background-color: #007bff; /* Blue */
         }
-        .actions .btn-delete { 
+        .btn-delete { 
             background-color: #dc3545; /* Red */
-            color: white; 
-            padding: 8px 12px; 
-            text-decoration: none; 
-            border-radius: 4px;
+        }
+
+        /* This is your new "Boost" button style */
+        .btn-boost {
+            background-color: #28a745; /* Green */
+        }
+
+        /* This is the style for the "Featured" status text */
+        .status-featured {
+            font-weight: bold;
+            color: #28a745; /* Green */
             font-size: 0.9em;
-            margin-left: 5px;}
-        /* We will add a red delete button style later */
+            white-space: nowrap;
+        }
+        /* --- END OF NEW STYLES --- */
     </style>
 </head>
 <body>
@@ -52,7 +67,7 @@
 
         {% for prop in properties %}
             <div class="property-row">
-                <div style="display: flex; align-items: center;">
+                <div class="property-info">
                     {% if prop.main_image %}
                         <img src="{{ prop.main_image.url }}" alt="">
                     {% endif %}
@@ -61,10 +76,20 @@
                         <small>Price: PKR {{ prop.price }}</small>
                     </span>
                 </div>
+                
                 <div class="actions">
-    <a href="{% url 'property_update' pk=prop.pk %}" class="btn-edit">Edit</a>
-    <a href="{% url 'property_delete' pk=prop.pk %}" class="btn-delete">Delete</a>
-</div>
+                
+                    {% comment %} --- START: NEW MONETIZATION LOGIC --- {% endcomment %}
+                    {% if prop.is_featured_live %}
+                        <span class="status-featured">⭐ Currently Featured</span>
+                    {% else %}
+                        <a href="{% url 'boost_listing_info' %}" class="btn-boost">Boost This Listing</a>
+                    {% endif %}
+                    {% comment %} --- END: NEW MONETIZATION LOGIC --- {% endcomment %}
+
+                    <a href="{% url 'property_update' pk=prop.pk %}" class="btn-edit">Edit</a>
+                    <a href="{% url 'property_delete' pk=prop.pk %}" class="btn-delete">Delete</a>
+                </div>
             </div>
         {% empty %}
             <p>You have not posted any properties yet.</p>

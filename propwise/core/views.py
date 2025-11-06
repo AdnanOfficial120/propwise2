@@ -2,28 +2,52 @@
 
 from django.shortcuts import render
 from properties.models import Property       # Import our Property model
-from properties.filters import PropertyFilter  # <-- 1. IMPORT YOUR FILTER
+from properties.filters import PropertyFilter  # Import your filter
+from django.utils import timezone  # <-- 1. IMPORT 'timezone'
 
 def homepage(request):
     """
     View for the homepage.
-    Fetches the 12 most recent property listings.
-    Also provides the filter form for the search box.
+    
+    NOW UPGRADED:
+    1. Fetches all *FEATURED* properties for the top slider.
+    2. Fetches the 12 most recent *VERIFIED, NON-FEATURED* properties.
+    3. Provides the filter form for the search box.
     """
     
-   # This is your NEW code only vrified to show on main page:
-    latest_properties = Property.objects.filter(is_verified=True).order_by('-created_at')[:12]
+    # --- 2. NEW: "FEATURED" PROPERTIES QUERY ---
+    # This is your monetization.
+    # We find all properties that are:
+    #   a) Marked as 'is_featured'
+    #   b) Not expired (their 'featured_until' date is in the future)
     
-    # --- 2. CREATE AN INSTANCE OF THE FILTER ---
-    # We create an unbound filter form to display on the page.
-    # We don't pass 'request.GET' here, because we are not
-    # *displaying* results on the homepage, just the form itself.
+    # Get the current time
+    now = timezone.now()
+    
+    featured_properties = Property.objects.filter(
+        is_verified=True,     # Must be verified
+        is_featured=True,     # Must be featured
+        featured_until__gte=now  # Must not be expired
+    ).order_by('-created_at') # Show newest featured first
+    
+    
+    # --- 3. UPGRADED: "LATEST" PROPERTIES QUERY ---
+    # We now filter for 'is_verified=True' AND 'is_featured=False'
+    # to avoid showing the same properties in both sections.
+    latest_properties = Property.objects.filter(
+        is_verified=True,
+        is_featured=False
+    ).order_by('-created_at')[:12]
+    
+    
+    # This logic for the filter form is perfect as-is
     filter_form = PropertyFilter()
     
-    # --- 3. ADD THE FORM TO THE CONTEXT ---
+    # --- 4. ADD BOTH LISTS TO THE CONTEXT ---
     context = {
-        'properties': latest_properties,
-        'filter_form': filter_form  # <-- Pass the form to the template
+        'featured_properties': featured_properties, # <-- Your new list
+        'latest_properties': latest_properties,   # <-- Your upgraded list
+        'filter_form': filter_form
     }
     
     return render(request, 'core/homepage.html', context)

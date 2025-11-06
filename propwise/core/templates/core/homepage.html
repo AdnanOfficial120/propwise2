@@ -2,129 +2,176 @@
 
 {% block content %}
 
-    <h1>Welcome to PropWise</h1>
+{% comment %} --- 1. NEW STYLES FOR BADGES AND SLIDER --- {% endcomment %}
+<style>
+    /* This is the badge for your new "Featured" (Paid) listings */
+    .featured-badge {
+        display: inline-block;
+        padding: 4px 8px;
+        background-color: #fff3cd; /* Light yellow */
+        color: #856404; /* Dark yellow/brown */
+        font-size: 0.85em;
+        font-weight: bold;
+        border-radius: 4px;
+        margin-left: 8px;
+        vertical-align: middle;
+    }
     
-    {% comment %} --- THIS IS THE UPDATED SEARCH BOX --- {% endcomment %}
-    <div style="background: #eee; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-        <h3>Find Your Perfect Property</h3>
-        
-        {% comment %}
-          This form's 'action' and 'method' are the same.
-          It still submits to your 'property_search' page.
-        {% endcomment %}
-        <form action="{% url 'property_search' %}" method="get">
-            
-            {% comment %}
-              Instead of one <input>, we now render the
-              entire, powerful filter form.
-            {% endcomment %}
-            {{ filter_form.form.as_p }}
-            
-            <button type="submit" style="background: #0066cc; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; margin-top: 10px;">
-                Search
-            </button>
-        </form>
-        
-        {% comment %}
-          We can remove the "Go to Advanced Search" link,
-          because the advanced search is now right here!
-        {% endcomment %}
-    </div>
-    
-    
-    <h3>See Our Latest Listings</h3>
+    /* This is the badge for your "Verified" (Admin-Approved) listings */
+    .verified-badge {
+        display: inline-block;
+        padding: 4px 8px;
+        background-color: #d4edda; /* Light green */
+        color: #155724; /* Dark green */
+        font-size: 0.85em;
+        font-weight: bold;
+        border-radius: 4px;
+        margin-left: 8px;
+        vertical-align: middle;
+    }
 
-    <div class="property-list">
-        {% for prop in properties %}
-            <div class="property-card">
+    /* This creates the horizontal scrolling "slider" for featured properties */
+    .slider-container {
+        display: flex;
+        overflow-x: auto; /* This is what makes it scroll horizontally */
+        gap: 20px;
+        padding: 10px 0 20px 0; /* Add some padding for the scrollbar */
+    }
+    .slider-card {
+        flex: 0 0 300px; /* Each card is 300px wide, and won't shrink */
+        border: 1px solid #ccc; 
+        padding: 15px; 
+        border-radius: 8px; 
+    }
+    .slider-card img {
+        width: 100%;
+        height: 180px;
+        object-fit: cover;
+        border-radius: 4px;
+    }
+</style>
+
+
+<h1>Welcome to PropWise</h1>
+
+{% comment %} --- YOUR SEARCH BOX (No changes, this is perfect) --- {% endcomment %}
+<div style="background: #eee; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+    <h3>Find Your Perfect Property</h3>
+    <form action="{% url 'property_search' %}" method="get">
+        {{ filter_form.form.as_p }}
+        <button type="submit" style="background: #0066cc; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; margin-top: 10px;">
+            Search
+        </button>
+    </form>
+</div>
+
+
+{% comment %}
+{% endcomment %}
+{% if featured_properties %}
+    <h3 style="border-bottom: 2px solid #0056b3; padding-bottom: 5px;">⭐ Featured Properties</h3>
+    
+    <div class="slider-container">
+        {% for prop in featured_properties %}
+            <div class="slider-card">
                 
                 {% if prop.main_image %}
-                    <img src="{{ prop.main_image.url }}" alt="{{ prop.title }}">
+                    <a href="{% url 'property_detail' pk=prop.pk %}">
+                        <img src="{{ prop.main_image.url }}" alt="{{ prop.title }}">
+                    </a>
                 {% endif %}
                 
                 <h4>
-                    <a href="{% url 'property_detail' pk=prop.pk %}">
-                        {{ prop.title }}
-                    </a>
+                    <a href="{% url 'property_detail' pk=prop.pk %}">{{ prop.title }}</a>
+                    
+                    {% comment %} --- ADD THE FEATURED BADGE --- {% endcomment %}
+                    <span class="featured-badge">⭐ Featured</span>
                 </h4>
 
                 <p><strong>Price:</strong> PKR {{ prop.price }}</p>
                 <p><strong>Location:</strong> {{ prop.area }}</p>
                 <p><strong>Type:</strong> {{ prop.get_property_type_display }}</p>
-                <p style="margin-top: 10px;">
-                    <a href="{% url 'property_detail' pk=prop.pk %}" style="
-                        display: inline-block;
-                        padding: 8px 16px;
-                        background-color: #0066cc;
-                        color: white;
-                        text-decoration: none;
-                        border-radius: 4px;
-                        font-size: 14px;
-                    ">
-                        View Details
-                    </a>
-                    {% comment %} This is the new "Save/Unsave" button logic {% endcomment %}
-
-{% if user.is_authenticated %}
-    {% comment %} Check if this property is in the user's favorites list {% endcomment %}
-    
-    {% if prop in user.favorites.all %}
-        {% comment %} If YES, show the "Unsave" button {% endcomment %}
-        <form action="{% url 'remove_from_favorites' pk=prop.pk %}" method="POST" style="display: inline;">
-            {% csrf_token %}
-            <button type-"submit" style="
-                background: #dc3545; /* Red */
-                color: white;
-                padding: 5px 10px;
-                border: none;
-                border-radius: 4px;
-                cursor: pointer;
-                font-size: 14px;
-                margin-left: 10px;
-            ">
-                Unsave
-            </button>
-        </form>
-        
-    {% else %}
-        {% comment %} If NO, show the "Save" button {% endcomment %}
-        <form action="{% url 'add_to_favorites' pk=prop.pk %}" method="POST" style="display: inline;">
-            {% csrf_token %}
-            <button type="submit" style="
-                background: #007bff; /* Blue */
-                color: white;
-                padding: 5px 10px;
-                border: none;
-                border-radius: 4px;
-                cursor: pointer;
-                font-size: 14px;
-                margin-left: 10px;
-            ">
-                Save
-            </button>
-        </form>
-    {% endif %}
-
-{% else %}
-    {% comment %} If user is NOT logged in, link to login page {% endcomment %}
-    <a href="{% url 'login' %}?next={{ request.path }}" style="
-        background: #007bff; /* Blue */
-        color: white;
-        padding: 5px 10px;
-        border: none;
-        border-radius: 4px;
-        font-size: 14px;
-        margin-left: 10px;
-        text-decoration: none;
-    ">
-        Save
-    </a>
-{% endif %}
-                </p>
             </div>
-        {% empty %}
-            <p>No properties have been listed yet. Please check back soon!</p>
         {% endfor %}
     </div>
+{% endif %}
+{% comment %}
+{% endcomment %}
+
+
+{% comment %} --- 3. UPGRADED "LATEST LISTINGS" SECTION --- {% endcomment %}
+<h3>Latest Verified Listings</h3>
+
+<div class="property-list">
+    
+    {% comment %} --- USE THE 'latest_properties' VARIABLE FROM THE VIEW --- {% endcomment %}
+    {% for prop in latest_properties %} 
+        <div class="property-card">
+            
+            {% if prop.main_image %}
+                <a href="{% url 'property_detail' pk=prop.pk %}">
+                    <img src="{{ prop.main_image.url }}" alt="{{ prop.title }}">
+                </a>
+            {% endif %}
+            
+            <h4>
+                <a href="{% url 'property_detail' pk=prop.pk %}">
+                    {{ prop.title }}
+                </a>
+                
+                {% comment %} --- ADD THE VERIFIED BADGE --- {% endcomment %}
+                {% if prop.is_verified %}
+                    <span class="verified-badge">✅ Verified</span>
+                {% endif %}
+            </h4>
+
+            <p><strong>Price:</strong> PKR {{ prop.price }}</p>
+            <p><strong>Location:</strong> {{ prop.area }}</p>
+            <p><strong>Type:</strong> {{ prop.get_property_type_display }}</p>
+            
+            <p style="margin-top: 10px;">
+                <a href="{% url 'property_detail' pk=prop.pk %}" style="
+                    display: inline-block;
+                    padding: 8px 16px;
+                    background-color: #0066cc;
+                    color: white;
+                    text-decoration: none;
+                    border-radius: 4px;
+                    font-size: 14px;
+                ">
+                    View Details
+                </a>
+                
+                {% comment %} Save/Unsave Button Logic (Copied from your template) {% endcomment %}
+                {% if user.is_authenticated %}
+                    {% if prop in user.favorites.all %}
+                        <form action="{% url 'remove_from_favorites' pk=prop.pk %}" method="POST" style="display: inline;">
+                            {% csrf_token %}
+                            <button type="submit" style="
+                                background: #dc3545; color: white; padding: 5px 10px; border: none; 
+                                border-radius: 4px; cursor: pointer; font-size: 14px; margin-left: 10px;
+                            ">Unsave</button>
+                        </form>
+                    {% else %}
+                        <form action="{% url 'add_to_favorites' pk=prop.pk %}" method="POST" style="display: inline;">
+                            {% csrf_token %}
+                            <button type="submit" style="
+                                background: #007bff; color: white; padding: 5px 10px; border: none; 
+                                border-radius: 4px; cursor: pointer; font-size: 14px; margin-left: 10px;
+                            ">Save</button>
+                        </form>
+                    {% endif %}
+                {% else %}
+                    <a href="{% url 'login' %}?next={{ request.path }}" style="
+                        background: #007bff; color: white; padding: 5px 10px; border: none; 
+                        border-radius: 4px; font-size: 14px; margin-left: 10px; text-decoration: none;
+                    ">Save</a>
+                {% endif %}
+            </p>
+        </div>
+    {% empty %}
+        <p>No properties have been listed yet. Please check back soon!</p>
+    {% endfor %}
+</div>
 
 {% endblock content %}

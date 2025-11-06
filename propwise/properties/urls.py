@@ -30,5 +30,7 @@ urlpatterns = [
     path('api/properties/', views.property_api_view, name='property_api'),
     # --- ADD THIS NEW LINE FOR THE AI ASSISTANT ---
     path('api/generate-description/', views.generate_ai_description, name='generate_ai_description'),
+    # --- ADD THIS NEW LINE FOR THE "BOOST" PAGE ---
+    path('boost-info/', views.boost_listing_info, name='boost_listing_info'),
 ]
 

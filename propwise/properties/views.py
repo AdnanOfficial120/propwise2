@@ -28,6 +28,9 @@ from django.views.decorators.http import require_POST
 from django.conf import settings # To get the User model
 # properties/views.py (right after imports)
 genai.configure(api_key=os.environ.get('GEMINI_API_KEY'))
+#these are for payment 7 day etc
+from django.utils import timezone
+from django.db.models import Case, When, BooleanField
 
 # properties/views.py
 
@@ -90,87 +93,96 @@ def property_detail(request, pk):
 
 # --- REPLACE YOUR OLD 'property_search' FUNCTION WITH THIS ---
 
+# properties/views.py
+
+# --- REPLACE YOUR 'property_search' FUNCTION WITH THIS ---
+
 def property_search(request):
     """
     View for searching and filtering properties.
-    NOW ALSO HANDLES SAVING THE SEARCH via a POST request.
+    NOW UPGRADED to show Featured listings first.
     """
     
-    # --- 1. Existing Filter/Search Logic (GET) ---
-    # This part is exactly the same as your old code
-    queryset = Property.objects.all().order_by('-created_at')
+    # --- 1. UPGRADED: Filter/Search Logic (GET) ---
+    
+    # Get the current time
+    now = timezone.now()
+
+    # 1a. Create a "live" featured status
+    # This adds a new temporary column to the query called 'is_featured_live'.
+    # It will be True ONLY if is_featured=True AND the expiration date is in the future.
+    queryset = Property.objects.annotate(
+        is_featured_live=Case(
+            When(is_featured=True, featured_until__gte=now, then=True),
+            default=False,
+            output_field=BooleanField()
+        )
+    )
+
+    # 1b. This is your new "professional" sort order:
+    #    1. Sort by the "live" featured status (Featured first)
+    #    2. Sort by the "verified" status (Verified next)
+    #    3. Sort by creation date (Newest first)
+    queryset = queryset.order_by('-is_featured_live', '-is_verified', '-created_at')
+
+    # 1c. This part is the same as before
     property_filter = PropertyFilter(request.GET, queryset=queryset)
     
+    
     # --- 2. New Logic for Saving the Search (POST) ---
-    saved_search_form = SavedSearchForm() # Initialize empty form for the template
+    # (This part is 100% the same as your old code, no changes here)
+    saved_search_form = SavedSearchForm() 
 
-    # We only save a search if the user is logged in AND is submitting the save form
     if request.method == 'POST' and request.user.is_authenticated:
         saved_search_form = SavedSearchForm(request.POST)
         
         if saved_search_form.is_valid():
             try:
-                # Get the filter data *from the URL query string* (request.GET)
                 query_params = request.GET
-                
                 search = saved_search_form.save(commit=False)
                 search.user = request.user
                 
-                # --- Populate the search object from the URL filters ---
                 search.keyword = query_params.get('keyword', None)
-                
                 city_id = query_params.get('city', None)
                 if city_id:
                     search.city_id = int(city_id)
-                    
                 search.property_type = query_params.get('property_type', None)
                 search.purpose = query_params.get('purpose', None)
                 
-                # --- Safely convert numeric fields ---
-                # This stops the site from crashing if the URL has bad data
                 try:
                     min_price_str = query_params.get('price_min', None)
                     if min_price_str:
                         search.min_price = Decimal(min_price_str.replace(',', ''))
                 except (ValueError, TypeError):
-                    pass # Ignore invalid min_price data
-                    
+                    pass 
                 try:
                     max_price_str = query_params.get('price_max', None)
                     if max_price_str:
                         search.max_price = Decimal(max_price_str.replace(',', ''))
                 except (ValueError, TypeError):
-                    pass # Ignore invalid max_price data
-                
+                    pass 
                 try:
                     min_bed_str = query_params.get('bedrooms_min', None)
                     if min_bed_str:
                         search.min_bedrooms = int(min_bed_str)
                 except (ValueError, TypeError):
-                    pass # Ignore invalid bedroom data
-                
-                # --- End of populating ---
+                    pass 
                 
                 search.save()
                 messages.success(request, f"Your search '{search.name}' has been saved!")
-                
-                # Redirect back to the exact same page (with query string)
-                # This stops a re-post if the user hits "refresh"
                 return redirect(request.get_full_path())
                 
             except IntegrityError:
                 messages.error(request, "You already have a search with that name. Please choose a different name.")
         
         else:
-            # Form was invalid (user likely didn't enter a name)
             messages.error(request, "To save a search, you must give it a name.")
     
     
     # --- 3. Context for the template ---
-    # We now pass the form into the template
     context = {
         'filter': property_filter,
-        'saved_search_form': saved_search_form, # Pass the form to the template
+        'saved_search_form': saved_search_form,
     }
     
     return render(request, 'properties/property_search.html', context)
@@ -209,15 +221,32 @@ def property_create(request):
     }
     return render(request, 'properties/property_form.html', context)
 
+# properties/views.py
+
+# --- REPLACE YOUR OLD 'agent_dashboard' FUNCTION WITH THIS ---
+
 @login_required(login_url='login')
 def agent_dashboard(request):
-    my_properties = Property.objects.filter(agent=request.user).order_by('-created_at')
+    
+    now = timezone.now()
+    
+    # 1. Get all properties for this agent
+    my_properties_qs = Property.objects.filter(agent=request.user)
+    
+    # 2. Annotate with 'is_featured_live' status
+    # This checks if the property is featured AND not expired
+    my_properties = my_properties_qs.annotate(
+        is_featured_live=Case(
+            When(is_featured=True, featured_until__gte=now, then=True),
+            default=False,
+            output_field=BooleanField()
+        )
+    ).order_by('-created_at') # Order after annotating
     
     context = {
         'properties': my_properties
     }
     return render(request, 'properties/agent_dashboard.html', context)
-
 
 
 # --- REPLACE YOUR OLD 'property_update' FUNCTION WITH THIS ---
@@ -488,3 +517,18 @@ def generate_ai_description(request):
     except Exception as e:
         # Handle any errors
         return JsonResponse({'error': str(e)}, status=500)
+    
+
+
+
+
+# --- ADD THIS NEW VIEW FOR YOUR "HOW TO PAY" PAGE ---
+
+@login_required
+def boost_listing_info(request):
+    """
+    A simple, static page that explains to an agent
+    how to pay for a featured listing.
+    """
+    # We will create this template in Step 3
+    return render(request, 'properties/boost_listing_info.html')
