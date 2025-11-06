@@ -11,8 +11,8 @@ def homepage(request):
     Also provides the filter form for the search box.
     """
     
-    # This query is the same as before
-    latest_properties = Property.objects.order_by('-created_at')[:12]
+   # This is your NEW code only vrified to show on main page:
+    latest_properties = Property.objects.filter(is_verified=True).order_by('-created_at')[:12]
     
     # --- 2. CREATE AN INSTANCE OF THE FILTER ---
     # We create an unbound filter form to display on the page.

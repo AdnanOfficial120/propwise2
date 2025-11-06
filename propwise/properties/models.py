@@ -80,6 +80,13 @@ class Property(models.Model):
     
     # Main "Cover" Image
     main_image = models.ImageField(upload_to='properties/main_images/', null=True, blank=True)
+
+    # --- ADD THIS NEW for admin verify ---
+    is_verified = models.BooleanField(
+        default=False,
+        help_text="Mark this listing as verified by the admin (e.g., checked for accuracy)."
+    )
+    # --- END OF NEW FIELD ---
     
     def __str__(self):
         return f"{self.title} in {self.area}"

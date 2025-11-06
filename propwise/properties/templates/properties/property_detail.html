@@ -1,31 +1,96 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ property.title }} - PropWise</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        .container { max-width: 900px; margin: auto; }
-        .main-image { max-width: 100%; height: auto; border-radius: 8px; }
-        .gallery { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 15px; }
-        .gallery img { max-width: 100%; border-radius: 4px; }
-        .specs { background: #f4f4f4; padding: 15px; border-radius: 8px; margin: 20px 0; }
-        .specs-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        a { color: #0066cc; }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: auto;
+        }
+
+        .main-image {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+        }
+
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .gallery img {
+            max-width: 100%;
+            border-radius: 4px;
+        }
+
+        .specs {
+            background: #f4f4f4;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .specs-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        a {
+            color: #0066cc;
+        }
+
+        /* --- ADD THIS NEW STYLE  of badge--- */
+        .verified-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            background-color: #d4edda;
+            /* Light green background */
+            color: #155724;
+            /* Dark green text */
+            font-size: 0.7em;
+            /* Make it a bit smaller than the h1 */
+            font-weight: bold;
+            border-radius: 5px;
+            margin-left: 10px;
+            vertical-align: middle;
+            /* Aligns it nicely with the title */
+        }
+
+        /* --- END OF NEW STYLE --- */
     </style>
 </head>
+
 <body>
     <div class="container">
         <p><a href="/"> &larr; Back to Homepage</a></p>
 
-        <h1>{{ property.title }}</h1>
+        <h1>
+            {{ property.title }}
+
+            {% comment %} --- THIS IS THE NEW BADGE --- {% endcomment %}
+            {% if property.is_verified %}
+            <span class="verified-badge">✅ Verified</span>
+            {% endif %}
+            {% comment %} --- END OF NEW BADGE --- {% endcomment %}
+        </h1>
         <h3>{{ property.area }}</h3>
-        
+
         <h2>PKR {{ property.price }}</h2>
 
         {% if property.main_image %}
-            <img class="main-image" src="{{ property.main_image.url }}" alt="{{ property.title }}">
+        <img class="main-image" src="{{ property.main_image.url }}" alt="{{ property.title }}">
         {% endif %}
 
         <div class="specs">
@@ -38,119 +103,127 @@
                 <span><strong>Size:</strong> {{ property.area_size }} {{ property.get_area_unit_display }}</span>
                 <span><strong>Agent:</strong> {{ property.agent.username }}</span>
                 {% comment %}
-  This goes in: properties/templates/properties/property_detail.html
-{% endcomment %}
+                This goes in: properties/templates/properties/property_detail.html
+                {% endcomment %}
 
-{% if user.is_authenticated %}
-    {% comment %} 
-      This is the key logic: Only show this button if the logged-in user
-      is NOT the agent who owns the property.
-    {% endcomment %}
-    {% if property.agent != user %}
-        <div style="margin-top: 20px; padding: 15px; background: #f4f4f4; border-radius: 8px;">
-            <h4>Contact the Agent</h4>
-<p>Start a conversation with 
-    <a href="{% url 'agent_profile' pk=property.agent.pk %}" style="font-weight: bold; text-decoration: none; color: #0066cc;">
-        <strong>{{ property.agent.first_name|default:property.agent.username }}</strong>
-    </a> 
-    about this property.
-</p>            
-            {% comment %} 
-              This is a form, not a link, because it *creates* a new
-              object (a chat thread). This is a professional best practice.
-            {% endcomment %}
-            <form action="{% url 'start_chat' property_pk=property.pk %}" method="POST">
-                {% csrf_token %}
-                <button type="submit" style="background: #0066cc; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px;">
-                    Start Chat
-                </button>
-            </form>
+                {% if user.is_authenticated %}
+                {% comment %}
+                This is the key logic: Only show this button if the logged-in user
+                is NOT the agent who owns the property.
+                {% endcomment %}
+                {% if property.agent != user %}
+                <div style="margin-top: 20px; padding: 15px; background: #f4f4f4; border-radius: 8px;">
+                    <h4>Contact the Agent</h4>
+                    <p>Start a conversation with
+                        <a href="{% url 'agent_profile' pk=property.agent.pk %}"
+                            style="font-weight: bold; text-decoration: none; color: #0066cc;">
+                            <strong>{{ property.agent.first_name|default:property.agent.username }}</strong>
+                        </a>
+                        about this property.
+                    </p>
+                    {% comment %}
+                    This is a form, not a link, because it *creates* a new
+                    object (a chat thread). This is a professional best practice.
+                    {% endcomment %}
+                    <form action="{% url 'start_chat' property_pk=property.pk %}" method="POST">
+                        {% csrf_token %}
+                        <button type="submit"
+                            style="background: #0066cc; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px;">
+                            Start Chat
+                        </button>
+                    </form>
+                </div>
+                {% endif %}
+                {% else %}
+                {% comment %}
+                If the user is logged out, show a simple link to the login page.
+                {% endcomment %}
+                <div style="margin-top: 20px; padding: 15px; background: #f4f4f4; border-radius: 8px;">
+                    <p>
+                        <a href="{% url 'login' %}?next={{ request.path }}">Log in</a> to contact the agent.
+                    </p>
+                </div>
+                {% endif %}
+            </div>
         </div>
-    {% endif %}
-{% else %}
-    {% comment %} 
-      If the user is logged out, show a simple link to the login page.
-    {% endcomment %}
-    <div style="margin-top: 20px; padding: 15px; background: #f4f4f4; border-radius: 8px;">
-        <p>
-            <a href="{% url 'login' %}?next={{ request.path }}">Log in</a> to contact the agent.
-        </p>
+
+
+        <!-- this is for shwing distance also  -->
     </div>
-{% endif %}
-            </div>
-        </div>
+    </div> {% comment %}
+    This section will ONLY appear if we successfully
+    calculated the distances in our view.
+    {% endcomment %}
+    {% if nearby_amenities %}
+    <div class="specs" style="margin-top: 20px;">
+        <h4>What's Nearby This Property</h4>
 
+        <style>
+            .nearby-list {
+                list-style-type: none;
+                padding-left: 0;
+            }
 
-<!-- this is for shwing distance also  -->
-            </div> </div> {% comment %}
-            This section will ONLY appear if we successfully
-            calculated the distances in our view.
-        {% endcomment %}
-        {% if nearby_amenities %}
-            <div class="specs" style="margin-top: 20px;">
-                <h4>What's Nearby This Property</h4>
-                
-                <style>
-                    .nearby-list { 
-                        list-style-type: none; 
-                        padding-left: 0; 
-                    }
-                    .nearby-list li {
-                        display: flex;
-                        justify-content: space-between;
-                        padding: 8px 0;
-                        border-bottom: 1px dashed #ddd;
-                        font-size: 1.1em;
-                    }
-                    .nearby-list li:last-child {
-                        border-bottom: none;
-                    }
-                    .nearby-list .distance {
-                        font-weight: bold;
-                        color: #0056b3; /* Dark blue */
-                    }
-                </style>
+            .nearby-list li {
+                display: flex;
+                justify-content: space-between;
+                padding: 8px 0;
+                border-bottom: 1px dashed #ddd;
+                font-size: 1.1em;
+            }
 
-                <ul class="nearby-list">
-                    {% for item in nearby_amenities %}
-                        <li>
-                            <span>
-                                {% if item.amenity.amenity_type == 'school' %}🏫
-                                {% elif item.amenity.amenity_type == 'hospital' %}🏥
-                                {% elif item.amenity.amenity_type == 'park' %}🌳
-                                {% elif item.amenity.amenity_type == 'restaurant' %}🍽️
-                                {% elif item.amenity.amenity_type == 'supermarket' %}🛒
-                                {% else %}ℹ️
-                                {% endif %}
-                                
-                                {{ item.amenity.name }}
-                            </span>
-                            
-                            <span class="distance">
-                                {{ item.distance|floatformat:1 }} km
-                            </span>
-                        </li>
-                    {% endfor %}
-                </ul>
-            </div>
-        {% endif %}
-        
-<!-- end of distance showing  -->
+            .nearby-list li:last-child {
+                border-bottom: none;
+            }
 
+            .nearby-list .distance {
+                font-weight: bold;
+                color: #0056b3;
+                /* Dark blue */
+            }
+        </style>
 
+        <ul class="nearby-list">
+            {% for item in nearby_amenities %}
+            <li>
+                <span>
+                    {% if item.amenity.amenity_type == 'school' %}🏫
+                    {% elif item.amenity.amenity_type == 'hospital' %}🏥
+                    {% elif item.amenity.amenity_type == 'park' %}🌳
+                    {% elif item.amenity.amenity_type == 'restaurant' %}🍽️
+                    {% elif item.amenity.amenity_type == 'supermarket' %}🛒
+                    {% else %}ℹ️
+                    {% endif %}
 
+                    {{ item.amenity.name }}
+                </span>
 
-        <h3>Description</h3>
-        <p>{{ property.description|linebreaks }}</p>
-
-        <h3>Photo Gallery</h3>
-        <div class="gallery">
-            {% for image in gallery_images %}
-                <img src="{{ image.image.url }}" alt="Gallery image">
-            {% empty %}
-                <p>No other images in the gallery.</p>
+                <span class="distance">
+                    {{ item.distance|floatformat:1 }} km
+                </span>
+            </li>
             {% endfor %}
-        </div>
+        </ul>
+    </div>
+    {% endif %}
+
+    <!-- end of distance showing  -->
+
+
+
+
+    <h3>Description</h3>
+    <p>{{ property.description|linebreaks }}</p>
+
+    <h3>Photo Gallery</h3>
+    <div class="gallery">
+        {% for image in gallery_images %}
+        <img src="{{ image.image.url }}" alt="Gallery image">
+        {% empty %}
+        <p>No other images in the gallery.</p>
+        {% endfor %}
+    </div>
     </div>
 </body>
+
 </html>

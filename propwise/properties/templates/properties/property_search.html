@@ -11,6 +11,21 @@
         .results { flex: 3; padding-left: 30px; }
         .property-card { border: 1px solid #ccc; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
         .property-card img { max-width: 150px; height: auto; border-radius: 4px; float: left; margin-right: 15px; }
+
+/* --- ADD THIS verifies bage setting --- */
+        .verified-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            background-color: #d4edda; /* Light green background */
+            color: #155724; /* Dark green text */
+            font-size: 0.85em;
+            font-weight: bold;
+            border-radius: 4px;
+            margin-left: 8px; /* Space between title and badge */
+            vertical-align: middle; /* Aligns it nicely with the title */
+        }
+        /* --- END OF NEW STYLE --- */
+
     </style>
 </head>
 <body>
@@ -79,6 +94,10 @@
                         <a href="{% url 'property_detail' pk=prop.pk %}">
                             {{ prop.title }}
                         </a>
+                        {% comment %} --- THIS IS THE NEW BADGE --- {% endcomment %}
+                            {% if prop.is_verified %}
+                                <span class="verified-badge">✅ Verified</span>
+                            {% endif %}
                     </h4>
                     <p><strong>Price:</strong> PKR {{ prop.price }}</p>
                     <p><strong>Location:</strong> {{ prop.area }}</p>

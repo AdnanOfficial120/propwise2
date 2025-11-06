@@ -13,22 +13,25 @@ class PropertyAdmin(admin.ModelAdmin):
     """
     inlines = [PropertyImageInline]
     
-    # --- ADD LAT/LNG TO THE LIST DISPLAY ---
     list_display = (
         'title', 
         'area', 
+        'is_verified',  # <-- ADDED
         'property_type', 
         'purpose', 
         'price', 
         'agent',
-        'latitude',
-        'longitude'
     )
     
-    list_filter = ('property_type', 'purpose', 'area__city')
+    list_filter = (
+        'is_verified',  # <-- ADDED (This is your new "To-Do List")
+        'property_type', 
+        'purpose', 
+        'area__city'
+    )
+    
     search_fields = ('title', 'description', 'area__name', 'area__city__name')
     
-    # --- ADD FIELDSETS TO ORGANIZE THE EDIT PAGE ---
     fieldsets = (
         ('Core Information', {
             'fields': ('title', 'description', 'price', 'agent')
@@ -42,6 +45,11 @@ class PropertyAdmin(admin.ModelAdmin):
         ('Images', {
             'fields': ('main_image',)
         }),
+        # --- ADD THIS NEW SECTION ---
+        ('Admin Verification', {
+            'fields': ('is_verified',)
+        }),
+        # --- END OF NEW SECTION ---
     )
 
 # Register your models here.
