@@ -32,5 +32,7 @@ urlpatterns = [
     path('api/generate-description/', views.generate_ai_description, name='generate_ai_description'),
     # --- ADD THIS NEW LINE FOR THE "BOOST" PAGE ---
     path('boost-info/', views.boost_listing_info, name='boost_listing_info'),
+    # --- ADD THIS NEW LINE FOR THE "SOLD" BUTTON ---
+    path('mark-as-sold/<int:pk>/', views.mark_as_sold_view, name='mark_as_sold'),
 ]
 

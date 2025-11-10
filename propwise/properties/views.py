@@ -2,7 +2,7 @@
 
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
-from .models import Property, PropertyImage  # Make sure PropertyImage is imported
+from .models import Property, PropertyImage,PropertyStatus  # Make sure PropertyImage is imported
 from .filters import PropertyFilter
 from .forms import PropertyForm
 from django.http import HttpResponseForbidden
@@ -97,21 +97,27 @@ def property_detail(request, pk):
 
 # --- REPLACE YOUR 'property_search' FUNCTION WITH THIS ---
 
+# properties/views.py
+
+# --- REPLACE YOUR 'property_search' FUNCTION WITH THIS ---
+
 def property_search(request):
     """
     View for searching and filtering properties.
-    NOW UPGRADED to show Featured listings first.
+    NOW UPGRADED to show Featured listings first AND hide Sold listings.
     """
     
     # --- 1. UPGRADED: Filter/Search Logic (GET) ---
     
-    # Get the current time
     now = timezone.now()
 
-    # 1a. Create a "live" featured status
-    # This adds a new temporary column to the query called 'is_featured_live'.
-    # It will be True ONLY if is_featured=True AND the expiration date is in the future.
-    queryset = Property.objects.annotate(
+    # --- 1a. THIS IS THE UPGRADE ---
+    # We first create a "base queryset" that ONLY includes 'ACTIVE' properties.
+    # All other logic (filtering, sorting) will be built on top of this.
+    base_queryset = Property.objects.filter(status=PropertyStatus.ACTIVE)
+    
+    # 1b. Create a "live" featured status
+    queryset = base_queryset.annotate( # <-- Use base_queryset here
         is_featured_live=Case(
             When(is_featured=True, featured_until__gte=now, then=True),
             default=False,
@@ -119,13 +125,10 @@ def property_search(request):
         )
     )
 
-    # 1b. This is your new "professional" sort order:
-    #    1. Sort by the "live" featured status (Featured first)
-    #    2. Sort by the "verified" status (Verified next)
-    #    3. Sort by creation date (Newest first)
+    # 1c. This is your new "professional" sort order
     queryset = queryset.order_by('-is_featured_live', '-is_verified', '-created_at')
 
-    # 1c. This part is the same as before
+    # 1d. This part is the same as before
     property_filter = PropertyFilter(request.GET, queryset=queryset)
     
     
@@ -134,6 +137,8 @@ def property_search(request):
     saved_search_form = SavedSearchForm() 
 
     if request.method == 'POST' and request.user.is_authenticated:
+        # ... (all your existing POST logic for saving a search) ...
+        # ... (no changes are needed here) ...
         saved_search_form = SavedSearchForm(request.POST)
         
         if saved_search_form.is_valid():
@@ -177,7 +182,7 @@ def property_search(request):
         
         else:
             messages.error(request, "To save a search, you must give it a name.")
-    
+
     
     # --- 3. Context for the template ---
     context = {
@@ -532,3 +537,37 @@ def boost_listing_info(request):
     """
     # We will create this template in Step 3
     return render(request, 'properties/boost_listing_info.html')
+
+
+
+
+
+
+
+# --- ADD THIS NEW VIEW FOR MARKING A PROPERTY AS SOLD ---
+
+@login_required
+@require_POST # This action must be a POST request
+def mark_as_sold_view(request, pk):
+    """
+    Handles an agent marking their own property as 'Sold'.
+    """
+    # 1. Get the property and check for a 404
+    prop = get_object_or_404(Property, pk=pk)
+    
+    # 2. Security Check: Is this agent the owner?
+    if prop.agent != request.user:
+        messages.error(request, "You do not have permission to modify this listing.")
+        return redirect('agent_dashboard')
+        
+    # 3. Update the property's status
+    prop.status = PropertyStatus.SOLD
+    prop.sold_date = timezone.now() # Record the time it was sold
+    prop.is_featured = False # A sold property cannot be featured
+    prop.save()
+    
+    # 4. Send a success message and redirect
+    messages.success(request, f"'{prop.title}' has been successfully marked as sold.")
+    return redirect('agent_dashboard')
+
+

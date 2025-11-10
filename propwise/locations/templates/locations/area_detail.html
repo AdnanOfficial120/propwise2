@@ -1,91 +1,50 @@
 {% extends 'base.html' %}
 {% load static %}
+{% comment %} We do NOT need '{% load chartjs %}' - we removed that broken library {% endcomment %}
 
 {% block content %}
 
 {% comment %}
     ============================================================
-    STEP 1: ALL CSS LIBRARIES (IN THE CORRECT ORDER)
+    STEP 1: ALL CSS LIBRARIES
     ============================================================
 {% endcomment %}
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" />
-
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" />
-
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.css" />
 
 {% comment %}
     ============================================================
-    STEP 2: ALL JAVASCRIPT LIBRARIES (IN THE CORRECT ORDER)
+    STEP 2: ALL JAVASCRIPT LIBRARIES
     ============================================================
 {% endcomment %}
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 
 {% comment %}
     STEP 3: Our custom styles for the page
 {% endcomment %}
 <style>
-    /* This style is for the new Leaflet map */
-    #area-map {
-        height: 450px;
-        width: 100%;
-        border-radius: 8px;
-        border: 1px solid #ddd;
-    }
-    .amenities-grid {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: 20px;
-    }
-    @media (min-width: 768px) {
-        .amenities-grid {
-            grid-template-columns: 1fr 1fr;
-        }
-    }
-    .amenity-group {
+    #area-map { height: 450px; width: 100%; border-radius: 8px; border: 1px solid #ddd; }
+    .amenities-grid { display: grid; grid-template-columns: 1fr; gap: 20px; }
+    @media (min-width: 768px) { .amenities-grid { grid-template-columns: 1fr 1fr; } }
+    .amenity-group { background: #f9f9f9; border: 1px solid #eee; border-radius: 8px; padding: 15px 20px; }
+    .amenity-group h4 { margin-top: 0; border-bottom: 2px solid #007bff; padding-bottom: 8px; font-size: 1.2em; }
+    .amenity-group ul { list-style-type: none; padding-left: 0; margin: 0; }
+    .amenity-group li { padding: 6px 0; border-bottom: 1px dashed #ddd; }
+    .amenity-group li:last-child { border-bottom: none; }
+    .property-list { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+    .property-card { border: 1px solid #ccc; padding: 15px; border-radius: 8px; }
+    .property-card img { max-width: 100%; height: 200px; object-fit: cover; border-radius: 4px; }
+    .price-chart-container {
+        margin-top: 30px;
         background: #f9f9f9;
         border: 1px solid #eee;
         border-radius: 8px;
-        padding: 15px 20px;
-    }
-    .amenity-group h4 {
-        margin-top: 0;
-        border-bottom: 2px solid #007bff;
-        padding-bottom: 8px;
-        font-size: 1.2em;
-    }
-    .amenity-group ul {
-        list-style-type: none;
-        padding-left: 0;
-        margin: 0;
-    }
-    .amenity-group li {
-        padding: 6px 0;
-        border-bottom: 1px dashed #ddd;
-    }
-    .amenity-group li:last-child {
-        border-bottom: none;
-    }
-    .property-list { 
-        display: grid; 
-        grid-template-columns: repeat(3, 1fr);
-        gap: 20px; 
-    }
-    .property-card { 
-        border: 1px solid #ccc; 
-        padding: 15px; 
-        border-radius: 8px; 
-    }
-    .property-card img { 
-        max-width: 100%; 
-        height: 200px;
-        object-fit: cover;
-        border-radius: 4px; 
+        padding: 20px;
     }
 </style>
 
@@ -119,7 +78,6 @@
         {% if area.latitude and area.longitude %}
             <div class="neighborhood-map" style="margin-bottom: 30px;">
                 <h3>Location Map</h3>
-                
                 <div id="area-map"
                      data-lat="{{ area.latitude }}"
                      data-lng="{{ area.longitude }}"
@@ -147,9 +105,40 @@
             </div>
         {% endif %}
 
+        {% comment %}
+        {% endcomment %}
+        
+        {% comment %}
+            We check the PYTHON list 'price_chart_labels'.
+            It will only have data if the view found 2 or more months.
+        {% endcomment %}
+        {% if price_chart_labels %} 
+            <div class="price-chart-container">
+                <h3>Average Sold Price Trends in {{ area.name }}</h3>
+                <p style="font-size: 0.9em; color: #666;">
+                    Based on properties sold in the last 12 months.
+                </p>
+                
+                {% comment %}
+                  THIS IS THE FIXED CANVAS.
+                  It passes the data to our 'price_chart.js' file.
+                  We use |safe to handle the JSON strings from the view.
+                  Note: The view code I gave you last time was correct.
+                  It passes *JSON strings*, not Python lists.
+                {% endcomment %}
+                <canvas id="priceTrendChart"
+                        data-labels='{{ price_chart_labels|safe }}'
+                        data-data='{{ price_chart_data|safe }}'>
+                </canvas>
+            </div>
+        {% endif %}
+        
+        {% comment %}
+        {% endcomment %}
+
     </div> <hr style="margin: 20px 0;">
 
-    <h3>Properties in {{ area.name }}</h3>
+    <h3>Active Properties in {{ area.name }}</h3>
 
     <div class="property-list">
         {% for prop in properties %}
@@ -159,24 +148,17 @@
                     <img src="{{ prop.main_image.url }}" alt="{{ prop.title }}">
                 {% endif %}
                 
-                <h4>
-                    <a href="{% url 'property_detail' pk=prop.pk %}">
-                        {{ prop.title }}
-                    </a>
-                </h4>
-
+                <h4><a href="{% url 'property_detail' pk=prop.pk %}">{{ prop.title }}</a></h4>
                 <p><strong>Price:</strong> PKR {{ prop.price }}</p>
                 <p><strong>Location:</strong> {{ prop.area }}</p>
                 <p><strong>Type:</strong> {{ prop.get_property_type_display }}</p>
                 
                 <p style="margin-top: 10px;">
-                    <a href="{% url 'property_detail' pk=prop.pk %}" style="
-                        display: inline-block; padding: 8px 16px; background-color: #0066cc;
-                        color: white; text-decoration: none; border-radius: 4px; font-size: 14px;
-                    ">
+                    <a href="{% url 'property_detail' pk=prop.pk %}" style="display: inline-block; padding: 8px 16px; background-color: #0066cc; color: white; text-decoration: none; border-radius: 4px; font-size: 14px;">
                         View Details
                     </a>
                     
+                    {% comment %} This is your full Save/Unsave button logic {% endcomment %}
                     {% if user.is_authenticated %}
                         {% if prop in user.favorites.all %}
                             <form action="{% url 'remove_from_favorites' pk=prop.pk %}" method="POST" style="display: inline;">
@@ -204,7 +186,7 @@
                 </p>
             </div>
         {% empty %}
-            <p>No properties have been listed in this area yet. Please check back soon!</p>
+            <p>There are no active properties listed in this area right now. Sold properties are not shown here.</p>
         {% endfor %}
     </div>
 
@@ -212,9 +194,12 @@
 
 {% comment %}
     ============================================================
-    STEP 5: OUR OWN JAVASCRIPT FILE, LOADED AT THE VERY END
+    STEP 5: ALL JAVASCRIPT LOGIC (LOADED AT THE END)
     ============================================================
 {% endcomment %}
+
 <script src="{% static 'js/area_map.js' %}"></script>
+
+<script src="{% static 'js/price_chart.js' %}"></script>
 
 {% endblock content %}

@@ -23,9 +23,20 @@ class AreaUnit(models.TextChoices):
     SQ_YARD = 'sq_yard', 'Square Yards'
 
 
+
+# choices o fsolde etc..)
+
+class PropertyStatus(models.TextChoices):
+    ACTIVE = 'active', 'Active'
+    SOLD = 'sold', 'Sold'
+    EXPIRED = 'expired', 'Expired'
+    # We can add more later, like 'Pending'
+
 # properties/models.py
 
 
+
+# properties/models.py
 
 class Property(models.Model):
     """
@@ -44,7 +55,6 @@ class Property(models.Model):
         null=True, 
         related_name="properties"
     )
-
     latitude = models.DecimalField(
         max_digits=9, 
         decimal_places=6, 
@@ -52,7 +62,6 @@ class Property(models.Model):
         blank=True,
         help_text="Exact latitude of the property (e.g., 31.470510)"
     )
-    
     longitude = models.DecimalField(
         max_digits=9, 
         decimal_places=6, 
@@ -65,7 +74,7 @@ class Property(models.Model):
     purpose = models.CharField(max_length=10, choices=PropertyPurpose.choices)
     property_type = models.CharField(max_length=20, choices=PropertyType.choices)
     
-    # Specs (supports our comparison tool)
+    # Specs
     bedrooms = models.PositiveSmallIntegerField(null=True, blank=True)
     bathrooms = models.PositiveSmallIntegerField(null=True, blank=True)
     area_size = models.DecimalField(max_digits=10, decimal_places=2)
@@ -84,8 +93,6 @@ class Property(models.Model):
         default=False,
         help_text="Mark this listing as verified by the admin (e.g., checked for accuracy)."
     )
-    
-    # --- ADD THESE TWO NEW FIELDS for Monetization ---
     is_featured = models.BooleanField(
         default=False,
         help_text="Mark this listing as 'Featured' to show it at the top."
@@ -95,11 +102,23 @@ class Property(models.Model):
         blank=True,
         help_text="When this listing should stop being featured (e.g., 7 days from now)."
     )
+
+    # --- START: NEW FIELDS FOR "SOLD DATA" MODULE ---
+    status = models.CharField(
+        max_length=10,
+        choices=PropertyStatus.choices,
+        default=PropertyStatus.ACTIVE,
+        help_text="The current status of the listing (e.g., Active, Sold)."
+    )
+    sold_date = models.DateTimeField(
+        null=True, 
+        blank=True,
+        help_text="The date and time this property was marked as sold."
+    )
     # --- END OF NEW FIELDS ---
     
     def __str__(self):
         return f"{self.title} in {self.area}"
-
 class PropertyImage(models.Model): 
     """
     A model to store the image gallery for a property.

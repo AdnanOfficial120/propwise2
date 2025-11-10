@@ -49,21 +49,24 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'debug_toolbar',
-    'django.contrib.humanize', #added for {% load humanize %}: At the top. This lets us use {{ property.price|intcomma }},
-     # which will format a price like 50000000 into the much more readable 50,000,000
+    'django.contrib.humanize',
 
-    # Third-party apps (we will install these later)
+    # Third-party apps
+    'debug_toolbar',
     'rest_framework',
     'channels',
     'django_filters',
+    'chartjs',
+    
 
-    # Our new local apps
-    'accounts.apps.AccountsConfig',
-    'properties.apps.PropertiesConfig',
-    'locations.apps.LocationsConfig',
-    'chat.apps.ChatConfig',
-    'core.apps.CoreConfig',
+    # --- THIS IS THE FIX ---
+    # Use the simple app names, not the "Config" path
+    'core',
+    'accounts',
+    'locations',
+    'properties',
+    'chat',
+    
 ]
 
 MIDDLEWARE = [

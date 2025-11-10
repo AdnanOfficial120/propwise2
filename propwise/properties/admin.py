@@ -17,7 +17,8 @@ class PropertyAdmin(admin.ModelAdmin):
         'title', 
         'area', 
         'is_verified', 
-        'is_featured',  # <-- 1. ADD THIS
+        'is_featured',
+        'status',  # <-- 1. ADD THIS
         'property_type', 
         'purpose', 
         'price', 
@@ -26,7 +27,8 @@ class PropertyAdmin(admin.ModelAdmin):
     
     list_filter = (
         'is_verified', 
-        'is_featured',  # <-- 2. ADD THIS
+        'is_featured',
+        'status',  # <-- 2. ADD THIS
         'property_type', 
         'purpose', 
         'area__city'
@@ -47,18 +49,16 @@ class PropertyAdmin(admin.ModelAdmin):
         ('Images', {
             'fields': ('main_image',)
         }),
-        ('Admin Verification', {
-            'fields': ('is_verified',)
-        }),
         
-        # --- 3. ADD THIS NEW SECTION FOR MONETIZATION ---
-        ('Monetization (Admin Only)', {
-            'classes': ('collapse',), # Makes this section collapsible
-            'description': 'Check "Is Featured" and set an expiration date to feature this property.',
-            'fields': ('is_featured', 'featured_until')
+        # --- 3. ADD 'status' AND 'sold_date' TO THIS SECTION ---
+        ('Admin Status Control', {
+            'classes': ('collapse',),
+            'fields': ('is_verified', 'is_featured', 'featured_until', 'status', 'sold_date')
         }),
-        # --- END OF NEW SECTION ---
     )
+    
+    # We remove the old "Admin Verification" and "Monetization" sections
+    # and combine them into the single "Admin Status Control" section above.
 
 # Register your models here.
 admin.site.register(Property, PropertyAdmin)
