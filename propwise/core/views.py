@@ -9,7 +9,6 @@ from django.utils import timezone
 def homepage(request):
     """
     View for the homepage.
-    
     NOW UPGRADED:
     1. Fetches all *ACTIVE, FEATURED* properties for the top slider.
     2. Fetches the 12 most recent *ACTIVE, VERIFIED, NON-FEATURED* properties.
@@ -43,3 +42,15 @@ def homepage(request):
     }
     
     return render(request, 'core/homepage.html', context)
+
+
+# core/views.py for calculator
+
+def calculator_view(request):
+    """
+    Renders the new Mortgage/Affordability Calculator page.
+    The page itself is mostly HTML and JavaScript.
+    """
+    # We will create this template in the next step
+    return render(request, 'core/calculator.html')
+

@@ -1,0 +1,170 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+{% comment %}
+    STEP 1: Custom styles for our calculator
+{% endcomment %}
+<style>
+    .calculator-container {
+        max-width: 600px;
+        margin: 40px auto;
+        padding: 30px;
+        background: #f9f9f9;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+    .calculator-container h2 {
+        margin-top: 0;
+        text-align: center;
+        color: #333;
+    }
+    .calc-row {
+        margin-bottom: 20px;
+    }
+    .calc-row label {
+        display: block;
+        font-weight: bold;
+        margin-bottom: 8px;
+        color: #555;
+    }
+    .calc-input {
+        width: 100%;
+        padding: 12px;
+        font-size: 1.1em;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+        box-sizing: border-box; /* Important for 100% width */
+    }
+    .input-group {
+        display: flex;
+    }
+    .input-group-text {
+        padding: 12px;
+        background: #eee;
+        border: 1px solid #ccc;
+        border-right: none;
+        border-radius: 5px 0 0 5px;
+        font-weight: bold;
+    }
+    .input-group .calc-input {
+        border-radius: 0 5px 5px 0;
+    }
+
+    .result-box {
+        margin-top: 30px;
+        padding: 20px;
+        background: #0056b3; /* Dark blue */
+        color: white;
+        border-radius: 8px;
+        text-align: center;
+    }
+    .result-box p {
+        margin: 0;
+        font-size: 1.2em;
+    }
+    .result-box h3 {
+        margin: 5px 0 0 0;
+        font-size: 2.5em;
+    }
+</style>
+
+{% comment %}
+    STEP 2: The HTML for the calculator form
+{% endcomment %}
+<div class="calculator-container">
+    <h2>Affordability Calculator</h2>
+    <p style="text-align: center; color: #666; margin-top: -10px; margin-bottom: 25px;">
+        Estimate your monthly mortgage payment.
+    </p>
+
+    <div class="calc-row">
+        <label for="price">Property Price</label>
+        <div class="input-group">
+            <span class="input-group-text">PKR</span>
+            <input type="number" id="price" class="calc-input" value="10000000">
+        </div>
+    </div>
+
+    <div class="calc-row">
+        <label for="down_payment">Down Payment</label>
+        <div class="input-group">
+            <span class="input-group-text">%</span>
+            <input type="number" id="down_payment" class="calc-input" value="20">
+        </div>
+    </div>
+
+    <div class="calc-row">
+        <label for="interest_rate">Interest Rate</label>
+        <div class="input-group">
+            <span class="input-group-text">%</span>
+            <input type="number" id="interest_rate" class="calc-input" value="8" step="0.1">
+        </div>
+    </div>
+
+    <div class="calc-row">
+        <label for="loan_term">Loan Term (Years)</label>
+        <input type="number" id="loan_term" class="calc-input" value="20">
+    </div>
+
+    <div class="result-box">
+        <p>Estimated Monthly Payment:</p>
+        <h3 id="monthly-payment">PKR 0</h3>
+    </div>
+</div>
+
+{% comment %}
+    STEP 3: The JavaScript "Brain" that does the math
+{% endcomment %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 1. Get all the elements we need
+        const priceInput = document.getElementById('price');
+        const downPaymentInput = document.getElementById('down_payment');
+        const rateInput = document.getElementById('interest_rate');
+        const termInput = document.getElementById('loan_term');
+        const paymentDisplay = document.getElementById('monthly-payment');
+
+        // This is the main calculation function
+        function calculateMonthlyPayment() {
+            // 2. Get the values from the form
+            const P = parseFloat(priceInput.value); // Principal loan amount
+            const downPercent = parseFloat(downPaymentInput.value) / 100;
+            const r = parseFloat(rateInput.value) / 100 / 12; // Monthly interest rate
+            const n = parseFloat(termInput.value) * 12; // Total number of payments
+            
+            // 3. Calculate the loan amount
+            const loanAmount = P - (P * downPercent);
+
+            // 4. Do the mortgage math
+            // This is the standard formula: M = P[r(1+r)^n] / [(1+r)^n – 1]
+            let monthlyPayment = 0;
+            if (r > 0) {
+                monthlyPayment = loanAmount * (r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
+            } else if (loanAmount > 0 && n > 0) {
+                monthlyPayment = loanAmount / n; // No interest
+            }
+
+            // 5. Check for valid numbers and display the result
+            if (isFinite(monthlyPayment) && monthlyPayment > 0) {
+                // Format the number to look nice
+                paymentDisplay.textContent = "PKR " + Math.round(monthlyPayment).toLocaleString('en-US');
+            } else {
+                paymentDisplay.textContent = "PKR 0";
+            }
+        }
+
+        // 6. Add "event listeners" to all the inputs
+        // This makes the calculator update *instantly* as you type
+        priceInput.addEventListener('input', calculateMonthlyPayment);
+        downPaymentInput.addEventListener('input', calculateMonthlyPayment);
+        rateInput.addEventListener('input', calculateMonthlyPayment);
+        termInput.addEventListener('input', calculateMonthlyPayment);
+
+        // 7. Run the calculation once on page load
+        calculateMonthlyPayment();
+    });
+</script>
+
+{% endblock content %}

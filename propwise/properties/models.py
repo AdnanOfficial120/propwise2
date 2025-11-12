@@ -1,5 +1,3 @@
-# properties/models.py
-
 from django.db import models
 from django.conf import settings # To get the User model
 from locations.models import Area # To link to our Area model
@@ -22,22 +20,14 @@ class AreaUnit(models.TextChoices):
     SQ_FT = 'sq_ft', 'Square Feet'
     SQ_YARD = 'sq_yard', 'Square Yards'
 
-
-
-# choices o fsolde etc..)
-
+# This is the TextChoice class for the "Sold Data" module
 class PropertyStatus(models.TextChoices):
     ACTIVE = 'active', 'Active'
     SOLD = 'sold', 'Sold'
     EXPIRED = 'expired', 'Expired'
-    # We can add more later, like 'Pending'
-
-# properties/models.py
 
 
-
-# properties/models.py
-
+# This is the main Property model
 class Property(models.Model):
     """
     The main model for a property listing.
@@ -102,8 +92,6 @@ class Property(models.Model):
         blank=True,
         help_text="When this listing should stop being featured (e.g., 7 days from now)."
     )
-
-    # --- START: NEW FIELDS FOR "SOLD DATA" MODULE ---
     status = models.CharField(
         max_length=10,
         choices=PropertyStatus.choices,
@@ -115,10 +103,59 @@ class Property(models.Model):
         blank=True,
         help_text="The date and time this property was marked as sold."
     )
-    # --- END OF NEW FIELDS ---
+    
+    # --- FIELD FOR VIDEO TOUR ---
+    video_url = models.URLField(
+        max_length=500,
+        null=True,
+        blank=True,
+        help_text="A link to a YouTube or Vimeo video walkthrough (e.g., https://www.youtube.com/watch?v=...)"
+    )
     
     def __str__(self):
         return f"{self.title} in {self.area}"
+
+    # --- THIS IS YOUR NEW VIDEO HELPER FUNCTION ---
+    # properties/models.py (inside your Property class)
+
+    def get_video_embed_url(self):
+        """
+        This function converts a standard YouTube or Vimeo URL
+        into the correct URL format needed for embedding in an <iframe>.
+        
+        NOW UPGRADED to also handle YouTube "Shorts" links.
+        """
+        if not self.video_url:
+            return None
+        
+        url = self.video_url
+        video_id = None
+
+        # Handle standard YouTube links
+        if "youtube.com/watch?v=" in url:
+            video_id = url.split('v=')[-1].split('&')[0]
+            return f"https://www.youtube.com/embed/{video_id}"
+        
+        # Handle short YouTube links
+        if "youtu.be/" in url:
+            video_id = url.split('/')[-1].split('?')[0]
+            return f"https://www.youtube.com/embed/{video_id}"
+
+        # --- THIS IS THE NEW FIX ---
+        # Handle new YouTube "Shorts" links
+        if "youtube.com/shorts/" in url:
+            video_id = url.split('/shorts/')[-1].split('?')[0]
+            return f"https://www.youtube.com/embed/{video_id}"
+        # --- END OF NEW FIX ---
+
+        # Handle Vimeo links
+        if "vimeo.com/" in url:
+            video_id = url.split('/')[-1].split('?')[0]
+            return f"https://player.vimeo.com/video/{video_id}"
+        
+        # If it's not a recognized service, we can't embed it
+        return None
+# This is your PropertyImage model, now correctly indented
 class PropertyImage(models.Model): 
     """
     A model to store the image gallery for a property.

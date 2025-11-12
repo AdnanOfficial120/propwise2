@@ -96,7 +96,8 @@ def area_detail_view(request, area_pk):
     sold_properties = Property.objects.filter(
         area=area,
         status=PropertyStatus.SOLD,
-        sold_date__gte=one_year_ago
+        sold_date__gte=one_year_ago,
+        price__gt=0
     )
     
     price_data = sold_properties.annotate(

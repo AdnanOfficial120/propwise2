@@ -1,0 +1,183 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block content %}
+
+<style>
+    .compare-container {
+        max-width: 1200px;
+        margin: 20px auto;
+        padding: 20px;
+    }
+    
+    .compare-table-wrapper {
+        overflow-x: auto; /* Allows horizontal scrolling on small screens */
+    }
+
+    .compare-table {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed; /* Ensures columns are evenly spaced */
+        margin-top: 20px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+
+    .compare-table th,
+    .compare-table td {
+        border: 1px solid #ddd;
+        padding: 15px;
+        text-align: left;
+        vertical-align: top;
+        width: 25%; /* Assumes max 4 properties + 1 header column */
+    }
+
+    /* Header row (Price, Beds, Baths, etc.) */
+    .compare-table th:first-child {
+        width: 20%; /* Give the first column more space */
+        background: #f9f9f9;
+        font-size: 1.1em;
+        text-align: right;
+    }
+    
+    /* Property columns (the actual data) */
+    .compare-table th {
+        background: #f4f4f4;
+        text-align: center;
+    }
+
+    .compare-table .prop-header {
+        text-align: center;
+    }
+    .compare-table .prop-header img {
+        width: 100%;
+        height: 150px;
+        object-fit: cover;
+        border-radius: 8px;
+        margin-bottom: 10px;
+    }
+    .compare-table .prop-header h4 {
+        margin: 5px 0;
+    }
+
+    /* Style for the "Remove" button */
+    .compare-table .prop-header form {
+        margin-top: 10px;
+    }
+    .compare-table .prop-header .btn-remove {
+        background: #dc3545;
+        color: white;
+        border: none;
+        padding: 8px 12px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 0.9em;
+    }
+    
+    /* Highlight the "Verified" row */
+    .compare-table .verified-row {
+        font-weight: bold;
+        color: #155724; /* Dark green */
+    }
+    
+    /* Simple checkmark for verified */
+    .compare-table .verified-row td {
+        font-size: 1.2em;
+    }
+
+</style>
+
+<div class="compare-container">
+    <p><a href="{% url 'property_search' %}"> &larr; Back to Search Results</a></p>
+    <h2>Compare Properties</h2>
+
+    {% if not properties %}
+        <p>You have not added any properties to the comparison list yet.</p>
+    {% else %}
+        <div class="compare-table-wrapper">
+            <table class="compare-table">
+                <thead>
+                    <tr>
+                        <th>Feature</th>
+                        {% for prop in properties %}
+                        <th class="prop-header">
+                            {% if prop.main_image %}
+                                <img src="{{ prop.main_image.url }}" alt="{{ prop.title }}">
+                            {% endif %}
+                            <h4><a href="{% url 'property_detail' pk=prop.pk %}">{{ prop.title }}</a></h4>
+                            
+                            <form action="{% url 'remove_from_compare' pk=prop.pk %}" method="POST">
+                                {% csrf_token %}
+                                <button type="submit" class="btn-remove">Remove</button>
+                            </form>
+                        </th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <th>Price</th>
+                        {% for prop in properties %}
+                        <td style="font-weight: bold; color: #0056b3;">
+                            PKR {{ prop.price|intcomma }}
+                        </td>
+                        {% endfor %}
+                    </tr>
+                    
+                    <tr class="verified-row">
+                        <th>Verified Listing</th>
+                        {% for prop in properties %}
+                        <td>
+                            {% if prop.is_verified %}
+                                ✅ Yes
+                            {% else %}
+                                ❌ No
+                            {% endif %}
+                        </td>
+                        {% endfor %}
+                    </tr>
+
+                    <tr>
+                        <th>Area</th>
+                        {% for prop in properties %}
+                        <td>{{ prop.area.name }}, {{ prop.area.city.name }}</td>
+                        {% endfor %}
+                    </tr>
+                    
+                    <tr>
+                        <th>Property Type</th>
+                        {% for prop in properties %}
+                        <td>{{ prop.get_property_type_display }}</td>
+                        {% endfor %}
+                    </tr>
+                    <tr>
+                        <th>Purpose</th>
+                        {% for prop in properties %}
+                        <td>{{ prop.get_purpose_display }}</td>
+                        {% endfor %}
+                    </tr>
+                    <tr>
+                        <th>Bedrooms</th>
+                        {% for prop in properties %}
+                        <td>{{ prop.bedrooms|default:"N/A" }}</td>
+                        {% endfor %}
+                    </tr>
+                    <tr>
+                        <th>Bathrooms</th>
+                        {% for prop in properties %}
+                        <td>{{ prop.bathrooms|default:"N/A" }}</td>
+                        {% endfor %}
+                    </tr>
+                    <tr>
+                        <th>Size</th>
+                        {% for prop in properties %}
+                        <td>{{ prop.area_size }} {{ prop.get_area_unit_display }}</td>
+                        {% endfor %}
+                    </tr>
+
+                </tbody>
+            </table>
+        </div>
+    {% endif %}
+</div>
+
+{% endblock content %}

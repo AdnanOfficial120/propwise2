@@ -34,5 +34,16 @@ urlpatterns = [
     path('boost-info/', views.boost_listing_info, name='boost_listing_info'),
     # --- ADD THIS NEW LINE FOR THE "SOLD" BUTTON ---
     path('mark-as-sold/<int:pk>/', views.mark_as_sold_view, name='mark_as_sold'),
+    # --- ADD THESE THREE NEW URLS FOR THE "COMPARE" FEATURE ---
+    
+   # 1. The main comparison page
+    path('compare/', views.compare_page_view, name='compare_page'),
+    
+    # 2. The action to add a property (e.g., /listings/compare/add/5/)
+    path('compare/add/<int:pk>/', views.add_to_compare_view, name='add_to_compare'),
+    
+    # 3. The action to remove a property (e.g., /listings/compare/remove/5/)
+    path('compare/remove/<int:pk>/', views.remove_from_compare_view, name='remove_from_compare'),
 ]
+
 

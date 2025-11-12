@@ -406,8 +406,6 @@ def remove_from_favorites_view(request, pk):
 
 
 
-# properties/views.py 
-
 # ---  TWO VIEWS FOR THE INTERACTIVE MAP ---
 
 def map_search_view(request):
@@ -458,11 +456,7 @@ def property_api_view(request):
     except Exception as e:
         # Handle any potential errors
         return JsonResponse({'error': str(e)}, status=500)
-    
 
-
-
-    #
 
 # --- ADD THIS NEW VIEW FOR THE AI ASSISTANT ---
 # properties/views.py (at the bottom)
@@ -524,9 +518,6 @@ def generate_ai_description(request):
         return JsonResponse({'error': str(e)}, status=500)
     
 
-
-
-
 # --- ADD THIS NEW VIEW FOR YOUR "HOW TO PAY" PAGE ---
 
 @login_required
@@ -537,11 +528,6 @@ def boost_listing_info(request):
     """
     # We will create this template in Step 3
     return render(request, 'properties/boost_listing_info.html')
-
-
-
-
-
 
 
 # --- ADD THIS NEW VIEW FOR MARKING A PROPERTY AS SOLD ---
@@ -570,4 +556,73 @@ def mark_as_sold_view(request, pk):
     messages.success(request, f"'{prop.title}' has been successfully marked as sold.")
     return redirect('agent_dashboard')
 
+# --- ADD THESE THREE NEW VIEWS FOR THE "COMPARE" FEATURE ---
 
+def compare_page_view(request):
+    """
+    Step 1.3: The main page that shows the comparison table.
+    """
+    compare_ids = request.session.get('compare_list', [])
+    properties_to_compare = Property.objects.filter(pk__in=compare_ids)
+    
+    context = {
+        'properties': properties_to_compare
+    }
+    # We will create this template in the next step
+    return render(request, 'properties/compare_page.html', context)
+
+
+@require_POST # This action must be a POST request
+def add_to_compare_view(request, pk):
+    """
+    Step 1.1: Adds a property ID to the comparison list in the session.
+    NOW RETURNS JSON for our JavaScript.
+    """
+    compare_list = request.session.get('compare_list', [])
+    property_id = pk
+    
+    if property_id not in compare_list:
+        if len(compare_list) >= 4:
+            # If the list is full (4 items), remove the oldest item first
+            compare_list.pop(0) 
+        compare_list.append(property_id)
+        
+    request.session['compare_list'] = compare_list
+    
+    # Return a JSON response with the new count
+    return JsonResponse({'status': 'added', 'compare_list_count': len(compare_list)})
+
+
+
+
+# new for remove from comapare feature
+
+@require_POST
+def remove_from_compare_view(request, pk):
+    """
+    Removes a property ID from the comparison list in the session.
+    
+    NOW "SMARTER":
+    - If it's an AJAX (JavaScript) request, it returns JSON.
+    - If it's a normal form submission, it redirects.
+    """
+    compare_list = request.session.get('compare_list', [])
+    property_id = pk
+    
+    try:
+        compare_list.remove(property_id)
+        messages.success(request, "Property removed from comparison list.")
+    except ValueError:
+        pass 
+        
+    request.session['compare_list'] = compare_list
+    
+    # --- THIS IS THE FIX ---
+    # Check if this is an AJAX request (from our search page's JavaScript)
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        # If YES, return JSON for the JavaScript to handle
+        return JsonResponse({'status': 'removed', 'compare_list_count': len(compare_list)})
+    else:
+        # If NO (it's a form from the compare page),
+        # redirect back to the compare page.
+        return redirect('compare_page')

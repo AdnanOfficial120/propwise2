@@ -69,6 +69,35 @@
         }
 
         /* --- END OF NEW STYLE --- */
+
+
+
+
+        /* ... (your existing styles) ... */
+        .gallery img { max-width: 100%; border-radius: 4px; }
+        
+        /* --- ADD THIS NEW BLOCK FOR THE VIDEO --- */
+        .video-container {
+            position: relative;
+            padding-bottom: 56.25%; /* This creates a 16:9 aspect ratio */
+            height: 0;
+            overflow: hidden;
+            max-width: 100%;
+            background: #000;
+            border-radius: 8px; /* Match your other images */
+            margin: 20px 0; /* Add space above/below the video */
+        }
+        .video-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        /* --- END OF NEW BLOCK --- */
+        
+        .specs { background: #f4f4f4; padding: 15px; border-radius: 8px; margin: 20px 0; }
+        /* ... (rest of your styles) ... */
     </style>
 </head>
 
@@ -89,6 +118,30 @@
 
         <h2>PKR {{ property.price }}</h2>
 
+     {% comment %}
+        {% endcomment %}
+        
+        {% comment %}
+            We first call the new function and save its result
+            in a new variable called 'video_embed_url'
+        {% endcomment %}
+        {% with video_embed_url=property.get_video_embed_url %}
+            
+            {% comment %} We only show the video box if our function returned a valid URL {% endcomment %}
+            {% if video_embed_url %}
+                <div class="video-container">
+                    <iframe
+                        src="{{ video_embed_url }}"
+                        frameborder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowfullscreen>
+                    </iframe>
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        {% comment %}
+        {% endcomment %}
         {% if property.main_image %}
         <img class="main-image" src="{{ property.main_image.url }}" alt="{{ property.title }}">
         {% endif %}

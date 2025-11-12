@@ -18,7 +18,7 @@ class PropertyAdmin(admin.ModelAdmin):
         'area', 
         'is_verified', 
         'is_featured',
-        'status',  # <-- 1. ADD THIS
+        'status',
         'property_type', 
         'purpose', 
         'price', 
@@ -28,7 +28,7 @@ class PropertyAdmin(admin.ModelAdmin):
     list_filter = (
         'is_verified', 
         'is_featured',
-        'status',  # <-- 2. ADD THIS
+        'status',
         'property_type', 
         'purpose', 
         'area__city'
@@ -46,10 +46,12 @@ class PropertyAdmin(admin.ModelAdmin):
         ('Property Details', {
             'fields': ('purpose', 'property_type', 'bedrooms', 'bathrooms', 'area_size', 'area_unit')
         }),
-        ('Images', {
-            'fields': ('main_image',)
-        }),
         
+        # --- ADD 'video_url' TO THIS SECTION ---
+        ('Images & Video', {
+            'fields': ('main_image', 'video_url')
+        }),
+        # --- END OF CHANGE --- 
         # --- 3. ADD 'status' AND 'sold_date' TO THIS SECTION ---
         ('Admin Status Control', {
             'classes': ('collapse',),
