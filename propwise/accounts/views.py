@@ -12,10 +12,13 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth import get_user_model
 from properties.models import Property
 #  for rating system 
-from .models import AgentRating # Our new database model
+from .models import AgentRating, Lead # Our new database model
 from .forms import AgentRatingForm # Our new review form
 from django.db.models import Avg, Count # To calculate the average rating
 from django.db import IntegrityError # To catch duplicate reviews
+
+
+
 
 
 User = get_user_model() # Make sure this is defined for agent info..
@@ -230,3 +233,65 @@ def agent_directory_view(request):
     # 3. We will create this template in the next step
     return render(request, 'accounts/agent_directory.html', context)
     
+
+
+
+    
+
+# ---  VIEW FOR THE "LEAD MANAGER" ---
+
+# accounts/views.py
+
+# --- 1. ADD 'LeadForm' TO YOUR IMPORTS ---
+# Find your other form imports and add 'LeadForm'
+from .forms import CustomUserCreationForm, CustomUserChangeForm, SavedSearchForm, AgentRatingForm, LeadForm
+
+
+# --- 'lead_manager_view'  ---
+
+@login_required(login_url='login')
+def lead_manager_view(request):
+    """
+    Shows the currently logged-in agent their private list of leads
+    AND handles the form for adding a new lead.
+    """
+    
+    # 1. Security: Only agents can access this page
+    if not request.user.is_agent:
+        messages.error(request, "This page is only for registered agents.")
+        return redirect('homepage') 
+        
+    # --- 2. NEW: Handle Form Submission (POST Request) ---
+    if request.method == 'POST':
+        # We pass 'agent=request.user' to the form's __init__
+        # so it can filter the property dropdown
+        form = LeadForm(request.POST, agent=request.user)
+        
+        if form.is_valid():
+            # Create the Lead object but don't save to DB yet
+            lead = form.save(commit=False)
+            # Set the agent (the current user)
+            lead.agent = request.user 
+            lead.save()
+            
+            messages.success(request, f"New lead '{lead.contact_name}' has been added.")
+            return redirect('my_leads') # Redirect to clear the form
+        else:
+            # If the form is invalid, we'll fall through and
+            # render the page with the form's error messages
+            messages.error(request, "Please correct the errors below.")
+    else:
+        # --- This is a GET request ---
+        # Create a new, blank form, passing in the agent
+        form = LeadForm(agent=request.user)
+        
+    # --- 3. Get all leads (Same as before) ---
+    agent_leads = Lead.objects.filter(agent=request.user).order_by('-created_at')
+    
+    # --- 4. Update the Context ---
+    context = {
+        'leads': agent_leads,
+        'form': form, # <-- Add the form to the context
+    }
+    
+    return render(request, 'accounts/my_leads.html', context)

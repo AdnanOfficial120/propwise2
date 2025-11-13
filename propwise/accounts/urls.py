@@ -1,4 +1,4 @@
-
+#accounts urls.py
 from django.urls import path
 from django.contrib.auth import views as auth_views  
 from . import views as account_views  # Import our custom signup view
@@ -30,5 +30,7 @@ urlpatterns = [
     # --- ADDed THIS NEW LINE for show agent info ---
     # /accounts/agent/5/
     path('agent/<int:pk>/', account_views.agent_profile_view, name='agent_profile'),
+    # --- ADD THIS NEW LINE FOR THE "LEAD MANAGER" ---
+    path('my-leads/', account_views.lead_manager_view, name='my_leads'),
          
 ]

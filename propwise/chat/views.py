@@ -9,6 +9,10 @@ from properties.models import Property # Import Property
 from django.http import HttpResponseForbidden # To block bad requests
 from .forms import ChatMessageForm
 from django.http import JsonResponse
+#for lead startchat 
+from accounts.models import Lead, LeadStatus # Import your new Lead model
+from django.contrib.auth import get_user_model # Import the User model
+from django.contrib import messages
 
 
 @login_required(login_url='login')
@@ -35,11 +39,17 @@ def chat_inbox_view(request):
 
 # ... your chat_inbox_view creating here... ...
 
+# chat/views.py
+
+# --- REPLACE YOUR 'start_chat_view' FUNCTION WITH THIS ---
+
 @login_required(login_url='login')
 def start_chat_view(request, property_pk):
     """
     Finds or creates a chat thread for a given property and buyer.
     This view is triggered by the "Contact Agent" button.
+    
+    NOW UPGRADED: Also automatically creates a new Lead for the agent.
     """
     # We only accept POST requests to this view
     if request.method != 'POST':
@@ -57,16 +67,40 @@ def start_chat_view(request, property_pk):
     # get_or_create() attempts to find an object with these parameters.
     # If it exists, it "gets" it.
     # If not, it "creates" it and returns the new object.
-    # This prevents duplicate chat threads.
     thread, created = ChatThread.objects.get_or_create(
         property=property,
         buyer=buyer,
         agent=agent
     )
     
+    # --- START: NEW "AUTO-LEAD" LOGIC ---
+    
+    # 'created' is a boolean (True/False) returned by get_or_create().
+    # If 'created' is True, it means this is a BRAND NEW chat thread.
+    if created:
+        try:
+            # We will also create a new Lead for the agent
+            Lead.objects.create(
+                agent=agent,
+                contact_name=buyer.get_full_name() or buyer.username,
+                contact_email=buyer.email,
+                contact_phone=buyer.phone_number,
+                status=LeadStatus.NEW,
+                source=f"PropWise Chat ({property.title})",
+                property_of_interest=property,
+                notes=f"New lead automatically generated from chat about {property.title}."
+            )
+            messages.success(request, "Chat started and new lead added to agent's dashboard.")
+        except Exception as e:
+            # If creating the lead fails, we don't want to stop the chat.
+            # Just log the error and continue.
+            print(f"Error creating lead: {e}")
+            messages.success(request, "Chat started.")
+            
+    # --- END: NEW "AUTO-LEAD" LOGIC ---
+    
     # Redirect the user to the chat room
     return redirect('chat_detail', thread_id=thread.id)
-
 
 # ---    chat_detail_view  with live jason ---
 # --- REPLACE your old chat_detail_view WITH THIS ---

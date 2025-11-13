@@ -28,6 +28,7 @@
 
             {% if user.is_agent %}
                 <a href="{% url 'agent_dashboard' %}" style="margin-left: 15px;">My Dashboard</a>
+                <a href="{% url 'my_leads' %}" style="margin-left: 15px;">My Leads</a>
                 <a href="{% url 'property_create' %}" style="margin-left: 15px;">+ Create Listing</a>
             {% else %}
                 <a href="{% url 'saved_properties' %}" style="margin-left: 15px;">My Saved Properties</a>

@@ -1,18 +1,24 @@
-# locations/views.py
-
-from django.shortcuts import render, get_object_or_404
-from .models import City, Area, Amenity
-# --- 1. ADD PropertyStatus, Avg, TruncMonth ---
-from properties.models import Property, PropertyStatus 
+from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse
 import json
-from django.db.models import Avg
+import datetime
+
+# --- 1. ALL MODEL IMPORTS ---
+from .models import City, Area, Amenity, Question, Answer
+from properties.models import Property, PropertyStatus 
+
+# --- 2. ALL HELPER IMPORTS ---
+from django.db.models import Avg, F, Case, When, DecimalField
 from django.db.models.functions import TruncMonth
 from django.utils import timezone
-import datetime
-# locations/views.py (at the top)
-from django.db.models import F, Case, When, DecimalField
 from decimal import Decimal
+
+# --- 3. NEW IMPORTS FOR Q&A FORMS/ACTIONS ---
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
+from .forms import QuestionForm, AnswerForm
+
 
 def all_cities_view(request):
     """
@@ -39,21 +45,11 @@ def city_detail_view(request, city_pk):
 
 
 # --- THIS IS YOUR NEW, FULLY UPGRADED VIEW ---
-# locations/views.py
-
-# locations/views.py
-
-# locations/views.py
-
-# --- REPLACE YOUR 'area_detail_view' FUNCTION WITH THIS ---
-
-# locations/views.py
-
 def area_detail_view(request, area_pk):
     """
     Page 3: Displays all properties for a specific area,
     PLUS Neighborhood Insights, "What's Nearby" data,
-    AND the new "Price Trends" chart.
+    AND the new "Price Trends" chart and "Community Q&A".
     """
     
     # 1. Get the specific area
@@ -71,7 +67,6 @@ def area_detail_view(request, area_pk):
     
     # 4. Create a JSON list of amenities *for the map*
     amenities_for_map = []
-    
     for amenity in all_amenities:
         type_name = amenity.get_amenity_type_display()
         if type_name not in amenities_by_type:
@@ -89,52 +84,72 @@ def area_detail_view(request, area_pk):
                 'color': map_details['color']
             })
             
-    # --- 5. START: "PRICE TRENDS" LOGIC ---
-    
+    # --- 5. "PRICE TRENDS" LOGIC (Price Per SqFt) ---
     one_year_ago = timezone.now() - datetime.timedelta(days=365)
+    marla_to_sqft = Decimal('272.25')
+    kanal_to_sqft = Decimal('5445.0')
+    sqyard_to_sqft = Decimal('9.0')
     
     sold_properties = Property.objects.filter(
         area=area,
         status=PropertyStatus.SOLD,
         sold_date__gte=one_year_ago,
         price__gt=0
-    )
-    
+    ).exclude(area_size=0)
+
     price_data = sold_properties.annotate(
-        month=TruncMonth('sold_date')
-    ).values(
-        'month'
+        size_in_sqft=Case(
+            When(area_unit='marla', then=F('area_size') * marla_to_sqft),
+            When(area_unit='kanal', then=F('area_size') * kanal_to_sqft),
+            When(area_unit='sq_yard', then=F('area_size') * sqyard_to_sqft),
+            When(area_unit='sq_ft', then=F('area_size') * Decimal('1.0')),
+            default=F('area_size'),
+            output_field=DecimalField()
+        ),
+        price_per_sqft=F('price') / F('size_in_sqft')
     ).annotate(
-        avg_price=Avg('price')
-    ).order_by('month')
-    
-    # --- 6. START: THIS IS THE FIX ---
+        month=TruncMonth('sold_date')
+    ).values('month').annotate(avg_price=Avg('price_per_sqft')).order_by('month')
     
     price_chart_labels = []
     price_chart_data = []
     
-    # We MUST have at least 2 data points (months) to draw a line graph
     if price_data.count() > 1:
         for item in price_data:
             price_chart_labels.append(item['month'].strftime('%b %Y'))
-            # We must convert the Decimal to a float for json.dumps
+            # Convert Decimal to float for JSON
             price_chart_data.append(float(item['avg_price']))
+            
+    # --- 6. NEW: "COMMUNITY Q&A" LOGIC ---
+    
+    # Get all questions for this area
+    # Prefetch answers and users to prevent N+1 queries
+    questions = area.questions.all().prefetch_related(
+        'answers', 
+        'answers__user'
+    )
+    
+    # Create empty forms to pass to the template
+    question_form = QuestionForm()
+    answer_form = AnswerForm()
 
-    # --- END OF FIX ---
-        
     # --- 7. Build the final context ---
     context = {
         'area': area,
         'properties': properties_in_area,
         'amenities_by_type': amenities_by_type,
         'amenities_json': json.dumps(amenities_for_map),
-        
-        # We now send the lists (which will be empty if data < 2)
         'price_chart_labels': json.dumps(price_chart_labels),
         'price_chart_data': json.dumps(price_chart_data),
+        
+        # --- ADD NEW Q&A DATA TO CONTEXT ---
+        'questions': questions,
+        'question_form': question_form,
+        'answer_form': answer_form,
     }
     
     return render(request, 'locations/area_detail.html', context)
+
 
 def ajax_load_areas(request):
     """
@@ -146,3 +161,51 @@ def ajax_load_areas(request):
         data = [{'id': area.id, 'name': area.name} for area in areas]
         return JsonResponse(data, safe=False)
     return JsonResponse([], safe=False)
+
+
+# --- START: NEW Q&A "ACTION" VIEWS ---
+
+@login_required
+@require_POST
+def add_question_view(request, area_pk):
+    """
+    Handles the POST submission for a new Question.
+    """
+    area = get_object_or_404(Area, pk=area_pk)
+    form = QuestionForm(request.POST)
+    
+    if form.is_valid():
+        question = form.save(commit=False)
+        question.area = area
+        question.user = request.user
+        question.save()
+        messages.success(request, "Your question has been posted!")
+    else:
+        messages.error(request, "There was an error with your question. Please check the form.")
+        
+    # Redirect back to the area page, no matter what
+    return redirect('area_detail', area_pk=area.pk)
+
+
+@login_required
+@require_POST
+def add_answer_view(request, question_pk):
+    """
+    Handles the POST submission for a new Answer.
+    """
+    question = get_object_or_404(Question, pk=question_pk)
+    form = AnswerForm(request.POST)
+    
+    if form.is_valid():
+        answer = form.save(commit=False)
+        answer.question = question
+        answer.user = request.user
+        answer.save()
+        messages.success(request, "Your answer has been posted!")
+    else:
+        messages.error(request, "Your answer could not be empty.")
+    
+    # Redirect back to the area page this question lives on
+    return redirect('area_detail', area_pk=question.area.pk)
+
+# --- END: NEW Q&A "ACTION" VIEWS ---

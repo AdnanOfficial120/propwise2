@@ -5,6 +5,8 @@ from django import forms  # <-- Make sure this is imported
 from django.contrib.auth import get_user_model
 # accounts/forms.py notification to show 
 from .models import SavedSearch,AgentRating
+from .models import Lead
+from properties.models import Property, PropertyStatus
 
 # This gets your custom user model (accounts.User)
 User = get_user_model()
@@ -104,3 +106,76 @@ class AgentRatingForm(forms.ModelForm):
         """
         super().__init__(*args, **kwargs)
         self.fields['comment'].required = False
+
+
+
+
+  
+
+# --- ADD THIS NEW FORM FOR THE "LEAD MANAGER" ---
+
+class LeadForm(forms.ModelForm):
+    """
+    A form for an agent to manually create or update a Lead.
+    """
+    class Meta:
+        model = Lead
+        # These are the fields the agent will fill out.
+        # The 'agent' field is set automatically in the view.
+        fields = [
+            'contact_name', 
+            'contact_email', 
+            'contact_phone', 
+            'status', 
+            'source', 
+            'property_of_interest', 
+            'notes'
+        ]
+        
+        widgets = {
+            'contact_name': forms.TextInput(attrs={
+                'class': 'form-control', 'placeholder': 'e.g., Ali Khan'
+            }),
+            'contact_email': forms.EmailInput(attrs={
+                'class': 'form-control', 'placeholder': 'e.g., ali@example.com'
+            }),
+            'contact_phone': forms.TextInput(attrs={
+                'class': 'form-control', 'placeholder': 'e.g., 0300-1234567'
+            }),
+            'status': forms.Select(attrs={'class': 'form-select'}),
+            'source': forms.TextInput(attrs={
+                'class': 'form-control', 'placeholder': 'e.g., Phone Call, Walk-in'
+            }),
+            'property_of_interest': forms.Select(attrs={'class': 'form-select'}),
+            'notes': forms.Textarea(attrs={
+                'class': 'form-control', 
+                'rows': 4,
+                'placeholder': 'Private notes about this lead...'
+            }),
+        }
+
+    def __init__(self, *args, **kwargs):
+        """
+        This is the "magic" part. We pass in the 'user' (agent)
+        to filter the 'property_of_interest' dropdown.
+        """
+        # Get the agent (user) from the arguments
+        agent = kwargs.pop('agent', None) 
+        
+        super().__init__(*args, **kwargs)
+        
+        # Make these fields optional
+        self.fields['contact_email'].required = False
+        self.fields['contact_phone'].required = False
+        self.fields['source'].required = False
+        self.fields['property_of_interest'].required = False
+        self.fields['notes'].required = False
+
+        if agent:
+            # THIS IS THE KEY:
+            # Filter the 'property_of_interest' queryset to only show
+            # this agent's own *active* properties.
+            self.fields['property_of_interest'].queryset = Property.objects.filter(
+                agent=agent,
+                status=PropertyStatus.ACTIVE
+            ).order_by('-created_at')    

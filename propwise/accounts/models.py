@@ -123,3 +123,93 @@ class AgentRating(models.Model):
     def __str__(self):
         # This is what will show up in the Django Admin
         return f"{self.reviewer.username} rated {self.agent.username}: {self.rating} stars"
+    
+
+
+
+
+
+   
+
+# --- TWO CLASSES FOR THE "LEAD MANAGER" MODULE ---
+
+class LeadStatus(models.TextChoices):
+    """
+    Defines the sales pipeline steps for an agent.
+    """
+    NEW = 'new', 'New'
+    CONTACTED = 'contacted', 'Contacted'
+    FOLLOW_UP = 'follow_up', 'Follow-up'
+    VISIT_SCHEDULED = 'visit_scheduled', 'Visit Scheduled'
+    NOT_INTERESTED = 'not_interested', 'Not Interested'
+    CLOSED = 'closed', 'Closed'
+
+class Lead(models.Model):
+    """
+    This is the "digital notebook" for an agent.
+    It stores a single lead (a potential customer).
+    """
+    agent = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,  # If agent is deleted, their leads are deleted
+        related_name="leads",
+        limit_choices_to={'is_agent': True}, # Ensures this MUST be an agent
+        help_text="The agent this lead belongs to."
+    )
+    
+    # --- Lead's Contact Info ---
+    contact_name = models.CharField(
+        max_length=255, 
+        help_text="The lead's full name (e.g., Ali Khan)"
+    )
+    contact_email = models.EmailField(
+        max_length=255, 
+        blank=True, 
+        null=True
+    )
+    contact_phone = models.CharField(
+        max_length=20, 
+        blank=True, 
+        null=True
+    )
+    
+    # --- Lead's Status ---
+    status = models.CharField(
+        max_length=20,
+        choices=LeadStatus.choices,
+        default=LeadStatus.NEW,
+        help_text="The current stage of this lead in the sales pipeline."
+    )
+    
+    source = models.CharField(
+        max_length=100, 
+        blank=True, 
+        null=True,
+        help_text="Where this lead came from (e.g., 'PropWise Chat', 'Phone Call')"
+    )
+    
+    # --- Optional: Link to the property they were interested in ---
+    property_of_interest = models.ForeignKey(
+        Property,
+        on_delete=models.SET_NULL, # If property is deleted, keep the lead
+        null=True,
+        blank=True,
+        related_name="leads"
+    )
+    
+    # --- Agent's Private Notes ---
+    notes = models.TextField(
+        blank=True, 
+        null=True,
+        help_text="Agent's private notes about this lead."
+    )
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        # Show the newest leads first
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Lead for {self.agent.username}: {self.contact_name}"

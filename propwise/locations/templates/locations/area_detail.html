@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
-{% comment %} We do NOT need '{% load chartjs %}' - we removed that broken library {% endcomment %}
+{% load humanize %} <!-- 1. ADD THIS to use the 'timesince' filter -->
 
 {% block content %}
 
@@ -46,6 +46,99 @@
         border-radius: 8px;
         padding: 20px;
     }
+    
+    /* --- 2. START: NEW STYLES FOR Q&A SECTION --- */
+    .qa-container {
+        margin-top: 30px;
+        background: #fff;
+        border: 1px solid #eee;
+        border-radius: 8px;
+        padding: 20px;
+    }
+    .ask-question-form {
+        background: #f9f9f9;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 30px;
+    }
+    .ask-question-form h3 { margin-top: 0; }
+    .ask-question-form input[type="text"],
+    .ask-question-form textarea {
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 10px;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+        box-sizing: border-box;
+    }
+    .ask-question-form button {
+        background: #007bff;
+        color: white;
+        padding: 12px 20px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 1em;
+    }
+    
+    .question-card {
+        border-bottom: 1px solid #eee;
+        padding-bottom: 15px;
+        margin-bottom: 15px;
+    }
+    .question-card:last-child { border-bottom: none; }
+    
+    .question-header {
+        font-size: 1.2em;
+        font-weight: bold;
+        color: #333;
+    }
+    .question-meta {
+        font-size: 0.9em;
+        color: #666;
+        margin: 5px 0 10px 0;
+    }
+    .question-body {
+        line-height: 1.6;
+    }
+    
+    .answer-list {
+        padding-left: 20px;
+        border-left: 3px solid #007bff;
+        margin-top: 15px;
+    }
+    .answer-card {
+        padding: 10px 0;
+        border-bottom: 1px dashed #ddd;
+    }
+    .answer-card:last-child { border-bottom: none; }
+    .answer-meta {
+        font-size: 0.9em;
+        color: #666;
+        margin-bottom: 5px;
+    }
+    .answer-meta strong { color: #0056b3; }
+    
+    .answer-form textarea {
+        width: 100%;
+        padding: 8px;
+        margin-top: 10px;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+        box-sizing: border-box;
+    }
+    .answer-form button {
+        background: #28a745;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 0.9em;
+        margin-top: 5px;
+    }
+    /* --- END: NEW STYLES FOR Q&A SECTION --- */
+
 </style>
 
 {% comment %}
@@ -104,28 +197,13 @@
                 </div>
             </div>
         {% endif %}
-
-        {% comment %}
-        {% endcomment %}
         
-        {% comment %}
-            We check the PYTHON list 'price_chart_labels'.
-            It will only have data if the view found 2 or more months.
-        {% endcomment %}
         {% if price_chart_labels %} 
             <div class="price-chart-container">
                 <h3>Average Sold Price Trends in {{ area.name }}</h3>
                 <p style="font-size: 0.9em; color: #666;">
                     Based on properties sold in the last 12 months.
                 </p>
-                
-                {% comment %}
-                  THIS IS THE FIXED CANVAS.
-                  It passes the data to our 'price_chart.js' file.
-                  We use |safe to handle the JSON strings from the view.
-                  Note: The view code I gave you last time was correct.
-                  It passes *JSON strings*, not Python lists.
-                {% endcomment %}
                 <canvas id="priceTrendChart"
                         data-labels='{{ price_chart_labels|safe }}'
                         data-data='{{ price_chart_data|safe }}'>
@@ -133,10 +211,87 @@
             </div>
         {% endif %}
         
-        {% comment %}
-        {% endcomment %}
+    </div> <!-- This closes the .insights-container -->
 
-    </div> <hr style="margin: 20px 0;">
+    {% comment %}
+    <!-- ================================================== -->
+    <!-- === START: NEW "COMMUNITY Q&A" MODULE === -->
+    <!-- ================================================== -->
+    {% endcomment %}
+    <div class="qa-container">
+        <h2>Community Q&A for {{ area.name }}</h2>
+        
+        <!-- 1. "Ask a Question" Form -->
+        <div class="ask-question-form">
+            <h3>Ask a Question</h3>
+            {% if user.is_authenticated %}
+                <form action="{% url 'add_question' area_pk=area.pk %}" method="POST">
+                    {% csrf_token %}
+                    {{ question_form.as_p }}
+                    <button type="submit">Post Your Question</button>
+                </form>
+            {% else %}
+                <p><a href="{% url 'login' %}?next={{ request.path }}">Log in</a> to ask a question.</p>
+            {% endif %}
+        </div>
+        
+        <!-- 2. "Recent Questions" List -->
+        <h3>Recent Questions</h3>
+        <div class="question-list">
+            {% for question in questions %}
+                <div class="question-card">
+                    <p class="question-header">{{ question.title }}</p>
+                    <p class="question-meta">
+                        Asked by <strong>{{ question.user.username|default:"Anonymous" }}</strong>
+                        {{ question.created_at|timesince }} ago
+                    </p>
+                    {% if question.body %}
+                        <p class="question-body">{{ question.body|linebreaksbr }}</p>
+                    {% endif %}
+                    
+                    <!-- 3. List of Answers for this Question -->
+                    <div class="answer-list">
+                        {% for answer in question.answers.all %}
+                            <div class="answer-card">
+                                <p class="answer-meta">
+                                    <strong>{{ answer.user.username|default:"Anonymous" }}</strong>
+                                    {% if answer.user.is_agent %}(Agent){% endif %}
+                                    answered {{ answer.created_at|timesince }} ago:
+                                </p>
+                                <p>{{ answer.body|linebreaksbr }}</p>
+                            </div>
+                        {% empty %}
+                            <p style="font-size: 0.9em; color: #666;">No answers yet. Be the first to help!</p>
+                        {% endfor %}
+                        
+                        <!-- 4. "Add an Answer" Form -->
+                        <div class="answer-form">
+                            {% if user.is_authenticated %}
+                                <form action="{% url 'add_answer' question_pk=question.pk %}" method="POST">
+                                    {% csrf_token %}
+                                    {{ answer_form.as_p }}
+                                    <button type="submit">Post Answer</button>
+                                </form>
+                            {% else %}
+                                <p style="font-size: 0.9em; margin-top: 10px;">
+                                    <a href="{% url 'login' %}?next={{ request.path }}">Log in</a> to post an answer.
+                                </p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            {% empty %}
+                <p>No questions have been asked about this area yet. Be the first!</p>
+            {% endfor %}
+        </div>
+    </div>
+    {% comment %}
+    <!-- ================================================== -->
+    <!-- === END: "COMMUNITY Q&A" MODULE === -->
+    <!-- ================================================== -->
+    {% endcomment %}
+
+    <hr style="margin: 40px 0;">
 
     <h3>Active Properties in {{ area.name }}</h3>
 
@@ -149,7 +304,7 @@
                 {% endif %}
                 
                 <h4><a href="{% url 'property_detail' pk=prop.pk %}">{{ prop.title }}</a></h4>
-                <p><strong>Price:</strong> PKR {{ prop.price }}</p>
+                <p><strong>Price:</strong> PKR {{ prop.price|intcomma }}</p>
                 <p><strong>Location:</strong> {{ prop.area }}</p>
                 <p><strong>Type:</strong> {{ prop.get_property_type_display }}</p>
                 
@@ -158,7 +313,6 @@
                         View Details
                     </a>
                     
-                    {% comment %} This is your full Save/Unsave button logic {% endcomment %}
                     {% if user.is_authenticated %}
                         {% if prop in user.favorites.all %}
                             <form action="{% url 'remove_from_favorites' pk=prop.pk %}" method="POST" style="display: inline;">
@@ -197,9 +351,7 @@
     STEP 5: ALL JAVASCRIPT LOGIC (LOADED AT THE END)
     ============================================================
 {% endcomment %}
-
 <script src="{% static 'js/area_map.js' %}"></script>
-
 <script src="{% static 'js/price_chart.js' %}"></script>
 
 {% endblock content %}
