@@ -4,10 +4,34 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Dashboard - PropWise</title>
+    <!-- Add Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    
     <style>
         body { font-family: Arial, sans-serif; margin: 20px; }
-        .container { max-width: 900px; margin: auto; }
+        .container { max-width: 1000px; margin: auto; }
         h1 { margin-bottom: 20px; }
+        
+        /* --- NEW STATS BAR STYLES --- */
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        .stat-card {
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            text-align: center;
+        }
+        .stat-card h3 { margin: 0; font-size: 2.5em; color: #0056b3; }
+        .stat-card p { margin: 5px 0 0 0; color: #666; font-weight: bold; }
+        .stat-icon { font-size: 2em; color: #ddd; margin-bottom: 10px; }
+        /* --- END STATS STYLES --- */
+
         .property-row { 
             display: flex; 
             justify-content: space-between; 
@@ -16,19 +40,23 @@
             border: 1px solid #ccc; 
             border-radius: 8px; 
             margin-bottom: 10px; 
+            background: #fff;
         }
         .property-row img { max-width: 80px; border-radius: 4px; margin-right: 15px; }
-        .property-info {
-            display: flex;
-            align-items: center;
+        .property-info { display: flex; align-items: center; }
+        
+        /* View Counter Style */
+        .view-badge {
+            background: #eee;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            color: #555;
+            margin-top: 5px;
+            display: inline-block;
         }
 
-        /* --- UPDATED & NEW STYLES --- */
-        .actions {
-            display: flex;
-            align-items: center;
-            gap: 8px; /* Adds space between buttons */
-        }
+        .actions { display: flex; align-items: center; gap: 8px; }
         .actions a, .actions button {
             display: inline-block;
             padding: 8px 12px;
@@ -41,43 +69,58 @@
             cursor: pointer;
             font-family: Arial, sans-serif;
         }
-        .btn-edit { background-color: #007bff; } /* Blue */
-        .btn-delete { background-color: #dc3545; } /* Red */
-        .btn-boost { background-color: #28a745; } /* Green */
-        
-        /* --- NEW STYLES FOR "SOLD" --- */
-        .btn-sold {
-            background-color: #ffc107; /* Yellow */
-            color: #212529; /* Dark text */
-        }
-        .status-sold {
-            font-weight: bold;
-            color: #dc3545; /* Red */
-            font-size: 1.1em;
-            white-space: nowrap;
-            padding: 8px 12px;
-        }
-        .actions form {
-            margin: 0; /* Ensures form button aligns with links */
-        }
-        /* --- END OF NEW STYLES --- */
-
-        .status-featured {
-            font-weight: bold;
-            color: #28a745; /* Green */
-            font-size: 0.9em;
-            white-space: nowrap;
-        }
+        .btn-edit { background-color: #007bff; }
+        .btn-delete { background-color: #dc3545; }
+        .btn-boost { background-color: #28a745; }
+        .btn-sold { background-color: #ffc107; color: #212529; }
+        .status-sold { font-weight: bold; color: #dc3545; font-size: 1.1em; padding: 8px 12px; }
+        .status-featured { font-weight: bold; color: #28a745; font-size: 0.9em; }
+        .actions form { margin: 0; }
     </style>
 </head>
 <body>
     <div class="container">
         <p><a href="/"> &larr; Back to Homepage</a></p>
-        <h1>My Property Listings</h1>
+        <h1>Agent Dashboard</h1>
+
+        {% comment %} --- START: NEW STATS BAR --- {% endcomment %}
+        <div class="stats-container">
+            <!-- Card 1: Total Views -->
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fa fa-eye"></i></div>
+                <h3>{{ total_views }}</h3>
+                <p>Total Listing Views</p>
+            </div>
+
+            <!-- Card 2: Total Leads -->
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fa fa-users"></i></div>
+                <h3>{{ total_leads }}</h3>
+                <p>Total Leads Received</p>
+            </div>
+
+            <!-- Card 3: Top Performer -->
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fa fa-trophy"></i></div>
+                {% if top_performer %}
+                    <h3 style="font-size: 1.5em; margin-top: 10px;">
+                        <a href="{% url 'property_detail' pk=top_performer.pk %}" style="text-decoration: none; color: #0056b3;">
+                            {{ top_performer.title|truncatechars:15 }}
+                        </a>
+                    </h3>
+                    <p>{{ top_performer.view_count }} Views</p>
+                {% else %}
+                    <p style="margin-top: 15px;">No data yet</p>
+                {% endif %}
+            </div>
+        </div>
+        {% comment %} --- END: NEW STATS BAR --- {% endcomment %}
+
+
+        <h2>My Property Listings</h2>
 
         {% for prop in properties %}
-            <div class.property-row
-                 {% if prop.status == 'sold' %}style="background: #fdfdfd; opacity: 0.7;"{% endif %}>
+            <div class="property-row" {% if prop.status == 'sold' %}style="background: #f9f9f9; opacity: 0.8;"{% endif %}>
                  
                 <div class="property-info">
                     {% if prop.main_image %}
@@ -85,44 +128,35 @@
                     {% endif %}
                     <span>
                         <strong>{{ prop.title }}</strong><br>
-                        <small>Price: PKR {{ prop.price }}</small>
+                        <small>Price: PKR {{ prop.price }}</small><br>
+                        
+                        <!-- Show view count for each individual property -->
+                        <span class="view-badge">
+                            <i class="fa fa-eye"></i> {{ prop.view_count }} Views
+                        </span>
                     </span>
                 </div>
                 
                 <div class="actions">
-                
-                    {% comment %} --- START: UPGRADED LOGIC FOR ALL BUTTONS --- {% endcomment %}
-                    
                     {% if prop.status == 'active' %}
-                        
-                        {% comment %} Show "Boost" or "Featured" status {% endcomment %}
                         {% if prop.is_featured_live %}
-                            <span class="status-featured">⭐ Currently Featured</span>
+                            <span class="status-featured">⭐ Featured</span>
                         {% else %}
-                            <a href="{% url 'boost_listing_info' %}" class="btn-boost">Boost Listing</a>
+                            <a href="{% url 'boost_listing_info' %}" class="btn-boost">Boost</a>
                         {% endif %}
 
-                        {% comment %} Show "Mark as Sold" button {% endcomment %}
-                        <form action="{% url 'mark_as_sold' pk=prop.pk %}" method="POST" onsubmit="return confirm('Are you sure you want to mark this property as sold? This cannot be undone.');">
+                        <form action="{% url 'mark_as_sold' pk=prop.pk %}" method="POST" onsubmit="return confirm('Mark as sold?');">
                             {% csrf_token %}
-                            <button type="submit" class="btn-sold">Mark as Sold</button>
+                            <button type="submit" class="btn-sold">Sold</button>
                         </form>
                         
                         <a href="{% url 'property_update' pk=prop.pk %}" class="btn-edit">Edit</a>
                         <a href="{% url 'property_delete' pk=prop.pk %}" class="btn-delete">Delete</a>
-                        
                     {% elif prop.status == 'sold' %}
-                        
-                        {% comment %} If it's sold, just show a "Sold" badge {% endcomment %}
                         <span class="status-sold">SOLD</span>
-                        
                     {% else %}
-                        
-                        {% comment %} Fallback for other statuses like "Expired" {% endcomment %}
                         <span class="status-expired">{{ prop.get_status_display }}</span>
-                        
                     {% endif %}
-                    {% comment %} --- END: UPGRADED LOGIC --- {% endcomment %}
                 </div>
             </div>
         {% empty %}

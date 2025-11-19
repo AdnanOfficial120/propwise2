@@ -165,3 +165,33 @@ class PropertyImage(models.Model):
     
     def __str__(self):
         return f"Image for {self.property.title}"
+
+        # agent dashboard analsisis
+
+class PropertyView(models.Model):
+    """
+    Tracks a single 'view' on a property detail page.
+    Used for Agent Analytics.
+    """
+    property = models.ForeignKey(
+        Property, 
+        on_delete=models.CASCADE, 
+        related_name="views"
+    )
+    timestamp = models.DateTimeField(auto_now_add=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    
+    # Optional: If the viewer was logged in, track who they were
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True
+    )
+
+    class Meta:
+        # Most recent views first
+        ordering = ['-timestamp']
+
+    def __str__(self):
+        return f"View on {self.property.title} at {self.timestamp}"

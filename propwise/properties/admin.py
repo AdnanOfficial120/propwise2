@@ -1,7 +1,7 @@
 # properties/admin.py
 
 from django.contrib import admin
-from .models import Property, PropertyImage
+from .models import Property, PropertyImage,PropertyView
 
 class PropertyImageInline(admin.TabularInline):
     model = PropertyImage
@@ -65,3 +65,13 @@ class PropertyAdmin(admin.ModelAdmin):
 # Register your models here.
 admin.site.register(Property, PropertyAdmin)
 admin.site.register(PropertyImage)
+
+# --- REGISTER THE VIEW TRACKER ---
+@admin.register(PropertyView)
+class PropertyViewAdmin(admin.ModelAdmin):
+    list_display = ('property', 'timestamp', 'ip_address', 'user')
+    list_filter = ('timestamp',)
+    search_fields = ('property__title', 'ip_address')
+    
+    # Make it read-only so admins don't accidentally fake views
+    readonly_fields = ('property', 'timestamp', 'ip_address', 'user')

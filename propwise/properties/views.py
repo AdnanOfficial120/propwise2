@@ -3,7 +3,7 @@
 
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
-from .models import Property, PropertyImage,PropertyStatus  # Make sure PropertyImage is imported
+from .models import Property, PropertyImage,PropertyStatus,PropertyView  # Make sure PropertyImage is imported
 from .filters import PropertyFilter
 from .forms import PropertyForm
 from django.http import HttpResponseForbidden
@@ -32,27 +32,50 @@ genai.configure(api_key=os.environ.get('GEMINI_API_KEY'))
 #these are for payment 7 day etc
 from django.utils import timezone
 from django.db.models import Case, When, BooleanField
+# for count visitores
+from django.db.models import Count, Sum # For calculating stats
+from accounts.models import Lead # To count leads
 
 # properties/views.py
 
 # ---  'property_detail' with distance measure---
 
+# properties/views.py
+
+# --- Helper function to get the visitor's IP address ---
+def get_client_ip(request):
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        ip = x_forwarded_for.split(',')[0]
+    else:
+        ip = request.META.get('REMOTE_ADDR')
+    return ip
+
 def property_detail(request, pk):
-    # 1. Get the main property and gallery (same as before)
+    # 1. Get the main property and gallery
     property = get_object_or_404(Property, pk=pk)
     gallery_images = property.images.all()
     
-    # --- 2. NEW: CALCULATE NEARBY AMENITIES ---
+    # --- START: ANALYTICS TRACKING ---
+    # We record a view every time this page loads.
     
-    nearby_amenities = [] # Start with an empty list
+    # Only track if the viewer is NOT the agent who owns it
+    # (Agents shouldn't inflate their own stats)
+    if request.user != property.agent:
+        PropertyView.objects.create(
+            property=property,
+            ip_address=get_client_ip(request),
+            user=request.user if request.user.is_authenticated else None
+        )
+    # --- END: ANALYTICS TRACKING ---
+    
+    
+    # --- 2. CALCULATE NEARBY AMENITIES ---
+    nearby_amenities = []
 
-    # We can only calculate distance if the *property* has coordinates
     if property.latitude and property.longitude:
-        
-        # This is Point A (the property's location)
         prop_point = (property.latitude, property.longitude)
         
-        # Get all amenities that *also* have coordinates
         all_amenities = Amenity.objects.filter(
             latitude__isnull=False, 
             longitude__isnull=False
@@ -60,36 +83,26 @@ def property_detail(request, pk):
         
         amenities_with_distance = []
         
-        # Loop through every amenity to find its distance
         for amenity in all_amenities:
-            
-            # This is Point B (the amenity's location)
             amenity_point = (amenity.latitude, amenity.longitude)
-            
-            # Use geopy to calculate the distance
             distance_km = geodesic(prop_point, amenity_point).km
             
-            # Add the amenity and its distance to our list
             amenities_with_distance.append({
                 'amenity': amenity,
                 'distance': distance_km
             })
         
-        # Sort the list by distance, from closest to farthest
         sorted_amenities = sorted(amenities_with_distance, key=lambda x: x['distance'])
-        
-        # Get just the Top 5 closest amenities
         nearby_amenities = sorted_amenities[:5]
 
     # --- 3. BUILD THE FINAL CONTEXT ---
     context = {
         'property': property,
         'gallery_images': gallery_images,
-        'nearby_amenities': nearby_amenities, # <-- Add our new list to the context
+        'nearby_amenities': nearby_amenities, 
     }
     
     return render(request, 'properties/property_detail.html', context)
-
 # properties/views.py
 
 # --- REPLACE YOUR OLD 'property_search' FUNCTION WITH THIS ---
@@ -227,30 +240,49 @@ def property_create(request):
     }
     return render(request, 'properties/property_form.html', context)
 
-# properties/views.py
-
-# --- REPLACE YOUR OLD 'agent_dashboard' FUNCTION WITH THIS ---
+# --- REPLACE YOUR 'agent_dashboard' VIEW WITH THIS ---
 
 @login_required(login_url='login')
 def agent_dashboard(request):
-    
+    """
+    Displays the agent's properties AND their business analytics.
+    """
     now = timezone.now()
     
-    # 1. Get all properties for this agent
+    # 1. Get properties for this agent
     my_properties_qs = Property.objects.filter(agent=request.user)
     
-    # 2. Annotate with 'is_featured_live' status
-    # This checks if the property is featured AND not expired
+    # 2. Annotate with 'is_featured_live' AND 'view_count'
+    #    We count the related 'PropertyView' objects for each property.
     my_properties = my_properties_qs.annotate(
         is_featured_live=Case(
             When(is_featured=True, featured_until__gte=now, then=True),
             default=False,
             output_field=BooleanField()
-        )
-    ).order_by('-created_at') # Order after annotating
+        ),
+        view_count=Count('views') # This counts the actual views from our new model
+    ).order_by('-created_at')
+    
+    # --- 3. CALCULATE DASHBOARD STATS ---
+    
+    # A. Total Views (Sum of all views on all properties)
+    #    We use aggregate() to sum up the counts we just made.
+    #    The 'or 0' handles the case where the agent has no properties yet.
+    total_views = my_properties.aggregate(total=Sum('view_count'))['total'] or 0
+    
+    # B. Total Leads (Count of Lead objects for this agent)
+    total_leads = Lead.objects.filter(agent=request.user).count()
+    
+    # C. Top Performer (The single property with the most views)
+    #    We sort our annotated list by view_count descending and take the first one.
+    top_performer = my_properties.order_by('-view_count').first()
     
     context = {
-        'properties': my_properties
+        'properties': my_properties,
+        # Pass the new stats to the template
+        'total_views': total_views,
+        'total_leads': total_leads,
+        'top_performer': top_performer,
     }
     return render(request, 'properties/agent_dashboard.html', context)
 
