@@ -51,41 +51,29 @@
             color: #0066cc;
         }
 
-        /* --- ADD THIS NEW STYLE  of badge--- */
+        /* Badge Style */
         .verified-badge {
             display: inline-block;
             padding: 6px 12px;
             background-color: #d4edda;
-            /* Light green background */
             color: #155724;
-            /* Dark green text */
             font-size: 0.7em;
-            /* Make it a bit smaller than the h1 */
             font-weight: bold;
             border-radius: 5px;
             margin-left: 10px;
             vertical-align: middle;
-            /* Aligns it nicely with the title */
         }
 
-        /* --- END OF NEW STYLE --- */
-
-
-
-
-        /* ... (your existing styles) ... */
-        .gallery img { max-width: 100%; border-radius: 4px; }
-        
-        /* --- ADD THIS NEW BLOCK FOR THE VIDEO --- */
+        /* Video Container Style */
         .video-container {
             position: relative;
-            padding-bottom: 56.25%; /* This creates a 16:9 aspect ratio */
+            padding-bottom: 56.25%;
             height: 0;
             overflow: hidden;
             max-width: 100%;
             background: #000;
-            border-radius: 8px; /* Match your other images */
-            margin: 20px 0; /* Add space above/below the video */
+            border-radius: 8px;
+            margin: 20px 0;
         }
         .video-container iframe {
             position: absolute;
@@ -94,10 +82,61 @@
             width: 100%;
             height: 100%;
         }
-        /* --- END OF NEW BLOCK --- */
         
-        .specs { background: #f4f4f4; padding: 15px; border-radius: 8px; margin: 20px 0; }
-        /* ... (rest of your styles) ... */
+        /* Distance List Styles */
+        .nearby-list { 
+            list-style-type: none; 
+            padding-left: 0; 
+        }
+        .nearby-list li {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px dashed #ddd;
+            font-size: 1.1em;
+        }
+        .nearby-list li:last-child {
+            border-bottom: none;
+        }
+        .nearby-list .distance {
+            font-weight: bold;
+            color: #0056b3;
+        }
+
+        /* --- NEW STYLES FOR VISIT FORM --- */
+        .contact-box {
+            margin-top: 20px;
+            padding: 20px;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .contact-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        @media (max-width: 600px) {
+            .contact-grid { grid-template-columns: 1fr; }
+        }
+        .visit-form input, .visit-form textarea {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .btn-visit {
+            background: #28a745; /* Green */
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+        }
     </style>
 </head>
 
@@ -107,27 +146,15 @@
 
         <h1>
             {{ property.title }}
-
-            {% comment %} --- THIS IS THE NEW BADGE --- {% endcomment %}
             {% if property.is_verified %}
             <span class="verified-badge">✅ Verified</span>
             {% endif %}
-            {% comment %} --- END OF NEW BADGE --- {% endcomment %}
         </h1>
         <h3>{{ property.area }}</h3>
 
         <h2>PKR {{ property.price }}</h2>
 
-     {% comment %}
-        {% endcomment %}
-        
-        {% comment %}
-            We first call the new function and save its result
-            in a new variable called 'video_embed_url'
-        {% endcomment %}
         {% with video_embed_url=property.get_video_embed_url %}
-            
-            {% comment %} We only show the video box if our function returned a valid URL {% endcomment %}
             {% if video_embed_url %}
                 <div class="video-container">
                     <iframe
@@ -140,8 +167,7 @@
             {% endif %}
         {% endwith %}
 
-        {% comment %}
-        {% endcomment %}
+
         {% if property.main_image %}
         <img class="main-image" src="{{ property.main_image.url }}" alt="{{ property.title }}">
         {% endif %}
@@ -155,128 +181,105 @@
                 <span><strong>Bathrooms:</strong> {{ property.bathrooms|default:"N/A" }}</span>
                 <span><strong>Size:</strong> {{ property.area_size }} {{ property.get_area_unit_display }}</span>
                 <span><strong>Agent:</strong> {{ property.agent.username }}</span>
-                {% comment %}
-                This goes in: properties/templates/properties/property_detail.html
-                {% endcomment %}
-
-                {% if user.is_authenticated %}
-                {% comment %}
-                This is the key logic: Only show this button if the logged-in user
-                is NOT the agent who owns the property.
-                {% endcomment %}
-                {% if property.agent != user %}
-                <div style="margin-top: 20px; padding: 15px; background: #f4f4f4; border-radius: 8px;">
-                    <h4>Contact the Agent</h4>
-                    <p>Start a conversation with
-                        <a href="{% url 'agent_profile' pk=property.agent.pk %}"
-                            style="font-weight: bold; text-decoration: none; color: #0066cc;">
-                            <strong>{{ property.agent.first_name|default:property.agent.username }}</strong>
-                        </a>
-                        about this property.
-                    </p>
-                    {% comment %}
-                    This is a form, not a link, because it *creates* a new
-                    object (a chat thread). This is a professional best practice.
-                    {% endcomment %}
-                    <form action="{% url 'start_chat' property_pk=property.pk %}" method="POST">
-                        {% csrf_token %}
-                        <button type="submit"
-                            style="background: #0066cc; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px;">
-                            Start Chat
-                        </button>
-                    </form>
-                </div>
-                {% endif %}
-                {% else %}
-                {% comment %}
-                If the user is logged out, show a simple link to the login page.
-                {% endcomment %}
-                <div style="margin-top: 20px; padding: 15px; background: #f4f4f4; border-radius: 8px;">
-                    <p>
-                        <a href="{% url 'login' %}?next={{ request.path }}">Log in</a> to contact the agent.
-                    </p>
-                </div>
-                {% endif %}
             </div>
+
+            <!-- === CONTACT & VISIT SECTION === -->
+            {% if user.is_authenticated %}
+                {% if property.agent != user %}
+                <div class="contact-box">
+                    <h4 style="margin-top: 0;">Interested? Contact the Agent</h4>
+                    <p>
+                        Agent: 
+                        <a href="{% url 'agent_profile' pk=property.agent.pk %}" style="font-weight: bold; text-decoration: none;">
+                            {{ property.agent.first_name|default:property.agent.username }}
+                        </a>
+                    </p>
+                    
+                    <div class="contact-grid">
+                        <!-- LEFT: Start Chat -->
+                        <div style="background: #f0f8ff; padding: 15px; border-radius: 8px; text-align: center;">
+                            <h5>Message the Agent</h5>
+                            <p style="font-size: 0.9em;">Start a live chat to ask questions instantly.</p>
+                            <form action="{% url 'start_chat' property_pk=property.pk %}" method="POST">
+                                {% csrf_token %}
+                                <button type="submit" style="background: #0066cc; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; width: 100%;">
+                                    Start Chat
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- RIGHT: Schedule Visit (NEW) -->
+                        <div style="background: #e8f5e9; padding: 15px; border-radius: 8px;">
+                            <h5 style="text-align: center; margin-top: 0;">Schedule a Visit</h5>
+                            <form action="{% url 'schedule_visit' property_pk=property.pk %}" method="POST" class="visit-form">
+                                {% csrf_token %}
+                                
+                                <label style="font-size: 0.9em; font-weight: bold;">Date & Time:</label>
+                                {{ visit_form.visit_date }}
+                                
+                                <label style="font-size: 0.9em; font-weight: bold;">Message:</label>
+                                {{ visit_form.message }}
+                                
+                                <button type="submit" class="btn-visit">Request Tour</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            {% else %}
+                <div style="margin-top: 20px; padding: 15px; background: #f4f4f4; border-radius: 8px; text-align: center;">
+                    <p>
+                        <a href="{% url 'login' %}?next={{ request.path }}" style="font-weight: bold;">Log in</a> 
+                        to start a chat or schedule a visit.
+                    </p>
+                </div>
+            {% endif %}
+            <!-- === END CONTACT SECTION === -->
         </div>
 
+        {% if nearby_amenities %}
+            <div class="specs" style="margin-top: 20px;">
+                <h4>What's Nearby This Property</h4>
+                <ul class="nearby-list">
+                    {% for item in nearby_amenities %}
+                    <li>
+                        <span>
+                            {% if item.amenity.amenity_type == 'school' %}🏫
+                            {% elif item.amenity.amenity_type == 'hospital' %}🏥
+                            {% elif item.amenity.amenity_type == 'park' %}🌳
+                            {% elif item.amenity.amenity_type == 'restaurant' %}🍽️
+                            {% elif item.amenity.amenity_type == 'supermarket' %}🛒
+                            {% else %}ℹ️
+                            {% endif %}
+                            {{ item.amenity.name }}
+                        </span>
+                        <span class="distance">
+                            {{ item.distance|floatformat:1 }} km
+                        </span>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
 
-        <!-- this is for shwing distance also  -->
-    </div>
-    </div> {% comment %}
-    This section will ONLY appear if we successfully
-    calculated the distances in our view.
-    {% endcomment %}
-    {% if nearby_amenities %}
-    <div class="specs" style="margin-top: 20px;">
-        <h4>What's Nearby This Property</h4>
+        <h3>Description</h3>
+        <p>{{ property.description|linebreaks }}</p>
 
-        <style>
-            .nearby-list {
-                list-style-type: none;
-                padding-left: 0;
-            }
-
-            .nearby-list li {
-                display: flex;
-                justify-content: space-between;
-                padding: 8px 0;
-                border-bottom: 1px dashed #ddd;
-                font-size: 1.1em;
-            }
-
-            .nearby-list li:last-child {
-                border-bottom: none;
-            }
-
-            .nearby-list .distance {
-                font-weight: bold;
-                color: #0056b3;
-                /* Dark blue */
-            }
-        </style>
-
-        <ul class="nearby-list">
-            {% for item in nearby_amenities %}
-            <li>
-                <span>
-                    {% if item.amenity.amenity_type == 'school' %}🏫
-                    {% elif item.amenity.amenity_type == 'hospital' %}🏥
-                    {% elif item.amenity.amenity_type == 'park' %}🌳
-                    {% elif item.amenity.amenity_type == 'restaurant' %}🍽️
-                    {% elif item.amenity.amenity_type == 'supermarket' %}🛒
-                    {% else %}ℹ️
-                    {% endif %}
-
-                    {{ item.amenity.name }}
-                </span>
-
-                <span class="distance">
-                    {{ item.distance|floatformat:1 }} km
-                </span>
-            </li>
+        <h3>Photo Gallery</h3>
+        <div class="gallery">
+            {% for image in gallery_images %}
+            <img src="{{ image.image.url }}" alt="Gallery image">
+            {% empty %}
+            <p>No other images in the gallery.</p>
             {% endfor %}
-        </ul>
+        </div>
+        <div style="margin-top: 30px; text-align: center; border-top: 1px solid #eee; padding-top: 10px;">
+        <a href="{% url 'report_listing' pk=property.pk %}" style="color: #dc3545; font-size: 0.9em; text-decoration: none;">
+            🚩 Report this Listing
+        </a>
     </div>
-    {% endif %}
 
-    <!-- end of distance showing  -->
-
-
-
-
-    <h3>Description</h3>
-    <p>{{ property.description|linebreaks }}</p>
-
-    <h3>Photo Gallery</h3>
-    <div class="gallery">
-        {% for image in gallery_images %}
-        <img src="{{ image.image.url }}" alt="Gallery image">
-        {% empty %}
-        <p>No other images in the gallery.</p>
-        {% endfor %}
-    </div>
+</div> <!-- End of .container -->
     </div>
 </body>
-
 </html>

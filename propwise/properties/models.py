@@ -195,3 +195,34 @@ class PropertyView(models.Model):
 
     def __str__(self):
         return f"View on {self.property.title} at {self.timestamp}"
+    
+
+    # properties/models.py (at the bottom)
+
+class ReportReason(models.TextChoices):
+    FAKE = 'fake', 'Fake / Fraudulent'
+    SOLD = 'sold', 'Already Sold / Unavailable'
+    WRONG_INFO = 'wrong_info', 'Incorrect Information'
+    DUPLICATE = 'duplicate', 'Duplicate Listing'
+    OTHER = 'other', 'Other'
+#thsi is for reporting system
+class ListingReport(models.Model):
+    """
+    Allows users to report a property listing to the admin.
+    """
+    property = models.ForeignKey(Property, on_delete=models.CASCADE, related_name="reports")
+    reporter = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    
+    reason = models.CharField(max_length=20, choices=ReportReason.choices)
+    description = models.TextField(help_text="Please provide details about why you are reporting this listing.")
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    # Admin can mark a report as "resolved" after they check it
+    is_resolved = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Report on {self.property.title} by {self.reporter.username}"

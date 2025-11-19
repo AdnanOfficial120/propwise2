@@ -12,7 +12,7 @@ from django.views.generic import DeleteView
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib import messages
 # properties/views.py for notification of saved serches
-from accounts.forms import SavedSearchForm
+from accounts.forms import SavedSearchForm,VisitRequestForm
 from django.db import IntegrityError
 from decimal import Decimal
 # properties/views.py (for map view)
@@ -35,6 +35,8 @@ from django.db.models import Case, When, BooleanField
 # for count visitores
 from django.db.models import Count, Sum # For calculating stats
 from accounts.models import Lead # To count leads
+from .forms import PropertyForm, ListingReportForm # <-- Added ListingReportForm
+
 
 # properties/views.py
 
@@ -51,16 +53,13 @@ def get_client_ip(request):
         ip = request.META.get('REMOTE_ADDR')
     return ip
 
+#  property  detailed view
 def property_detail(request, pk):
     # 1. Get the main property and gallery
     property = get_object_or_404(Property, pk=pk)
     gallery_images = property.images.all()
     
     # --- START: ANALYTICS TRACKING ---
-    # We record a view every time this page loads.
-    
-    # Only track if the viewer is NOT the agent who owns it
-    # (Agents shouldn't inflate their own stats)
     if request.user != property.agent:
         PropertyView.objects.create(
             property=property,
@@ -69,24 +68,16 @@ def property_detail(request, pk):
         )
     # --- END: ANALYTICS TRACKING ---
     
-    
     # --- 2. CALCULATE NEARBY AMENITIES ---
     nearby_amenities = []
-
     if property.latitude and property.longitude:
         prop_point = (property.latitude, property.longitude)
-        
-        all_amenities = Amenity.objects.filter(
-            latitude__isnull=False, 
-            longitude__isnull=False
-        )
+        all_amenities = Amenity.objects.filter(latitude__isnull=False, longitude__isnull=False)
         
         amenities_with_distance = []
-        
         for amenity in all_amenities:
             amenity_point = (amenity.latitude, amenity.longitude)
             distance_km = geodesic(prop_point, amenity_point).km
-            
             amenities_with_distance.append({
                 'amenity': amenity,
                 'distance': distance_km
@@ -95,11 +86,16 @@ def property_detail(request, pk):
         sorted_amenities = sorted(amenities_with_distance, key=lambda x: x['distance'])
         nearby_amenities = sorted_amenities[:5]
 
-    # --- 3. BUILD THE FINAL CONTEXT ---
+    # --- 3. CREATE THE VISIT FORM ---
+    # We pass an empty form to the template so the user can fill it out
+    visit_form = VisitRequestForm()
+
+    # --- 4. BUILD THE FINAL CONTEXT ---
     context = {
         'property': property,
         'gallery_images': gallery_images,
-        'nearby_amenities': nearby_amenities, 
+        'nearby_amenities': nearby_amenities,
+        'visit_form': visit_form, # <-- Add the form to context
     }
     
     return render(request, 'properties/property_detail.html', context)
@@ -660,3 +656,32 @@ def remove_from_compare_view(request, pk):
         # If NO (it's a form from the compare page),
         # redirect back to the compare page.
         return redirect('compare_page')
+    
+
+# for reporting system
+# --- ADD THIS VIEW FOR REPORTING LISTINGS ---
+@login_required
+def report_listing_view(request, pk):
+    """
+    Allows a user to report a property.
+    """
+    property_obj = get_object_or_404(Property, pk=pk)
+    
+    if request.method == 'POST':
+        form = ListingReportForm(request.POST)
+        if form.is_valid():
+            report = form.save(commit=False)
+            report.property = property_obj
+            report.reporter = request.user
+            report.save()
+            
+            messages.success(request, "Thank you. This listing has been reported to the admin.")
+            return redirect('property_detail', pk=pk)
+    else:
+        form = ListingReportForm()
+    
+    context = {
+        'form': form,
+        'property': property_obj
+    }
+    return render(request, 'properties/report_listing.html', context)    

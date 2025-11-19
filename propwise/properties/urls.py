@@ -44,6 +44,9 @@ urlpatterns = [
     
     # 3. The action to remove a property (e.g., /listings/compare/remove/5/)
     path('compare/remove/<int:pk>/', views.remove_from_compare_view, name='remove_from_compare'),
+    #for report system 
+    path('report/<int:pk>/', views.report_listing_view, name='report_listing'),
+
 ]
 
 

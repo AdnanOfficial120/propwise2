@@ -242,3 +242,36 @@ class Notification(models.Model):
 
     def __str__(self):
         return f"Notification for {self.recipient.username}: {self.message}"
+    
+
+# this is for visiting scheduled
+
+class VisitStatus(models.TextChoices):
+    PENDING = 'pending', 'Pending'
+    ACCEPTED = 'accepted', 'Accepted'
+    REJECTED = 'rejected', 'Rejected'
+
+class VisitRequest(models.Model):
+    """
+    Stores a request from a buyer to visit a specific property.
+    """
+    buyer = models.ForeignKey(User, on_delete=models.CASCADE, related_name="visit_requests")
+    agent = models.ForeignKey(User, on_delete=models.CASCADE, related_name="appointments")
+    property = models.ForeignKey(Property, on_delete=models.CASCADE, related_name="visits")
+    
+    visit_date = models.DateTimeField(help_text="Preferred date and time for the visit.")
+    message = models.TextField(blank=True, null=True, help_text="Optional message to the agent.")
+    
+    status = models.CharField(
+        max_length=20, 
+        choices=VisitStatus.choices, 
+        default=VisitStatus.PENDING
+    )
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Visit: {self.buyer.username} -> {self.property.title}"

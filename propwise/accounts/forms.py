@@ -4,9 +4,10 @@ from django.contrib.auth.forms import UserCreationForm
 from django import forms  # <-- Make sure this is imported
 from django.contrib.auth import get_user_model
 # accounts/forms.py notification to show 
-from .models import SavedSearch,AgentRating
-from .models import Lead
+from .models import SavedSearch,AgentRating,Lead
 from properties.models import Property, PropertyStatus
+#for visitschedule
+from .models import VisitRequest
 
 # This gets your custom user model (accounts.User)
 User = get_user_model()
@@ -179,3 +180,26 @@ class LeadForm(forms.ModelForm):
                 agent=agent,
                 status=PropertyStatus.ACTIVE
             ).order_by('-created_at')    
+
+# this is fot visting scheduled
+
+class VisitRequestForm(forms.ModelForm):
+    class Meta:
+        model = VisitRequest
+        fields = ['visit_date', 'message']
+        
+        widgets = {
+            'visit_date': forms.DateTimeInput(attrs={
+                'class': 'form-control',
+                'type': 'datetime-local' # This creates the HTML5 date/time picker
+            }),
+            'message': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'e.g., I am available after 5 PM...'
+            }),
+        }
+        labels = {
+            'visit_date': 'Preferred Date & Time',
+            'message': 'Message (Optional)',
+        }

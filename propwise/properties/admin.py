@@ -1,7 +1,7 @@
 # properties/admin.py
 
 from django.contrib import admin
-from .models import Property, PropertyImage,PropertyView
+from .models import Property, PropertyImage,PropertyView,ListingReport
 
 class PropertyImageInline(admin.TabularInline):
     model = PropertyImage
@@ -75,3 +75,17 @@ class PropertyViewAdmin(admin.ModelAdmin):
     
     # Make it read-only so admins don't accidentally fake views
     readonly_fields = ('property', 'timestamp', 'ip_address', 'user')
+
+# --- ADD THIS NEW ADMIN CLASS  report register...---
+@admin.register(ListingReport)
+class ListingReportAdmin(admin.ModelAdmin):
+    list_display = ('property', 'reason', 'reporter', 'created_at', 'is_resolved')
+    list_filter = ('is_resolved', 'reason', 'created_at')
+    search_fields = ('property__title', 'description', 'reporter__username')
+    
+    # Add a handy action to mark multiple reports as resolved
+    actions = ['mark_as_resolved']
+
+    def mark_as_resolved(self, request, queryset):
+        queryset.update(is_resolved=True)
+    mark_as_resolved.short_description = "Mark selected reports as resolved"    

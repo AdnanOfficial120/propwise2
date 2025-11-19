@@ -12,11 +12,13 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth import get_user_model
 from properties.models import Property
 #  for rating system 
-from .models import AgentRating, Lead # Our new database model
 from .forms import AgentRatingForm # Our new review form
 from django.db.models import Avg, Count # To calculate the average rating
 from django.db import IntegrityError # To catch duplicate reviews
 from .models import Notification # Make sure Notification is imported
+from .models import AgentRating, Lead, Notification, VisitRequest, LeadStatus # <-- ADD VisitRequest, LeadStatus
+from .forms import AgentRatingForm, LeadForm, VisitRequestForm # <-- ADD VisitRequestForm
+from django.urls import reverse
 
 
 
@@ -318,3 +320,56 @@ def mark_notification_read(request, pk):
     
     # If security fails, just go home
     return redirect('homepage')
+
+
+
+# --- added THIS VIEW FOR SCHEDULING VISITS  ---
+
+@login_required
+def schedule_visit_view(request, property_pk):
+    """
+    Handles the submission of the "Schedule a Tour" form.
+    1. Saves the VisitRequest.
+    2. Creates a Lead for the agent.
+    3. Notifies the agent.
+    """
+    property_obj = get_object_or_404(Property, pk=property_pk)
+    
+    if request.method == 'POST':
+        form = VisitRequestForm(request.POST)
+        if form.is_valid():
+            # 1. Save the Visit Request
+            visit = form.save(commit=False)
+            visit.buyer = request.user
+            visit.agent = property_obj.agent
+            visit.property = property_obj
+            visit.save()
+            
+            # 2. Create a Lead for the Agent (Automation)
+            try:
+                Lead.objects.create(
+                    agent=property_obj.agent,
+                    contact_name=request.user.get_full_name() or request.user.username,
+                    contact_email=request.user.email,
+                    contact_phone=request.user.phone_number,
+                    status=LeadStatus.NEW,
+                    source=f"Visit Request ({property_obj.title})",
+                    property_of_interest=property_obj,
+                    notes=f"Requested a visit on: {visit.visit_date}. Message: {visit.message}"
+                )
+            except Exception as e:
+                print(f"Error creating lead: {e}")
+
+            # 3. Notify the Agent (Automation)
+            Notification.objects.create(
+                recipient=property_obj.agent,
+                message=f"New Visit Request! {request.user.username} wants to see '{property_obj.title}'",
+                link_url=reverse('my_leads') 
+            )
+
+            messages.success(request, "Your visit request has been sent! The agent will contact you shortly.")
+        else:
+            messages.error(request, "There was an error with your request. Please check the date and time.")
+            
+    # Redirect back to the property page
+    return redirect('property_detail', pk=property_pk)

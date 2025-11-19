@@ -33,6 +33,7 @@ urlpatterns = [
     # --- ADD THIS NEW LINE FOR THE "LEAD MANAGER" ---
     path('my-leads/', account_views.lead_manager_view, name='my_leads'),
     path('notification/<int:pk>/read/', account_views.mark_notification_read, name='mark_notification_read'),
+    path('schedule-visit/<int:property_pk>/', account_views.schedule_visit_view, name='schedule_visit'),
   
          
 ]
