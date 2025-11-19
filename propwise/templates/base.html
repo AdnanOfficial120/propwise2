@@ -4,12 +4,73 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Welcome to PropWise - Your Real Estate Partner</title>
+    
+    <!-- 1. ADD FONT AWESOME (Required for the Bell Icon) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
     <style>
         body { font-family: Arial, sans-serif; margin: 20px; }
         h1 { color: #333; }
+        
+        /* Basic Layout Styles */
         .property-list { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
         .property-card { border: 1px solid #ccc; padding: 15px; border-radius: 8px; }
         .property-card img { max-width: 100%; height: auto; border-radius: 4px; }
+
+        /* --- NOTIFICATION BELL STYLES (Necessary for the feature to work) --- */
+        .notif-container {
+            position: relative;
+            display: inline-block;
+            margin-left: 15px;
+            cursor: pointer;
+            vertical-align: middle;
+        }
+        .notif-icon {
+            font-size: 1.2em;
+            color: #555;
+        }
+        .notif-badge {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #dc3545; /* Red */
+            color: white;
+            border-radius: 50%;
+            padding: 2px 6px;
+            font-size: 0.7em;
+            font-weight: bold;
+        }
+        .notif-dropdown {
+            display: none; /* Hidden by default */
+            position: absolute;
+            right: 0;
+            top: 30px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            width: 300px;
+            z-index: 1000;
+            text-align: left;
+        }
+        .notif-header {
+            padding: 10px 15px;
+            border-bottom: 1px solid #eee;
+            font-weight: bold;
+            background: #f9f9f9;
+            border-radius: 8px 8px 0 0;
+        }
+        .notif-item {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+            font-size: 0.9em;
+            display: block;
+            color: #333;
+            text-decoration: none;
+        }
+        .notif-item:hover { background: #f0f8ff; }
+        .notif-empty { padding: 20px; text-align: center; color: #777; font-size: 0.9em; }
+        /* --- END NOTIFICATION STYLES --- */
     </style>
 </head>
 <body>
@@ -20,62 +81,88 @@
             <strong>PropWise</strong>
         </a>
     </div>
-        <nav>
+        <nav style="display: flex; align-items: center;">
             {% if user.is_authenticated %}
             <span>
                 Welcome, <strong>{{ user.username }}</strong>!
             </span>
 
+            <!-- === START: NOTIFICATION BELL === -->
+            <div class="notif-container" onclick="toggleNotifs()">
+                <i class="fa fa-bell notif-icon"></i>
+                
+                {% if notification_count > 0 %}
+                    <span class="notif-badge">{{ notification_count }}</span>
+                {% endif %}
+                
+                <div class="notif-dropdown" id="notif-dropdown">
+                    <div class="notif-header">Notifications</div>
+                    
+                    {% if notification_list %}
+                        {% for notif in notification_list %}
+                            <a href="{% url 'mark_notification_read' pk=notif.pk %}" class="notif-item">
+                                {{ notif.message }}
+                                <br>
+                                <span style="font-size: 0.8em; color: #888;">
+                                    {{ notif.created_at|timesince }} ago
+                                </span>
+                            </a>
+                        {% endfor %}
+                    {% else %}
+                        <div class="notif-empty">No new notifications</div>
+                    {% endif %}
+                </div>
+            </div>
+            <!-- === END: NOTIFICATION BELL === -->
+
             {% if user.is_agent %}
                 <a href="{% url 'agent_dashboard' %}" style="margin-left: 15px;">My Dashboard</a>
                 <a href="{% url 'my_leads' %}" style="margin-left: 15px;">My Leads</a>
                 <a href="{% url 'property_create' %}" style="margin-left: 15px;">+ Create Listing</a>
+                
+                <!-- Smart Profile Link for Agents -->
+                <a href="{% url 'agent_profile' pk=user.pk %}" style="margin-left: 15px;">My Public Profile</a>
+                <a href="{% url 'profile' %}" style="margin-left: 15px;">(Edit Profile)</a>
             {% else %}
                 <a href="{% url 'saved_properties' %}" style="margin-left: 15px;">My Saved Properties</a>
+                <a href="{% url 'profile' %}" style="margin-left: 15px;">My Profile</a>
             {% endif %}
             
-            {% if user.is_agent %}
-    <a href="{% url 'agent_profile' pk=user.pk %}" style="margin-left: 15px;">My Public Profile</a>
-    <a href="{% url 'profile' %}" style="margin-left: 15px;">(Edit Profile)</a>
-{% else %}
-    <a href="{% url 'profile' %}" style="margin-left: 15px;">My Profile</a>
-{% endif %}
-
-
-
             <a href="{% url 'chat_inbox' %}" style="margin-left: 15px;">Inbox</a>
+            
+            <!-- RESTORED LINKS -->
             <a href="{% url 'all_cities' %}" style="margin-left: 15px;">Locations</a>
             <a href="{% url 'map_search' %}" style="margin-left: 15px;">Map Search</a>
             <a href="{% url 'calculator' %}" style="margin-left: 15px;">Calculator</a>
             <a href="{% url 'agent_directory' %}" style="margin-left: 15px;">Find an Agent</a>
-
 
             <form action="{% url 'logout' %}" method="post" style="display: inline; margin-left: 15px;">
                 {% csrf_token %}
                 <button type="submit" style="
                     background: none;
                     border: none;
-                    color: #0066cc; /* Or your default link color */
+                    color: #0066cc; 
                     cursor: pointer;
                     text-decoration: underline;
                     padding: 0;
-                    font-size: inherit; /* Matches the rest of the text */
+                    font-size: inherit; 
                     font-family: inherit;
                 ">Log Out</button>
             </form>
+            
             {% else %}
+                <!-- Logged Out Links -->
                 <a href="{% url 'agent_directory' %}" style="margin-left: 15px;">Find an Agent</a>
                 <a href="{% url 'all_cities' %}" style="margin-left: 15px;">Locations</a>
                 <a href="{% url 'map_search' %}" style="margin-left: 15px;">Map Search</a>
                 <a href="{% url 'calculator' %}" style="margin-left: 15px;">Calculator</a>
                 <a href="{% url 'login' %}">Log In</a>
                 <a href="{% url 'signup' %}" style="margin-left: 15px;">Sign Up</a>
-                
             {% endif %}
         </nav>
     </header>
 
-    {% comment %} This is the new Message Block {% endcomment %}
+    {% comment %} This is the Message Block {% endcomment %}
     <div class="container" style="margin-top: 20px;">
         {% if messages %}
             {% for message in messages %}
@@ -86,18 +173,30 @@
         {% endif %}
     </div>
 
-    {% comment %} 
-      This is the "hollow" part where other
-      templates will inject their content.
-    {% endcomment %}
     {% block content %}
     {% endblock content %}
 
-
-    {% comment %} 
-      You can add a <footer> here later
-      and it will show up on every page.
-    {% endcomment %}
+    <!-- JAVASCRIPT FOR THE NOTIFICATION DROPDOWN -->
+    <script>
+        function toggleNotifs() {
+            var dropdown = document.getElementById("notif-dropdown");
+            if (dropdown.style.display === "block") {
+                dropdown.style.display = "none";
+            } else {
+                dropdown.style.display = "block";
+            }
+        }
+        
+        // Close the dropdown if the user clicks outside of it
+        window.onclick = function(event) {
+            if (!event.target.matches('.notif-container') && !event.target.matches('.notif-icon') && !event.target.matches('.notif-badge')) {
+                var dropdown = document.getElementById("notif-dropdown");
+                if (dropdown && dropdown.style.display === "block") {
+                    dropdown.style.display = "none";
+                }
+            }
+        }
+    </script>
 
 </body>
 </html>

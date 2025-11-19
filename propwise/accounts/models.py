@@ -213,3 +213,32 @@ class Lead(models.Model):
 
     def __str__(self):
         return f"Lead for {self.agent.username}: {self.contact_name}"
+    
+
+
+
+    # for bell notification
+
+class Notification(models.Model):
+    """
+    Stores an on-site notification for a user.
+    e.g., "You have a new lead" or "New answer to your question".
+    """
+    recipient = models.ForeignKey(
+        User, 
+        on_delete=models.CASCADE, 
+        related_name="notifications"
+    )
+    message = models.CharField(max_length=255)
+    link_url = models.CharField(
+        max_length=255, 
+        help_text="The URL where the user should go when they click (e.g., /chat/1/)"
+    )
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at'] # Newest first
+
+    def __str__(self):
+        return f"Notification for {self.recipient.username}: {self.message}"

@@ -32,5 +32,7 @@ urlpatterns = [
     path('agent/<int:pk>/', account_views.agent_profile_view, name='agent_profile'),
     # --- ADD THIS NEW LINE FOR THE "LEAD MANAGER" ---
     path('my-leads/', account_views.lead_manager_view, name='my_leads'),
+    path('notification/<int:pk>/read/', account_views.mark_notification_read, name='mark_notification_read'),
+  
          
 ]

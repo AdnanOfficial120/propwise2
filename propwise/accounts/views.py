@@ -16,6 +16,8 @@ from .models import AgentRating, Lead # Our new database model
 from .forms import AgentRatingForm # Our new review form
 from django.db.models import Avg, Count # To calculate the average rating
 from django.db import IntegrityError # To catch duplicate reviews
+from .models import Notification # Make sure Notification is imported
+
 
 
 
@@ -295,3 +297,24 @@ def lead_manager_view(request):
     }
     
     return render(request, 'accounts/my_leads.html', context)
+
+# --- ADD THIS NEW VIEW TO MARK NOTIFICATIONS AS READ ---
+
+@login_required
+def mark_notification_read(request, pk):
+    """
+    1. Gets the notification object.
+    2. Checks if the current user owns it.
+    3. Marks it as read.
+    4. Redirects to the actual link.
+    """
+    notification = get_object_or_404(Notification, pk=pk)
+
+    # Security: Only the recipient can mark it as read
+    if request.user == notification.recipient:
+        notification.is_read = True
+        notification.save()
+        return redirect(notification.link_url)
+    
+    # If security fails, just go home
+    return redirect('homepage')

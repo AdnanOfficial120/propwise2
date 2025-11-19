@@ -1,3 +1,4 @@
+
 # properties/views.py
 
 from django.shortcuts import render, get_object_or_404, redirect
@@ -494,7 +495,8 @@ def generate_ai_description(request):
         - The size is {area_size} {area_unit}.
         - The price is PKR {price}.
         
-        Based on this data, write an attractive description.
+        Based on this data, write an attractive description.and use simple words and remember dont write like these lines on top like here is yout description  only write requide description
+        and write short and simple words
         - Use strong, positive adjectives.
         - Highlight the key features (bedrooms, bathrooms, location).
         - DO NOT include the price in the final description.

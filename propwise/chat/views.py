@@ -1,55 +1,44 @@
-# chat/views.py
-
-# chat/views.py
-from django.shortcuts import render, get_object_or_404, redirect # Add redirect & get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
-from .models import ChatThread, ChatMessage # Import ChatMessage
-from properties.models import Property # Import Property
-from django.http import HttpResponseForbidden # To block bad requests
-from .forms import ChatMessageForm
-from django.http import JsonResponse
-#for lead startchat 
-from accounts.models import Lead, LeadStatus # Import your new Lead model
-from django.contrib.auth import get_user_model # Import the User model
-from django.contrib import messages
+from django.http import HttpResponseForbidden, JsonResponse
+from django.contrib.auth import get_user_model
+from django.urls import reverse # Needed for notification links
 
+# --- Local Imports ---
+from .models import ChatThread, ChatMessage
+from .forms import ChatMessageForm
+from properties.models import Property
+
+# --- Imports for our "Magic" Integrations ---
+from accounts.models import Lead, LeadStatus, Notification
+
+User = get_user_model()
 
 @login_required(login_url='login')
 def chat_inbox_view(request):
     """
     Display all active chat threads for the current user.
     """
-
-    # This is the professional way to query.
     # We find all threads where the user is EITHER the buyer OR the agent.
     threads = ChatThread.objects.filter(
         Q(buyer=request.user) | Q(agent=request.user)
-    ).order_by('-updated_at') # Show newest active chats first
+    ).order_by('-updated_at')
 
     context = {
         'threads': threads
     }
-
     return render(request, 'chat/inbox.html', context)
 
-
-
-
-
-# ... your chat_inbox_view creating here... ...
-
-# chat/views.py
-
-# --- REPLACE YOUR 'start_chat_view' FUNCTION WITH THIS ---
 
 @login_required(login_url='login')
 def start_chat_view(request, property_pk):
     """
     Finds or creates a chat thread for a given property and buyer.
-    This view is triggered by the "Contact Agent" button.
-    
-    NOW UPGRADED: Also automatically creates a new Lead for the agent.
+    Triggers:
+    1. Creates a new ChatThread (if needed).
+    2. Creates a new Lead in the Agent's CRM.
+    3. Sends a Notification to the Agent.
     """
     # We only accept POST requests to this view
     if request.method != 'POST':
@@ -63,23 +52,18 @@ def start_chat_view(request, property_pk):
     if agent == buyer:
         return HttpResponseForbidden("You cannot start a chat with yourself.")
 
-    # This is the professional way to do this:
-    # get_or_create() attempts to find an object with these parameters.
-    # If it exists, it "gets" it.
-    # If not, it "creates" it and returns the new object.
+    # Find existing thread or create a new one
     thread, created = ChatThread.objects.get_or_create(
         property=property,
         buyer=buyer,
         agent=agent
     )
     
-    # --- START: NEW "AUTO-LEAD" LOGIC ---
-    
-    # 'created' is a boolean (True/False) returned by get_or_create().
-    # If 'created' is True, it means this is a BRAND NEW chat thread.
+    # --- START: "MAGIC" AUTOMATION LOGIC ---
+    # If this is a BRAND NEW thread ('created' is True), we trigger our business logic.
     if created:
         try:
-            # We will also create a new Lead for the agent
+            # 1. Create the Lead for the Agent's CRM
             Lead.objects.create(
                 agent=agent,
                 contact_name=buyer.get_full_name() or buyer.username,
@@ -90,37 +74,41 @@ def start_chat_view(request, property_pk):
                 property_of_interest=property,
                 notes=f"New lead automatically generated from chat about {property.title}."
             )
-            messages.success(request, "Chat started and new lead added to agent's dashboard.")
-        except Exception as e:
-            # If creating the lead fails, we don't want to stop the chat.
-            # Just log the error and continue.
-            print(f"Error creating lead: {e}")
-            messages.success(request, "Chat started.")
             
-    # --- END: NEW "AUTO-LEAD" LOGIC ---
+            # 2. Create the Notification for the Agent
+            Notification.objects.create(
+                recipient=agent,
+                message=f"New Lead! {buyer.username} started a chat about '{property.title}'.",
+                link_url=reverse('my_leads') # Clicking takes them to their Lead Manager
+            )
+            
+        except Exception as e:
+            # If automation fails, log it but don't stop the chat
+            print(f"Error in start_chat automation: {e}")
+            
+    # --- END: AUTOMATION LOGIC ---
     
     # Redirect the user to the chat room
     return redirect('chat_detail', thread_id=thread.id)
 
-# ---    chat_detail_view  with live jason ---
-# --- REPLACE your old chat_detail_view WITH THIS ---
 
 @login_required(login_url='login')
 def chat_detail_view(request, thread_id):
     """
     Displays the chat room and handles sending new messages.
-    This view is now AJAX-aware.
+    Supports AJAX (JSON) responses for smoother chatting.
     """
     thread = get_object_or_404(ChatThread, id=thread_id)
     
+    # Security check
     if request.user != thread.buyer and request.user != thread.agent:
         return HttpResponseForbidden("You do not have permission to view this chat.")
 
-    # Mark messages as read (only on GET, when the page *loads*)
+    # Mark messages as read when loading the page (GET request)
     if request.method == 'GET':
         thread.messages.filter(is_read=False).exclude(sender=request.user).update(is_read=True)
 
-    # --- THIS IS THE UPDATED LOGIC FOR SENDING ---
+    # Handle Sending Messages (POST request)
     if request.method == 'POST':
         form = ChatMessageForm(request.POST)
         if form.is_valid():
@@ -129,56 +117,47 @@ def chat_detail_view(request, thread_id):
             message.sender = request.user
             message.save()
             
-            # Update the thread's 'updated_at' timestamp
+            # Update the thread's timestamp so it moves to the top of the inbox
             thread.save() 
             
-            # --- PROFESSIONAL FIX ---
-            # Instead of redirecting, we return a simple JSON response.
-            # Our JavaScript will catch this and know the message was sent.
+            # Return JSON for JavaScript to handle
             return JsonResponse({"status": "success", "message": "Message sent!"})
         else:
-            # If the form is invalid (e.g., empty message)
             return JsonResponse({"status": "error", "errors": form.errors}, status=400)
     
-    # --- This is for the GET request (loading the page) ---
+    # Load the page
     form = ChatMessageForm()
-    
     context = {
         'thread': thread,
         'form': form
     }
-    
     return render(request, 'chat/chat_detail.html', context)
 
-
-
-# --- Added THIS NEW VIEW to make chat app reload , live ---
 
 @login_required(login_url='login')
 def get_messages_api(request, thread_id):
     """
-    An "API" view that returns all messages for a
-    chat thread in JSON format.
+    An API view that returns all messages for a thread in JSON format.
+    Used by JavaScript to refresh the chat without reloading the page.
     """
     thread = get_object_or_404(ChatThread, id=thread_id)
     
-    # Security check: User must be part of this thread
+    # Security check
     if request.user != thread.buyer and request.user != thread.agent:
         return JsonResponse({"error": "Not authorized"}, status=403)
         
-    # Mark messages as read (we'll keep this logic)
+    # Mark messages as read
     thread.messages.filter(is_read=False).exclude(sender=request.user).update(is_read=True)
 
-    # Convert the messages into a list of "safe" dictionaries
+    # Build the list of messages
     message_list = []
     for message in thread.messages.all():
         message_list.append({
             'id': message.id,
             'sender_username': message.sender.username if message.sender else "Deleted User",
             'body': message.body,
-            'timestamp': message.timestamp.strftime("%b %d, %Y, %I:%M %p"), # "Oct 30, 2025, 11:30 AM"
-            'is_sender': message.sender == request.user # True if the current user sent it
+            'timestamp': message.timestamp.strftime("%b %d, %Y, %I:%M %p"),
+            'is_sender': message.sender == request.user
         })
     
-    # Return the list as a JSON object
     return JsonResponse({'messages': message_list})
