@@ -135,51 +135,72 @@
         <!-- === COLUMN 2 - THE TABLE === -->
         <div class="table-wrapper">
             <table class="leads-table">
-                <thead>
-                    <tr>
-                        <th>Status</th>
-                        <th>Contact Name</th>
-                        <th>Contact Info</th>
-                        <th>Source</th>
-                        <th>Property of Interest</th>
-                        <th>Notes</th>
-                        <th>Date Added</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for lead in leads %}
-                    <tr>
-                        <td>
-                            <span class="status-badge status-{{ lead.status }}">
-                                {{ lead.get_status_display }}
-                            </span>
-                        </td>
-                        <td><strong>{{ lead.contact_name }}</strong></td>
-                        <td>
-                            {% if lead.contact_phone %}{{ lead.contact_phone }}<br>{% endif %}
-                            {% if lead.contact_email %}{{ lead.contact_email }}{% endif %}
-                        </td>
-                        <td>{{ lead.source|default:"N/A" }}</td>
-                        <td>
-                            {% if lead.property_of_interest %}
-                                <a href="{% url 'property_detail' pk=lead.property_of_interest.pk %}">
-                                    {{ lead.property_of_interest.title|truncatechars:30 }}
-                                </a>
-                            {% else %}
-                                N/A
-                            {% endif %}
-                        </td>
-                        <td class="notes-cell">{{ lead.notes|linebreaksbr|default:"-" }}</td>
-                        <td>{{ lead.created_at|date:"M d, Y" }}</td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="7" style="text-align: center; padding: 20px;">
-                            You have no leads yet.
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
+            <thead>
+                <tr>
+                    <th>Status</th>
+                    <th>Contact Name</th>
+                    <th>Contact Info</th>
+                    <th>Source</th>
+                    <th>Property</th>
+                    <th>Notes</th>
+                    <th>Date</th>
+                    <th>Actions</th> <!-- NEW COLUMN -->
+                </tr>
+            </thead>
+            <tbody>
+                {% for lead in leads %}
+                <tr>
+                    <td>
+                        <span class="status-badge status-{{ lead.status }}">
+                            {{ lead.get_status_display }}
+                        </span>
+                    </td>
+                    <td><strong>{{ lead.contact_name }}</strong></td>
+                    <td>
+                        {% if lead.contact_phone %}{{ lead.contact_phone }}<br>{% endif %}
+                        {% if lead.contact_email %}{{ lead.contact_email }}{% endif %}
+                    </td>
+                    <td>{{ lead.source|default:"N/A" }}</td>
+                    <td>
+                        {% if lead.property_of_interest %}
+                            <a href="{% url 'property_detail' pk=lead.property_of_interest.pk %}">
+                                {{ lead.property_of_interest.title|truncatechars:20 }}
+                            </a>
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td class="notes-cell">{{ lead.notes|linebreaksbr|default:"-" }}</td>
+                    <td>{{ lead.created_at|date:"M d" }}</td>
+                    
+                    <!-- NEW ACTIONS COLUMN -->
+                    <td style="min-width: 120px;">
+                        <div style="display: flex; gap: 5px;">
+                            <!-- Edit Button -->
+                            <a href="{% url 'update_lead' pk=lead.pk %}" style="background: #007bff; color: white; padding: 5px 10px; border-radius: 4px; text-decoration: none; font-size: 0.85em;">
+                                Edit
+                            </a>
+                            
+                            <!-- Delete Button (Form for security) -->
+                            <form action="{% url 'delete_lead' pk=lead.pk %}" method="POST" onsubmit="return confirm('Delete this lead?');" style="margin: 0;">
+                                {% csrf_token %}
+                                <button type="submit" style="background: #dc3545; color: white; padding: 5px 10px; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85em;">
+                                    X
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                    <!-- END ACTIONS -->
+                    
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" style="text-align: center; padding: 20px;">
+                        You have no leads yet.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
             </table>
         </div>
     </div>

@@ -1,31 +1,45 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Log In - PropWise</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        form { max-width: 500px; margin: auto; padding: 20px; border: 1px solid #ccc; border-radius: 8px; }
-        form p { display: grid; grid-template-columns: 1fr 2fr; gap: 10px; align-items: center; }
-        form label { font-weight: bold; }
-        form input, form select { padding: 8px; width: 100%; box-sizing: border-box; }
-        button { background-color: #007bff; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; }
-    </style>
-</head>
-<body>
+{% extends 'base.html' %}
 
-    <form method="post">
-        <h2>Log In to PropWise</h2>
-        
+{% block content %}
+<div class="container" style="max-width: 400px; margin: 50px auto;">
+    <h2 style="text-align: center; margin-bottom: 20px;">Log In</h2>
+    
+    <form method="post" style="background: #f9f9f9; padding: 30px; border-radius: 8px; border: 1px solid #ddd; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
         {% csrf_token %}
         
-        {{ form.as_p }}
-        
-        <button type="submit">Log In</button>
-    </form>
-    <p style="text-align: center;">
-        Don't have an account? <a href="{% url 'signup' %}">Sign Up</a>
-    </p>
+        <!-- Display Form Errors (if any) -->
+        {% if form.errors %}
+            <div style="color: red; margin-bottom: 15px; text-align: center;">
+                Your username and password didn't match. Please try again.
+            </div>
+        {% endif %}
 
-</body>
-</html>
+        <div style="margin-bottom: 15px;">
+            <label for="id_username" style="font-weight: bold; display: block; margin-bottom: 5px;">Username:</label>
+            {{ form.username }}
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <label for="id_password" style="font-weight: bold; display: block; margin-bottom: 5px;">Password:</label>
+            {{ form.password }}
+        </div>
+
+        <button type="submit" style="background: #0066cc; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; width: 100%; font-size: 1.1em;">
+            Log In
+        </button>
+        
+        <!-- === THIS IS THE NEW FORGOT PASSWORD LINK === -->
+        <p style="text-align: center; margin-top: 15px;">
+            <a href="{% url 'password_reset' %}" style="color: #666; font-size: 0.9em; text-decoration: none;">
+                Forgot your password?
+            </a>
+        </p>
+        <!-- === END NEW LINK === -->
+
+    </form>
+
+    <p style="text-align: center; margin-top: 20px;">
+        Don't have an account? <a href="{% url 'signup' %}" style="color: #0066cc; font-weight: bold;">Sign up</a>
+    </p>
+</div>
+{% endblock %}

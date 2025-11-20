@@ -259,8 +259,25 @@
         </div>
     </div>
 
+<!-- Pagination Controls -->
+        <div style="margin-top: 30px; text-align: center;">
+            <span class="step-links">
+                {% if page_obj.has_previous %}
+                    <a href="?page=1{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" style="margin-right: 10px;">&laquo; First</a>
+                    <a href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Previous</a>
+                {% endif %}
 
-    ...
+                <span class="current" style="margin: 0 15px; font-weight: bold;">
+                    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                </span>
+
+                {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Next</a>
+                    <a href="?page={{ page_obj.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" style="margin-left: 10px;">Last &raquo;</a>
+                {% endif %}
+            </span>
+        </div>
+   
         </div>
     </div>
 

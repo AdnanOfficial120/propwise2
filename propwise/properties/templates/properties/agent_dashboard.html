@@ -119,7 +119,7 @@
 
         <h2>My Property Listings</h2>
 
-        {% for prop in properties %}
+        {% for prop in page_obj %}
             <div class="property-row" {% if prop.status == 'sold' %}style="background: #f9f9f9; opacity: 0.8;"{% endif %}>
                  
                 <div class="property-info">
@@ -163,6 +163,26 @@
             <p>You have not posted any properties yet.</p>
             <p><a href="{% url 'property_create' %}">Create your first listing now!</a></p>
         {% endfor %}
+
+
+        <!-- Pagination Controls -->
+        <div style="margin-top: 20px; text-align: center;">
+            <span class="step-links">
+                {% if page_obj.has_previous %}
+                    <a href="?page=1">&laquo; First</a>
+                    <a href="?page={{ page_obj.previous_page_number }}">Previous</a>
+                {% endif %}
+
+                <span class="current" style="margin: 0 15px;">
+                    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                </span>
+
+                {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}">Next</a>
+                    <a href="?page={{ page_obj.paginator.num_pages }}">Last &raquo;</a>
+                {% endif %}
+            </span>
+        </div>
     </div>
 </body>
 </html>

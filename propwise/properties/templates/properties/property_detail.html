@@ -5,138 +5,52 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ property.title }} - PropWise</title>
+    <!-- Add Font Awesome for Share Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-        }
-
-        .container {
-            max-width: 900px;
-            margin: auto;
-        }
-
-        .main-image {
-            max-width: 100%;
-            height: auto;
-            border-radius: 8px;
-        }
-
-        .gallery {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 10px;
-            margin-top: 15px;
-        }
-
-        .gallery img {
-            max-width: 100%;
-            border-radius: 4px;
-        }
-
-        .specs {
-            background: #f4f4f4;
-            padding: 15px;
-            border-radius: 8px;
-            margin: 20px 0;
-        }
-
-        .specs-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-        }
-
-        a {
-            color: #0066cc;
-        }
-
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 900px; margin: auto; }
+        .main-image { max-width: 100%; height: auto; border-radius: 8px; }
+        .gallery { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 15px; }
+        .gallery img { max-width: 100%; border-radius: 4px; }
+        .specs { background: #f4f4f4; padding: 15px; border-radius: 8px; margin: 20px 0; }
+        .specs-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        a { color: #0066cc; }
+        
         /* Badge Style */
-        .verified-badge {
-            display: inline-block;
-            padding: 6px 12px;
-            background-color: #d4edda;
-            color: #155724;
-            font-size: 0.7em;
-            font-weight: bold;
-            border-radius: 5px;
-            margin-left: 10px;
-            vertical-align: middle;
-        }
-
-        /* Video Container Style */
-        .video-container {
-            position: relative;
-            padding-bottom: 56.25%;
-            height: 0;
-            overflow: hidden;
-            max-width: 100%;
-            background: #000;
-            border-radius: 8px;
-            margin: 20px 0;
-        }
-        .video-container iframe {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-        }
+        .verified-badge { display: inline-block; padding: 6px 12px; background-color: #d4edda; color: #155724; font-size: 0.7em; font-weight: bold; border-radius: 5px; margin-left: 10px; vertical-align: middle; }
+        
+        /* Video Style */
+        .video-container { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; background: #000; border-radius: 8px; margin: 20px 0; }
+        .video-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
         
         /* Distance List Styles */
-        .nearby-list { 
-            list-style-type: none; 
-            padding-left: 0; 
-        }
-        .nearby-list li {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 0;
-            border-bottom: 1px dashed #ddd;
-            font-size: 1.1em;
-        }
-        .nearby-list li:last-child {
-            border-bottom: none;
-        }
-        .nearby-list .distance {
-            font-weight: bold;
-            color: #0056b3;
-        }
+        .nearby-list { list-style-type: none; padding-left: 0; }
+        .nearby-list li { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed #ddd; font-size: 1.1em; }
+        .nearby-list li:last-child { border-bottom: none; }
+        .nearby-list .distance { font-weight: bold; color: #0056b3; }
 
-        /* --- NEW STYLES FOR VISIT FORM --- */
-        .contact-box {
-            margin-top: 20px;
-            padding: 20px;
-            background: #fff;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-        }
-        .contact-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-        }
-        @media (max-width: 600px) {
-            .contact-grid { grid-template-columns: 1fr; }
-        }
-        .visit-form input, .visit-form textarea {
-            width: 100%;
-            padding: 8px;
-            margin-bottom: 10px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            box-sizing: border-box;
-        }
-        .btn-visit {
-            background: #28a745; /* Green */
-            color: white;
-            padding: 10px 15px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 16px;
-            width: 100%;
-        }
+        /* Contact Form Styles */
+        .contact-box { margin-top: 20px; padding: 20px; background: #fff; border: 1px solid #ddd; border-radius: 8px; }
+        .contact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        @media (max-width: 600px) { .contact-grid { grid-template-columns: 1fr; } }
+        .visit-form input, .visit-form textarea { width: 100%; padding: 8px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        .btn-visit { background: #28a745; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; width: 100%; }
+        
+        /* Share Button Styles */
+        .share-buttons { margin: 10px 0 20px 0; display: flex; gap: 10px; }
+        .btn-share { display: inline-flex; align-items: center; gap: 5px; padding: 8px 12px; border-radius: 4px; color: white; text-decoration: none; font-size: 0.9em; font-weight: bold; }
+        .btn-whatsapp { background-color: #25D366; }
+        .btn-facebook { background-color: #1877F2; }
+        
+        /* Similar Properties Styles */
+        .similar-section { margin-top: 50px; border-top: 2px solid #eee; padding-top: 20px; }
+        .similar-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 20px; }
+        .similar-card { border: 1px solid #ccc; padding: 15px; border-radius: 8px; }
+        .similar-card img { width: 100%; height: 150px; object-fit: cover; border-radius: 4px; margin-bottom: 10px; }
+        .similar-card h4 { margin: 0 0 10px 0; font-size: 1.1em; }
+        @media (max-width: 768px) { .similar-grid { grid-template-columns: 1fr; } }
     </style>
 </head>
 
@@ -154,6 +68,17 @@
 
         <h2>PKR {{ property.price }}</h2>
 
+        <!-- SOCIAL SHARE BUTTONS -->
+        <div class="share-buttons">
+            <a href="https://wa.me/?text=Check out this property: {{ request.build_absolute_uri }}" target="_blank" class="btn-share btn-whatsapp">
+                <i class="fa fa-whatsapp"></i> Share on WhatsApp
+            </a>
+            <a href="https://www.facebook.com/sharer/sharer.php?u={{ request.build_absolute_uri }}" target="_blank" class="btn-share btn-facebook">
+                <i class="fa fa-facebook"></i> Share
+            </a>
+        </div>
+
+        <!-- VIDEO WALKTHROUGH -->
         {% with video_embed_url=property.get_video_embed_url %}
             {% if video_embed_url %}
                 <div class="video-container">
@@ -167,7 +92,7 @@
             {% endif %}
         {% endwith %}
 
-
+        <!-- MAIN IMAGE -->
         {% if property.main_image %}
         <img class="main-image" src="{{ property.main_image.url }}" alt="{{ property.title }}">
         {% endif %}
@@ -183,7 +108,7 @@
                 <span><strong>Agent:</strong> {{ property.agent.username }}</span>
             </div>
 
-            <!-- === CONTACT & VISIT SECTION === -->
+            <!-- CONTACT & VISIT SECTION -->
             {% if user.is_authenticated %}
                 {% if property.agent != user %}
                 <div class="contact-box">
@@ -208,18 +133,15 @@
                             </form>
                         </div>
 
-                        <!-- RIGHT: Schedule Visit (NEW) -->
+                        <!-- RIGHT: Schedule Visit -->
                         <div style="background: #e8f5e9; padding: 15px; border-radius: 8px;">
                             <h5 style="text-align: center; margin-top: 0;">Schedule a Visit</h5>
                             <form action="{% url 'schedule_visit' property_pk=property.pk %}" method="POST" class="visit-form">
                                 {% csrf_token %}
-                                
                                 <label style="font-size: 0.9em; font-weight: bold;">Date & Time:</label>
                                 {{ visit_form.visit_date }}
-                                
                                 <label style="font-size: 0.9em; font-weight: bold;">Message:</label>
                                 {{ visit_form.message }}
-                                
                                 <button type="submit" class="btn-visit">Request Tour</button>
                             </form>
                         </div>
@@ -234,9 +156,9 @@
                     </p>
                 </div>
             {% endif %}
-            <!-- === END CONTACT SECTION === -->
         </div>
 
+        <!-- DISTANCE CALCULATOR SECTION -->
         {% if nearby_amenities %}
             <div class="specs" style="margin-top: 20px;">
                 <h4>What's Nearby This Property</h4>
@@ -273,13 +195,33 @@
             <p>No other images in the gallery.</p>
             {% endfor %}
         </div>
+        
+        <!-- SIMILAR PROPERTIES SECTION -->
+        {% if similar_properties %}
+            <div class="similar-section">
+                <h3>Similar Properties in {{ property.area.city.name }}</h3>
+                <div class="similar-grid">
+                    {% for sim_prop in similar_properties %}
+                        <div class="similar-card">
+                            {% if sim_prop.main_image %}
+                                <img src="{{ sim_prop.main_image.url }}" alt="{{ sim_prop.title }}">
+                            {% endif %}
+                            <h4><a href="{% url 'property_detail' pk=sim_prop.pk %}" style="text-decoration: none;">{{ sim_prop.title|truncatechars:30 }}</a></h4>
+                            <p><strong>PKR {{ sim_prop.price }}</strong></p>
+                            <p style="font-size: 0.9em; color: #666;">{{ sim_prop.area.name }}</p>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+        
+        <!-- REPORTING LINK -->
         <div style="margin-top: 30px; text-align: center; border-top: 1px solid #eee; padding-top: 10px;">
-        <a href="{% url 'report_listing' pk=property.pk %}" style="color: #dc3545; font-size: 0.9em; text-decoration: none;">
-            🚩 Report this Listing
-        </a>
-    </div>
+            <a href="{% url 'report_listing' pk=property.pk %}" style="color: #dc3545; font-size: 0.9em; text-decoration: none;">
+                🚩 Report this Listing
+            </a>
+        </div>
 
-</div> <!-- End of .container -->
     </div>
 </body>
 </html>

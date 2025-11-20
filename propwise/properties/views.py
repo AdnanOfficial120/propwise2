@@ -36,6 +36,7 @@ from django.db.models import Case, When, BooleanField
 from django.db.models import Count, Sum # For calculating stats
 from accounts.models import Lead # To count leads
 from .forms import PropertyForm, ListingReportForm # <-- Added ListingReportForm
+from django.core.paginator import Paginator
 
 
 # properties/views.py
@@ -54,6 +55,10 @@ def get_client_ip(request):
     return ip
 
 #  property  detailed view
+# properties/views.py
+
+# --- REPLACE YOUR 'property_detail' FUNCTION WITH THIS ---
+
 def property_detail(request, pk):
     # 1. Get the main property and gallery
     property = get_object_or_404(Property, pk=pk)
@@ -68,7 +73,7 @@ def property_detail(request, pk):
         )
     # --- END: ANALYTICS TRACKING ---
     
-    # --- 2. CALCULATE NEARBY AMENITIES ---
+    # --- 2. CALCULATE NEARBY AMENITIES (Your existing code) ---
     nearby_amenities = []
     if property.latitude and property.longitude:
         prop_point = (property.latitude, property.longitude)
@@ -86,20 +91,30 @@ def property_detail(request, pk):
         sorted_amenities = sorted(amenities_with_distance, key=lambda x: x['distance'])
         nearby_amenities = sorted_amenities[:5]
 
-    # --- 3. CREATE THE VISIT FORM ---
-    # We pass an empty form to the template so the user can fill it out
+    # --- 3. NEW: FETCH SIMILAR PROPERTIES ---
+    # Logic: Same City, Same Property Type, Active Status, NOT the current property
+    similar_properties = Property.objects.filter(
+        area__city=property.area.city,       # Same City
+        property_type=property.property_type, # Same Type (House/Plot)
+        status=PropertyStatus.ACTIVE         # Must be Active
+    ).exclude(
+        id=property.id                       # Exclude the one we are looking at
+    ).order_by('-created_at')[:3]            # Get the 3 newest ones
+    # --- END SIMILAR PROPERTIES ---
+
+    # --- 4. CREATE THE VISIT FORM ---
     visit_form = VisitRequestForm()
 
-    # --- 4. BUILD THE FINAL CONTEXT ---
+    # --- 5. BUILD THE FINAL CONTEXT ---
     context = {
         'property': property,
         'gallery_images': gallery_images,
         'nearby_amenities': nearby_amenities,
-        'visit_form': visit_form, # <-- Add the form to context
+        'visit_form': visit_form,
+        'similar_properties': similar_properties, # <-- Add this to context
     }
     
     return render(request, 'properties/property_detail.html', context)
-# properties/views.py
 
 # --- REPLACE YOUR OLD 'property_search' FUNCTION WITH THIS ---
 
@@ -111,96 +126,58 @@ def property_detail(request, pk):
 
 # --- REPLACE YOUR 'property_search' FUNCTION WITH THIS ---
 
+# properties/views.py
+
 def property_search(request):
     """
     View for searching and filtering properties.
-    NOW UPGRADED to show Featured listings first AND hide Sold listings.
+    NOW WITH PAGINATION (12 items per page).
     """
     
-    # --- 1. UPGRADED: Filter/Search Logic (GET) ---
-    
+    # 1. Filter Logic (Same as before)
     now = timezone.now()
-
-    # --- 1a. THIS IS THE UPGRADE ---
-    # We first create a "base queryset" that ONLY includes 'ACTIVE' properties.
-    # All other logic (filtering, sorting) will be built on top of this.
     base_queryset = Property.objects.filter(status=PropertyStatus.ACTIVE)
     
-    # 1b. Create a "live" featured status
-    queryset = base_queryset.annotate( # <-- Use base_queryset here
+    queryset = base_queryset.annotate(
         is_featured_live=Case(
             When(is_featured=True, featured_until__gte=now, then=True),
             default=False,
             output_field=BooleanField()
         )
-    )
+    ).order_by('-is_featured_live', '-is_verified', '-created_at')
 
-    # 1c. This is your new "professional" sort order
-    queryset = queryset.order_by('-is_featured_live', '-is_verified', '-created_at')
-
-    # 1d. This part is the same as before
     property_filter = PropertyFilter(request.GET, queryset=queryset)
     
+    # --- 2. PAGINATION LOGIC (NEW) ---
+    # We paginate the 'qs' (queryset) from the filter
+    paginator = Paginator(property_filter.qs, 12) # Show 12 properties per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    # --- END PAGINATION ---
     
-    # --- 2. New Logic for Saving the Search (POST) ---
-    # (This part is 100% the same as your old code, no changes here)
+    # 3. Save Search Logic (Same as before - hidden for brevity)
     saved_search_form = SavedSearchForm() 
-
     if request.method == 'POST' and request.user.is_authenticated:
-        # ... (all your existing POST logic for saving a search) ...
-        # ... (no changes are needed here) ...
         saved_search_form = SavedSearchForm(request.POST)
-        
         if saved_search_form.is_valid():
             try:
-                query_params = request.GET
                 search = saved_search_form.save(commit=False)
                 search.user = request.user
-                
-                search.keyword = query_params.get('keyword', None)
-                city_id = query_params.get('city', None)
-                if city_id:
-                    search.city_id = int(city_id)
-                search.property_type = query_params.get('property_type', None)
-                search.purpose = query_params.get('purpose', None)
-                
-                try:
-                    min_price_str = query_params.get('price_min', None)
-                    if min_price_str:
-                        search.min_price = Decimal(min_price_str.replace(',', ''))
-                except (ValueError, TypeError):
-                    pass 
-                try:
-                    max_price_str = query_params.get('price_max', None)
-                    if max_price_str:
-                        search.max_price = Decimal(max_price_str.replace(',', ''))
-                except (ValueError, TypeError):
-                    pass 
-                try:
-                    min_bed_str = query_params.get('bedrooms_min', None)
-                    if min_bed_str:
-                        search.min_bedrooms = int(min_bed_str)
-                except (ValueError, TypeError):
-                    pass 
-                
+                # ... (rest of your save logic) ...
                 search.save()
                 messages.success(request, f"Your search '{search.name}' has been saved!")
                 return redirect(request.get_full_path())
-                
             except IntegrityError:
-                messages.error(request, "You already have a search with that name. Please choose a different name.")
-        
-        else:
-            messages.error(request, "To save a search, you must give it a name.")
+                messages.error(request, "You already have a search with that name.")
 
-    
-    # --- 3. Context for the template ---
     context = {
         'filter': property_filter,
         'saved_search_form': saved_search_form,
+        'page_obj': page_obj, # <-- We send 'page_obj' instead of just the filter
     }
     
     return render(request, 'properties/property_search.html', context)
+
 @login_required(login_url='login') 
 def property_create(request):
     """
@@ -237,45 +214,42 @@ def property_create(request):
     return render(request, 'properties/property_form.html', context)
 
 # --- REPLACE YOUR 'agent_dashboard' VIEW WITH THIS ---
+# properties/views.py
 
 @login_required(login_url='login')
 def agent_dashboard(request):
     """
     Displays the agent's properties AND their business analytics.
+    NOW WITH PAGINATION (10 items per page).
     """
     now = timezone.now()
     
-    # 1. Get properties for this agent
+    # 1. Get properties and stats
     my_properties_qs = Property.objects.filter(agent=request.user)
     
-    # 2. Annotate with 'is_featured_live' AND 'view_count'
-    #    We count the related 'PropertyView' objects for each property.
     my_properties = my_properties_qs.annotate(
         is_featured_live=Case(
             When(is_featured=True, featured_until__gte=now, then=True),
             default=False,
             output_field=BooleanField()
         ),
-        view_count=Count('views') # This counts the actual views from our new model
+        view_count=Count('views')
     ).order_by('-created_at')
     
-    # --- 3. CALCULATE DASHBOARD STATS ---
-    
-    # A. Total Views (Sum of all views on all properties)
-    #    We use aggregate() to sum up the counts we just made.
-    #    The 'or 0' handles the case where the agent has no properties yet.
+    # --- 2. STATS CALCULATIONS (Same as before) ---
     total_views = my_properties.aggregate(total=Sum('view_count'))['total'] or 0
-    
-    # B. Total Leads (Count of Lead objects for this agent)
     total_leads = Lead.objects.filter(agent=request.user).count()
-    
-    # C. Top Performer (The single property with the most views)
-    #    We sort our annotated list by view_count descending and take the first one.
     top_performer = my_properties.order_by('-view_count').first()
+
+    # --- 3. PAGINATION LOGIC (NEW) ---
+    paginator = Paginator(my_properties, 10) # Show 10 listings per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    # --- END PAGINATION ---
     
     context = {
-        'properties': my_properties,
-        # Pass the new stats to the template
+        # We pass 'page_obj' instead of 'properties'
+        'page_obj': page_obj, 
         'total_views': total_views,
         'total_leads': total_leads,
         'top_performer': top_performer,

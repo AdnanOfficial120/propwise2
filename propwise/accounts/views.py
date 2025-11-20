@@ -19,6 +19,7 @@ from .models import Notification # Make sure Notification is imported
 from .models import AgentRating, Lead, Notification, VisitRequest, LeadStatus # <-- ADD VisitRequest, LeadStatus
 from .forms import AgentRatingForm, LeadForm, VisitRequestForm # <-- ADD VisitRequestForm
 from django.urls import reverse
+from django.views.decorators.http import require_POST
 
 
 
@@ -373,3 +374,57 @@ def schedule_visit_view(request, property_pk):
             
     # Redirect back to the property page
     return redirect('property_detail', pk=property_pk)
+
+
+# edit and delete of lead
+
+# --- 1. EDIT LEAD VIEW ---
+@login_required
+def update_lead_view(request, pk):
+    """
+    Allows an agent to edit a lead (change status, add notes, etc.)
+    """
+    lead = get_object_or_404(Lead, pk=pk)
+    
+    # Security: Ensure the lead belongs to the logged-in agent
+    if lead.agent != request.user:
+        messages.error(request, "You do not have permission to edit this lead.")
+        return redirect('my_leads')
+
+    if request.method == 'POST':
+        # Pass 'agent' to the form so it can filter properties correctly
+        form = LeadForm(request.POST, instance=lead, agent=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Lead updated successfully.")
+            return redirect('my_leads')
+    else:
+        form = LeadForm(instance=lead, agent=request.user)
+
+    context = {
+        'form': form,
+        'lead': lead
+    }
+    return render(request, 'accounts/lead_edit.html', context)
+
+
+# --- 2. DELETE LEAD VIEW ---
+@login_required
+@require_POST # Security: Delete must be a POST request
+def delete_lead_view(request, pk):
+    """
+    Allows an agent to delete a lead.
+    """
+    lead = get_object_or_404(Lead, pk=pk)
+    
+    # Security check
+    if lead.agent != request.user:
+        messages.error(request, "You do not have permission to delete this lead.")
+        return redirect('my_leads')
+
+    lead.delete()
+    messages.success(request, "Lead deleted successfully.")
+    return redirect('my_leads')
+
+
+

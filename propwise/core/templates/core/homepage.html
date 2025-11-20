@@ -49,6 +49,46 @@
         object-fit: cover;
         border-radius: 4px;
     }
+    /* Simple Grid for Categories */
+        .category-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 40px;
+        }
+        
+        .cat-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            text-decoration: none;
+            color: #333;
+            transition: all 0.2s;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        
+        .cat-card:hover {
+            transform: translateY(-3px);
+            border-color: #0066cc;
+            color: #0066cc;
+            box-shadow: 0 4px 10px rgba(0,102,204,0.15);
+        }
+        
+        .cat-icon {
+            font-size: 2em;
+            margin-bottom: 10px;
+            color: #0066cc;
+        }
+        
+        .cat-title {
+            font-weight: bold;
+            font-size: 1.1em;
+        }
 </style>
 
 
@@ -65,6 +105,35 @@
     </form>
 </div>
 
+<h3>Browse by Category</h3>
+    <div class="category-grid">
+        <!-- by category -->
+        <!-- 1. HOUSES -->
+        <!-- Notice the link: ?property_type=house -->
+        <a href="{% url 'property_search' %}?property_type=house" class="cat-card">
+            <i class="fa fa-home cat-icon"></i>
+            <span class="cat-title">Houses</span>
+        </a>
+
+        <!-- 2. PLOTS -->
+        <a href="{% url 'property_search' %}?property_type=plot" class="cat-card">
+            <i class="fa fa-map-o cat-icon"></i>
+            <span class="cat-title">Plots</span>
+        </a>
+
+        <!-- 3. APARTMENTS -->
+        <a href="{% url 'property_search' %}?property_type=apartment" class="cat-card">
+            <i class="fa fa-building cat-icon"></i>
+            <span class="cat-title">Apartments</span>
+        </a>
+
+        <!-- 4. COMMERCIAL -->
+        <a href="{% url 'property_search' %}?property_type=commercial" class="cat-card">
+            <i class="fa fa-briefcase cat-icon"></i>
+            <span class="cat-title">Commercial</span>
+        </a>
+
+    </div>
 
 {% comment %}
 {% endcomment %}
