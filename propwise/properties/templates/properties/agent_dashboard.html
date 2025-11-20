@@ -1,188 +1,363 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Dashboard - PropWise</title>
-    <!-- Add Font Awesome for icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+
+<style>
+    /* --- DASHBOARD CONTAINER --- */
+    .dashboard-container {
+        max-width: 1200px;
+        margin: 40px auto;
+        padding: 0 20px;
+    }
+
+    /* --- HEADER SECTION --- */
+    .dash-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 40px;
+        flex-wrap: wrap;
+        gap: 20px;
+    }
     
-    <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        .container { max-width: 1000px; margin: auto; }
-        h1 { margin-bottom: 20px; }
-        
-        /* --- NEW STATS BAR STYLES --- */
-        .stats-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            margin-bottom: 40px;
-        }
-        .stat-card {
-            background: #fff;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 20px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    .dash-title {
+        font-family: 'Playfair Display', serif;
+        font-size: 2.5rem;
+        color: var(--pw-navy);
+        margin-bottom: 5px;
+    }
+    .dash-subtitle { color: #64748b; font-size: 1rem; }
+
+    .btn-add-new {
+        background: var(--pw-navy);
+        color: white;
+        padding: 12px 25px;
+        border-radius: 50px;
+        text-decoration: none;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        transition: 0.3s;
+        box-shadow: 0 4px 15px rgba(15, 23, 42, 0.2);
+    }
+    .btn-add-new:hover {
+        background: var(--pw-gold);
+        color: var(--pw-navy);
+        transform: translateY(-2px);
+    }
+
+    /* --- STATS GRID --- */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 25px;
+        margin-bottom: 50px;
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: 16px;
+        padding: 25px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.04);
+        border: 1px solid #f1f5f9;
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        transition: 0.3s;
+    }
+    .stat-card:hover { transform: translateY(-5px); border-color: rgba(212, 175, 55, 0.3); }
+
+    .stat-icon {
+        width: 60px; height: 60px;
+        border-radius: 12px;
+        background: #f8fafc;
+        color: var(--pw-gold);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.8rem;
+    }
+    
+    .stat-info h3 {
+        font-size: 2rem;
+        color: var(--pw-navy);
+        font-family: 'Poppins', sans-serif;
+        font-weight: 700;
+        line-height: 1;
+        margin-bottom: 5px;
+    }
+    .stat-info p { color: #94a3b8; font-size: 0.9rem; margin: 0; font-weight: 500; }
+
+    /* --- LISTINGS PANEL --- */
+    .panel {
+        background: white;
+        border-radius: 16px;
+        border: 1px solid #f1f5f9;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.03);
+        overflow: hidden;
+    }
+    
+    .panel-header {
+        padding: 25px;
+        border-bottom: 1px solid #f1f5f9;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .panel-title { font-size: 1.2rem; font-weight: 700; color: var(--pw-navy); }
+
+    /* Listing Row Styles */
+    .listing-row {
+        display: grid;
+        grid-template-columns: 80px 2fr 1fr 1fr 1.5fr; /* Img | Info | Price | Stats | Actions */
+        align-items: center;
+        padding: 20px 25px;
+        border-bottom: 1px solid #f1f5f9;
+        gap: 20px;
+        transition: 0.2s;
+    }
+    .listing-row:last-child { border-bottom: none; }
+    .listing-row:hover { background: #fdfdfd; }
+
+    /* Sold State */
+    .listing-row.sold { opacity: 0.7; background: #f8fafc; }
+
+    .listing-img {
+        width: 80px; height: 80px;
+        border-radius: 10px;
+        object-fit: cover;
+        background: #eee;
+    }
+
+    .listing-info h4 {
+        font-size: 1.1rem;
+        color: var(--pw-navy);
+        margin-bottom: 5px;
+        font-weight: 600;
+    }
+    .listing-info h4 a { text-decoration: none; color: inherit; }
+    .listing-info h4 a:hover { color: var(--pw-gold); }
+    
+    .listing-badges { display: flex; gap: 8px; margin-top: 5px; }
+    .badge-status {
+        font-size: 0.7rem;
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-weight: 700;
+        text-transform: uppercase;
+    }
+    .bg-active { background: #ecfdf5; color: #059669; }
+    .bg-sold { background: #fef2f2; color: #dc2626; }
+    .bg-featured { background: #fffbeb; color: #d97706; border: 1px solid #fcd34d; }
+
+    .listing-price { font-weight: 700; color: var(--pw-gold); }
+
+    .listing-stats {
+        font-size: 0.9rem; color: #64748b;
+        display: flex; align-items: center; gap: 5px;
+    }
+
+    /* Actions */
+    .listing-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+    }
+
+    .btn-action {
+        padding: 8px 15px;
+        border-radius: 8px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        transition: 0.2s;
+    }
+
+    .btn-edit { background: #eff6ff; color: #3b82f6; }
+    .btn-edit:hover { background: #3b82f6; color: white; }
+    
+    .btn-boost { background: #ecfdf5; color: #059669; }
+    .btn-boost:hover { background: #059669; color: white; }
+
+    .btn-sold { background: #fef3c7; color: #d97706; }
+    .btn-sold:hover { background: #d97706; color: white; }
+
+    .btn-delete { background: white; color: #ef4444; border: 1px solid #fee2e2; }
+    .btn-delete:hover { background: #ef4444; color: white; border-color: #ef4444; }
+
+    /* Pagination */
+    .pagination { padding: 20px; text-align: center; border-top: 1px solid #f1f5f9; }
+    .page-link {
+        display: inline-block; padding: 5px 15px;
+        background: white; border: 1px solid #e2e8f0;
+        border-radius: 6px; margin: 0 5px; font-size: 0.9rem;
+    }
+
+    /* Responsive Table */
+    @media (max-width: 900px) {
+        .listing-row {
+            grid-template-columns: 1fr; /* Stack everything */
             text-align: center;
+            gap: 15px;
+            position: relative;
         }
-        .stat-card h3 { margin: 0; font-size: 2.5em; color: #0056b3; }
-        .stat-card p { margin: 5px 0 0 0; color: #666; font-weight: bold; }
-        .stat-icon { font-size: 2em; color: #ddd; margin-bottom: 10px; }
-        /* --- END STATS STYLES --- */
+        .listing-img { margin: 0 auto; width: 100%; height: 200px; }
+        .listing-actions { justify-content: center; flex-wrap: wrap; }
+        .listing-badges { justify-content: center; }
+    }
+</style>
 
-        .property-row { 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            padding: 15px; 
-            border: 1px solid #ccc; 
-            border-radius: 8px; 
-            margin-bottom: 10px; 
-            background: #fff;
-        }
-        .property-row img { max-width: 80px; border-radius: 4px; margin-right: 15px; }
-        .property-info { display: flex; align-items: center; }
-        
-        /* View Counter Style */
-        .view-badge {
-            background: #eee;
-            padding: 3px 8px;
-            border-radius: 12px;
-            font-size: 0.85em;
-            color: #555;
-            margin-top: 5px;
-            display: inline-block;
-        }
+<div class="dashboard-container">
 
-        .actions { display: flex; align-items: center; gap: 8px; }
-        .actions a, .actions button {
-            display: inline-block;
-            padding: 8px 12px;
-            text-decoration: none;
-            border-radius: 4px;
-            font-size: 0.9em;
-            color: white;
-            white-space: nowrap;
-            border: none;
-            cursor: pointer;
-            font-family: Arial, sans-serif;
-        }
-        .btn-edit { background-color: #007bff; }
-        .btn-delete { background-color: #dc3545; }
-        .btn-boost { background-color: #28a745; }
-        .btn-sold { background-color: #ffc107; color: #212529; }
-        .status-sold { font-weight: bold; color: #dc3545; font-size: 1.1em; padding: 8px 12px; }
-        .status-featured { font-weight: bold; color: #28a745; font-size: 0.9em; }
-        .actions form { margin: 0; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <p><a href="/"> &larr; Back to Homepage</a></p>
-        <h1>Agent Dashboard</h1>
+    <!-- 1. HEADER -->
+    <div class="dash-header">
+        <div>
+            <h1 class="dash-title">Dashboard</h1>
+            <p class="dash-subtitle">Welcome back, <strong>{{ user.username }}</strong>. Here is your performance overview.</p>
+        </div>
+        <a href="{% url 'property_create' %}" class="btn-add-new">
+            <i class="fa-solid fa-plus"></i> Create Listing
+        </a>
+    </div>
 
-        {% comment %} --- START: NEW STATS BAR --- {% endcomment %}
-        <div class="stats-container">
-            <!-- Card 1: Total Views -->
-            <div class="stat-card">
-                <div class="stat-icon"><i class="fa fa-eye"></i></div>
+    <!-- 2. STATS CARDS -->
+    <div class="stats-grid">
+        <!-- Views Card -->
+        <div class="stat-card">
+            <div class="stat-icon" style="background:#eff6ff; color:#3b82f6;">
+                <i class="fa-regular fa-eye"></i>
+            </div>
+            <div class="stat-info">
                 <h3>{{ total_views }}</h3>
-                <p>Total Listing Views</p>
-            </div>
-
-            <!-- Card 2: Total Leads -->
-            <div class="stat-card">
-                <div class="stat-icon"><i class="fa fa-users"></i></div>
-                <h3>{{ total_leads }}</h3>
-                <p>Total Leads Received</p>
-            </div>
-
-            <!-- Card 3: Top Performer -->
-            <div class="stat-card">
-                <div class="stat-icon"><i class="fa fa-trophy"></i></div>
-                {% if top_performer %}
-                    <h3 style="font-size: 1.5em; margin-top: 10px;">
-                        <a href="{% url 'property_detail' pk=top_performer.pk %}" style="text-decoration: none; color: #0056b3;">
-                            {{ top_performer.title|truncatechars:15 }}
-                        </a>
-                    </h3>
-                    <p>{{ top_performer.view_count }} Views</p>
-                {% else %}
-                    <p style="margin-top: 15px;">No data yet</p>
-                {% endif %}
+                <p>Total Views</p>
             </div>
         </div>
-        {% comment %} --- END: NEW STATS BAR --- {% endcomment %}
 
-
-        <h2>My Property Listings</h2>
-
-        {% for prop in page_obj %}
-            <div class="property-row" {% if prop.status == 'sold' %}style="background: #f9f9f9; opacity: 0.8;"{% endif %}>
-                 
-                <div class="property-info">
-                    {% if prop.main_image %}
-                        <img src="{{ prop.main_image.url }}" alt="">
-                    {% endif %}
-                    <span>
-                        <strong>{{ prop.title }}</strong><br>
-                        <small>Price: PKR {{ prop.price }}</small><br>
-                        
-                        <!-- Show view count for each individual property -->
-                        <span class="view-badge">
-                            <i class="fa fa-eye"></i> {{ prop.view_count }} Views
-                        </span>
-                    </span>
-                </div>
-                
-                <div class="actions">
-                    {% if prop.status == 'active' %}
-                        {% if prop.is_featured_live %}
-                            <span class="status-featured">⭐ Featured</span>
-                        {% else %}
-                            <a href="{% url 'boost_listing_info' %}" class="btn-boost">Boost</a>
-                        {% endif %}
-
-                        <form action="{% url 'mark_as_sold' pk=prop.pk %}" method="POST" onsubmit="return confirm('Mark as sold?');">
-                            {% csrf_token %}
-                            <button type="submit" class="btn-sold">Sold</button>
-                        </form>
-                        
-                        <a href="{% url 'property_update' pk=prop.pk %}" class="btn-edit">Edit</a>
-                        <a href="{% url 'property_delete' pk=prop.pk %}" class="btn-delete">Delete</a>
-                    {% elif prop.status == 'sold' %}
-                        <span class="status-sold">SOLD</span>
-                    {% else %}
-                        <span class="status-expired">{{ prop.get_status_display }}</span>
-                    {% endif %}
-                </div>
+        <!-- Leads Card -->
+        <div class="stat-card">
+            <div class="stat-icon" style="background:#ecfdf5; color:#059669;">
+                <i class="fa-solid fa-user-group"></i>
             </div>
-        {% empty %}
-            <p>You have not posted any properties yet.</p>
-            <p><a href="{% url 'property_create' %}">Create your first listing now!</a></p>
-        {% endfor %}
+            <div class="stat-info">
+                <h3>{{ total_leads }}</h3>
+                <p>Potential Leads</p>
+            </div>
+        </div>
 
-
-        <!-- Pagination Controls -->
-        <div style="margin-top: 20px; text-align: center;">
-            <span class="step-links">
-                {% if page_obj.has_previous %}
-                    <a href="?page=1">&laquo; First</a>
-                    <a href="?page={{ page_obj.previous_page_number }}">Previous</a>
+        <!-- Top Listing Card -->
+        <div class="stat-card">
+            <div class="stat-icon" style="background:#fffbeb; color:#d97706;">
+                <i class="fa-solid fa-trophy"></i>
+            </div>
+            <div class="stat-info">
+                {% if top_performer %}
+                    <h3 style="font-size:1.2rem; margin-bottom:5px;">{{ top_performer.view_count }} Views</h3>
+                    <p style="font-size:0.8rem;">Top: <a href="{% url 'property_detail' pk=top_performer.pk %}" style="color:inherit;">{{ top_performer.title|truncatechars:15 }}</a></p>
+                {% else %}
+                    <h3>-</h3>
+                    <p>No data yet</p>
                 {% endif %}
-
-                <span class="current" style="margin: 0 15px;">
-                    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
-                </span>
-
-                {% if page_obj.has_next %}
-                    <a href="?page={{ page_obj.next_page_number }}">Next</a>
-                    <a href="?page={{ page_obj.paginator.num_pages }}">Last &raquo;</a>
-                {% endif %}
-            </span>
+            </div>
         </div>
     </div>
-</body>
-</html>
+
+    <!-- 3. LISTINGS TABLE -->
+    <div class="panel">
+        <div class="panel-header">
+            <div class="panel-title">My Properties</div>
+            <div style="font-size:0.9rem; color:#64748b;">{{ page_obj.paginator.count }} Total</div>
+        </div>
+
+        <!-- Listings Loop -->
+        {% for prop in page_obj %}
+        <div class="listing-row {% if prop.status == 'sold' %}sold{% endif %}">
+            
+            <!-- Image -->
+            {% if prop.main_image %}
+                <img src="{{ prop.main_image.url }}" alt="" class="listing-img">
+            {% else %}
+                <div class="listing-img" style="display:flex; align-items:center; justify-content:center; color:#ccc;"><i class="fa-solid fa-image"></i></div>
+            {% endif %}
+
+            <!-- Info -->
+            <div class="listing-info">
+                <h4><a href="{% url 'property_detail' pk=prop.pk %}">{{ prop.title }}</a></h4>
+                <div class="listing-badges">
+                    {% if prop.status == 'active' %}
+                        <span class="badge-status bg-active">Active</span>
+                    {% elif prop.status == 'sold' %}
+                        <span class="badge-status bg-sold">Sold</span>
+                    {% else %}
+                        <span class="badge-status">{{ prop.status }}</span>
+                    {% endif %}
+
+                    {% if prop.is_featured_live %}
+                        <span class="badge-status bg-featured"><i class="fa-solid fa-star"></i> Featured</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Price -->
+            <div class="listing-price">PKR {{ prop.price }}</div>
+
+            <!-- Stats -->
+            <div class="listing-stats">
+                <i class="fa-regular fa-eye"></i> {{ prop.view_count }} Views
+            </div>
+
+            <!-- Actions -->
+            <div class="listing-actions">
+                {% if prop.status == 'active' %}
+                    {% if not prop.is_featured_live %}
+                        <a href="{% url 'boost_listing_info' %}" class="btn-action btn-boost" title="Boost Listing"><i class="fa-solid fa-rocket"></i></a>
+                    {% endif %}
+                    
+                    <a href="{% url 'property_update' pk=prop.pk %}" class="btn-action btn-edit" title="Edit"><i class="fa-solid fa-pen"></i></a>
+                    
+                    <!-- Mark Sold Form -->
+                    <form action="{% url 'mark_as_sold' pk=prop.pk %}" method="POST" style="margin:0;" onsubmit="return confirm('Are you sure this property is sold?');">
+                        {% csrf_token %}
+                        <button type="submit" class="btn-action btn-sold" title="Mark as Sold"><i class="fa-solid fa-check"></i> Sold</button>
+                    </form>
+
+                    <a href="{% url 'property_delete' pk=prop.pk %}" class="btn-action btn-delete" title="Delete"><i class="fa-solid fa-trash"></i></a>
+                
+                {% else %}
+                    <span style="font-weight:bold; color:#dc2626; font-size:0.9rem;">SOLD</span>
+                    <a href="{% url 'property_delete' pk=prop.pk %}" class="btn-action btn-delete" title="Delete"><i class="fa-solid fa-trash"></i></a>
+                {% endif %}
+            </div>
+
+        </div>
+        {% empty %}
+        <div style="padding:50px; text-align:center; color:#94a3b8;">
+            <i class="fa-solid fa-clipboard-list" style="font-size:3rem; margin-bottom:15px;"></i>
+            <p>You haven't listed any properties yet.</p>
+            <a href="{% url 'property_create' %}" style="color:var(--pw-navy); font-weight:bold;">Get Started Now</a>
+        </div>
+        {% endfor %}
+
+        <!-- Pagination -->
+        {% if is_paginated %}
+        <div class="pagination">
+            {% if page_obj.has_previous %}
+                <a href="?page=1" class="page-link">&laquo; First</a>
+                <a href="?page={{ page_obj.previous_page_number }}" class="page-link">Prev</a>
+            {% endif %}
+            <span style="margin:0 10px; font-weight:bold;">Page {{ page_obj.number }}</span>
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}" class="page-link">Next</a>
+                <a href="?page={{ page_obj.paginator.num_pages }}" class="page-link">Last &raquo;</a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+
+{% endblock %}

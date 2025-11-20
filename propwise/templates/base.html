@@ -1,202 +1,443 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Welcome to PropWise - Your Real Estate Partner</title>
-    
-    <!-- 1. ADD FONT AWESOME (Required for the Bell Icon) -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <title>PropWise | Smarter Real Estate</title>
+
+    <!-- 1. PREMIUM FONTS -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+    <!-- 2. ICONS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        h1 { color: #333; }
-        
-        /* Basic Layout Styles */
-        .property-list { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
-        .property-card { border: 1px solid #ccc; padding: 15px; border-radius: 8px; }
-        .property-card img { max-width: 100%; height: auto; border-radius: 4px; }
+        /* --- 1. LUXURY THEME VARIABLES --- */
+        :root {
+            --pw-navy: #0F172A;
+            --pw-gold: #D4AF37;
+            --pw-gold-hover: #B5952F;
+            --pw-gold-glow: rgba(212, 175, 55, 0.5);
+            --pw-bg: #ffffff; /* Pure White for seamless blending */
+            --pw-text-body: #334155;
+            --pw-light-gray: #F8FAFC;
+        }
 
-        /* --- NOTIFICATION BELL STYLES (Necessary for the feature to work) --- */
-        .notif-container {
-            position: relative;
-            display: inline-block;
-            margin-left: 15px;
-            cursor: pointer;
-            vertical-align: middle;
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--pw-light-gray);
+            color: var(--pw-text-body);
+            padding-top: 120px; /* Push content down for the taller navbar */
+            overflow-x: hidden;
         }
-        .notif-icon {
-            font-size: 1.2em;
-            color: #555;
-        }
-        .notif-badge {
-            position: absolute;
-            top: -8px;
-            right: -8px;
-            background: #dc3545; /* Red */
-            color: white;
-            border-radius: 50%;
-            padding: 2px 6px;
-            font-size: 0.7em;
-            font-weight: bold;
-        }
-        .notif-dropdown {
-            display: none; /* Hidden by default */
-            position: absolute;
-            right: 0;
-            top: 30px;
-            background: white;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            width: 300px;
+
+        a { text-decoration: none; color: inherit; transition: all 0.3s ease; }
+
+        /* --- 2. PREMIUM NAVBAR --- */
+        .navbar {
+            position: fixed;
+            top: 0; left: 0; width: 100%;
+            height: 120px; /* TALLER height for bigger logo */
+            background: #ffffff; /* Pure white to hide logo box */
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 4%;
             z-index: 1000;
-            text-align: left;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            box-shadow: 0 10px 40px -15px rgba(0,0,0,0.05); /* Soft luxury shadow */
+            animation: slideDown 0.5s ease-out;
         }
-        .notif-header {
-            padding: 10px 15px;
-            border-bottom: 1px solid #eee;
-            font-weight: bold;
-            background: #f9f9f9;
-            border-radius: 8px 8px 0 0;
+
+        @keyframes slideDown {
+            from { transform: translateY(-100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
         }
-        .notif-item {
-            padding: 12px 15px;
-            border-bottom: 1px solid #eee;
-            font-size: 0.9em;
-            display: block;
-            color: #333;
+
+        /* --- LEFT: LOGO & TAGLINE --- */
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 18px; /* Space between image and text */
             text-decoration: none;
         }
-        .notif-item:hover { background: #f0f8ff; }
-        .notif-empty { padding: 20px; text-align: center; color: #777; font-size: 0.9em; }
-        /* --- END NOTIFICATION STYLES --- */
+
+        .nav-brand img {
+            height: 85px; /* MUCH BIGGER LOGO */
+            width: auto;
+            object-fit: contain;
+            mix-blend-mode: multiply; /* Hides white background */
+            display: block;
+            transition: transform 0.3s ease;
+        }
+        .nav-brand:hover img { transform: scale(1.05); }
+
+        .brand-text-col {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .brand-main {
+            font-family: 'Playfair Display', serif;
+            font-size: 2rem; /* Large Title */
+            font-weight: 800;
+            color: var(--pw-navy);
+            line-height: 0.9;
+        }
+        .brand-main span { color: var(--pw-gold); }
+
+        .brand-tagline {
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.85rem;
+            color: #64748b; /* Softer gray */
+            font-weight: 400;
+            letter-spacing: 1.5px; /* Elegant spacing */
+            text-transform: uppercase;
+            margin-top: 4px;
+        }
+
+        /* --- CENTER: LINKS --- */
+        .nav-center {
+            display: flex;
+            gap: 40px;
+        }
+        
+        .nav-link {
+            font-size: 1rem;
+            font-weight: 500;
+            color: #64748b;
+            position: relative;
+            padding: 10px 0;
+        }
+
+        .nav-link:hover { color: var(--pw-navy); }
+
+        /* Animated Gold Underline */
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 3px;
+            bottom: 5px;
+            left: 0;
+            background-color: var(--pw-gold);
+            transition: width 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+        .nav-link:hover::after { width: 100%; }
+
+        /* --- RIGHT: ACTIONS --- */
+        .nav-right {
+            display: flex;
+            align-items: center;
+            gap: 25px;
+        }
+
+        /* Icons (Inbox, Bell) */
+        .nav-icon {
+            font-size: 1.4rem;
+            color: var(--pw-navy);
+            cursor: pointer;
+            position: relative;
+            transition: 0.3s;
+        }
+        .nav-icon:hover { 
+            color: var(--pw-gold); 
+            transform: translateY(-2px);
+        }
+        
+        .badge {
+            position: absolute; top: -5px; right: -8px;
+            background: #ef4444; color: white;
+            font-size: 0.7rem; font-weight: bold;
+            min-width: 18px; height: 18px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            border: 2px solid white;
+        }
+
+        /* The Gold "Add Property" Button */
+        .btn-create {
+            background: linear-gradient(135deg, var(--pw-gold) 0%, #EBC150 100%);
+            color: white;
+            padding: 12px 30px;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 1rem;
+            box-shadow: 0 4px 15px var(--pw-gold-glow);
+            display: flex; align-items: center; gap: 10px;
+            transition: all 0.3s ease;
+        }
+        .btn-create:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px var(--pw-gold-glow);
+        }
+
+        /* --- USER PROFILE PICTURE CSS --- */
+        .user-menu-container { position: relative; }
+        
+        .user-avatar {
+            width: 50px; height: 50px;
+            background: var(--pw-navy);
+            color: var(--pw-gold);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 600;
+            font-size: 1.2rem;
+            cursor: pointer;
+            border: 3px solid rgba(212, 175, 55, 0.2);
+            transition: all 0.3s;
+            overflow: hidden; /* IMPORTANT: Crops the image to a circle */
+        }
+
+        .user-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* Ensures the photo fills the circle without stretching */
+        }
+
+        .user-avatar:hover {
+            border-color: var(--pw-gold);
+            box-shadow: 0 0 15px rgba(15, 23, 42, 0.15);
+            transform: scale(1.05);
+        }
+
+        /* Dropdown Menus */
+        .dropdown-menu {
+            display: none;
+            position: absolute;
+            top: 70px; right: 0;
+            width: 280px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.08);
+            border: 1px solid #f1f5f9;
+            overflow: hidden;
+            flex-direction: column;
+            animation: fadeUp 0.2s ease-out;
+            z-index: 1100;
+        }
+        .dropdown-menu.active { display: flex; }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .dropdown-item {
+            padding: 15px 20px;
+            font-size: 0.95rem;
+            color: var(--pw-navy);
+            border-bottom: 1px solid #f8fafc;
+            display: flex; align-items: center; gap: 12px;
+            transition: background 0.2s;
+        }
+        .dropdown-item:hover { background: #f8fafc; color: var(--pw-gold); }
+        
+        /* Hamburger (Mobile) */
+        .hamburger { display: none; font-size: 1.8rem; cursor: pointer; color: var(--pw-navy); }
+
+        /* --- RESPONSIVE --- */
+        @media (max-width: 1200px) {
+            .nav-center { display: none; }
+            .btn-create { display: none; }
+            .hamburger { display: block; }
+            .nav-brand img { height: 60px; } /* Slightly smaller on tablet */
+            .brand-tagline { font-size: 0.7rem; }
+        }
+        
+        /* Message Alerts */
+        .msg-container { max-width: 1200px; margin: 20px auto; padding: 0 20px; }
+        .alert { padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid; }
+        .alert-success { background: #ecfdf5; color: #065f46; border-color: #10b981; }
+        .alert-error { background: #fef2f2; color: #991b1b; border-color: #ef4444; }
     </style>
 </head>
 <body>
 
-    <header style="display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; background: #f4f4f4; border-radius: 8px; margin-bottom: 20px;">
-       <div>
-        <a href="{% url 'homepage' %}" style="text-decoration: none; color: inherit;">
-            <strong>PropWise</strong>
-        </a>
-    </div>
-        <nav style="display: flex; align-items: center;">
-            {% if user.is_authenticated %}
-            <span>
-                Welcome, <strong>{{ user.username }}</strong>!
-            </span>
-
-            <!-- === START: NOTIFICATION BELL === -->
-            <div class="notif-container" onclick="toggleNotifs()">
-                <i class="fa fa-bell notif-icon"></i>
-                
-                {% if notification_count > 0 %}
-                    <span class="notif-badge">{{ notification_count }}</span>
-                {% endif %}
-                
-                <div class="notif-dropdown" id="notif-dropdown">
-                    <div class="notif-header">Notifications</div>
-                    
-                    {% if notification_list %}
-                        {% for notif in notification_list %}
-                            <a href="{% url 'mark_notification_read' pk=notif.pk %}" class="notif-item">
-                                {{ notif.message }}
-                                <br>
-                                <span style="font-size: 0.8em; color: #888;">
-                                    {{ notif.created_at|timesince }} ago
-                                </span>
-                            </a>
-                        {% endfor %}
-                    {% else %}
-                        <div class="notif-empty">No new notifications</div>
-                    {% endif %}
-                </div>
+    <!-- NAVBAR -->
+    <nav class="navbar">
+        <!-- 1. LOGO SECTION -->
+        <a href="{% url 'homepage' %}" class="nav-brand">
+            <!-- Image -->
+            <img src="{% static 'images/logo.png' %}" alt="PropWise">
+            
+            <!-- Text Column -->
+            <div class="brand-text-col">
+                <div class="brand-main">Prop<span>Wise</span></div>
+                <div class="brand-tagline">Smarter Real Estate</div>
             </div>
-            <!-- === END: NOTIFICATION BELL === -->
+        </a>
 
-            {% if user.is_agent %}
-                <a href="{% url 'agent_dashboard' %}" style="margin-left: 15px;">My Dashboard</a>
-                <a href="{% url 'my_leads' %}" style="margin-left: 15px;">My Leads</a>
-                <a href="{% url 'property_create' %}" style="margin-left: 15px;">+ Create Listing</a>
-                
-                <!-- Smart Profile Link for Agents -->
-                <a href="{% url 'agent_profile' pk=user.pk %}" style="margin-left: 15px;">My Public Profile</a>
-                <a href="{% url 'profile' %}" style="margin-left: 15px;">(Edit Profile)</a>
+        <!-- 2. CENTER LINKS -->
+        <div class="nav-center">
+            <a href="{% url 'homepage' %}" class="nav-link">Home</a>
+            <a href="{% url 'all_cities' %}" class="nav-link">Locations</a>
+            <a href="{% url 'map_search' %}" class="nav-link">Map Search</a>
+            <a href="{% url 'agent_directory' %}" class="nav-link">Find Agent</a>
+            <a href="{% url 'calculator' %}" class="nav-link">Calculator</a>
+        </div>
+
+        <!-- 3. RIGHT ACTIONS -->
+        <div class="nav-right">
+            
+            {% if user.is_authenticated %}
+                <!-- Inbox -->
+                <a href="{% url 'chat_inbox' %}" class="nav-icon" title="Messages">
+                    <i class="fa-regular fa-envelope"></i>
+                </a>
+
+                <!-- Notifications -->
+                <div class="nav-icon" onclick="toggleID('notif-drop')" title="Notifications">
+                    <i class="fa-regular fa-bell"></i>
+                    {% if notification_count > 0 %} 
+                        <span class="badge">{{ notification_count }}</span> 
+                    {% endif %}
+                    
+                    <!-- Notif Dropdown -->
+                    <div class="dropdown-menu" id="notif-drop" style="width: 320px;">
+                        <div class="dropdown-item" style="background:var(--pw-navy); color:white; font-weight:600;">
+                            Notifications
+                        </div>
+                        {% if notification_list %}
+                            {% for notif in notification_list %}
+                                <a href="{% url 'mark_notification_read' pk=notif.pk %}" class="dropdown-item">
+                                    <div style="display:flex; flex-direction:column;">
+                                        <span>{{ notif.message }}</span>
+                                        <small style="color:#94a3b8; font-size:0.75rem;">{{ notif.created_at|timesince }} ago</small>
+                                    </div>
+                                </a>
+                            {% endfor %}
+                        {% else %}
+                            <div class="dropdown-item" style="justify-content:center; color:#94a3b8;">No new alerts</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Button -->
+                {% if user.is_agent %}
+                    <a href="{% url 'property_create' %}" class="btn-create">
+                        <i class="fa-solid fa-plus"></i> Add Property
+                    </a>
+                {% endif %}
+
+                <!-- PROFILE PICTURE CIRCLE -->
+                <div class="user-menu-container">
+                    <div class="user-avatar" onclick="toggleID('user-drop')">
+                        
+                        <!-- CHECK IF USER HAS A PROFILE PICTURE -->
+                        {% if user.profile_picture %}
+                            <img src="{{ user.profile_picture.url }}" alt="{{ user.username }}">
+                        {% else %}
+                            <!-- FALLBACK: Premium User Icon -->
+                            <i class="fa-regular fa-user"></i>
+                        {% endif %}
+                        
+                    </div>
+
+                    <!-- Profile Dropdown -->
+                    <div class="dropdown-menu" id="user-drop">
+                        <div class="dropdown-item" style="background:#f8fafc; font-weight:600; color:var(--pw-navy);">
+                            Hello, {{ user.username }}
+                        </div>
+                        
+                        {% if user.is_agent %}
+                            <a href="{% url 'agent_dashboard' %}" class="dropdown-item"><i class="fa-solid fa-chart-pie"></i> Dashboard</a>
+                            <a href="{% url 'my_leads' %}" class="dropdown-item"><i class="fa-solid fa-user-group"></i> Leads</a>
+                            <a href="{% url 'agent_profile' pk=user.pk %}" class="dropdown-item"><i class="fa-regular fa-id-card"></i> Public Profile</a>
+                        {% else %}
+                            <a href="{% url 'saved_properties' %}" class="dropdown-item"><i class="fa-regular fa-heart"></i> Saved Homes</a>
+                        {% endif %}
+
+                        <a href="{% url 'profile' %}" class="dropdown-item"><i class="fa-solid fa-sliders"></i> Settings</a>
+                        
+                        <form action="{% url 'logout' %}" method="post" style="width:100%;">
+                            {% csrf_token %}
+                            <button type="submit" class="dropdown-item" style="width:100%; border:none; background:none; cursor:pointer; color:#ef4444;">
+                                <i class="fa-solid fa-arrow-right-from-bracket"></i> Log Out
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
             {% else %}
-                <a href="{% url 'saved_properties' %}" style="margin-left: 15px;">My Saved Properties</a>
-                <a href="{% url 'profile' %}" style="margin-left: 15px;">My Profile</a>
+                <a href="{% url 'login' %}" class="nav-link">Log In</a>
+                <a href="{% url 'signup' %}" class="btn-create">Sign Up</a>
             {% endif %}
-            
-            <a href="{% url 'chat_inbox' %}" style="margin-left: 15px;">Inbox</a>
-            
-            <!-- RESTORED LINKS -->
-            <a href="{% url 'all_cities' %}" style="margin-left: 15px;">Locations</a>
-            <a href="{% url 'map_search' %}" style="margin-left: 15px;">Map Search</a>
-            <a href="{% url 'calculator' %}" style="margin-left: 15px;">Calculator</a>
-            <a href="{% url 'agent_directory' %}" style="margin-left: 15px;">Find an Agent</a>
 
-            <form action="{% url 'logout' %}" method="post" style="display: inline; margin-left: 15px;">
-                {% csrf_token %}
-                <button type="submit" style="
-                    background: none;
-                    border: none;
-                    color: #0066cc; 
-                    cursor: pointer;
-                    text-decoration: underline;
-                    padding: 0;
-                    font-size: inherit; 
-                    font-family: inherit;
-                ">Log Out</button>
-            </form>
-            
-            {% else %}
-                <!-- Logged Out Links -->
-                <a href="{% url 'agent_directory' %}" style="margin-left: 15px;">Find an Agent</a>
-                <a href="{% url 'all_cities' %}" style="margin-left: 15px;">Locations</a>
-                <a href="{% url 'map_search' %}" style="margin-left: 15px;">Map Search</a>
-                <a href="{% url 'calculator' %}" style="margin-left: 15px;">Calculator</a>
-                <a href="{% url 'login' %}">Log In</a>
-                <a href="{% url 'signup' %}" style="margin-left: 15px;">Sign Up</a>
-            {% endif %}
-        </nav>
-    </header>
+            <!-- Hamburger -->
+            <div class="hamburger" onclick="toggleID('mobile-menu')">
+                <i class="fa-solid fa-bars"></i>
+            </div>
+        </div>
+    </nav>
 
-    {% comment %} This is the Message Block {% endcomment %}
-    <div class="container" style="margin-top: 20px;">
+    <!-- MOBILE MENU (Hidden by default) -->
+    <div id="mobile-menu" style="display:none; position:fixed; top:120px; left:0; width:100%; background:white; padding:20px; box-shadow:0 10px 20px rgba(0,0,0,0.1); z-index:999;">
+        <a href="{% url 'homepage' %}" class="dropdown-item">Home</a>
+        <a href="{% url 'all_cities' %}" class="dropdown-item">Locations</a>
+        <a href="{% url 'map_search' %}" class="dropdown-item">Map Search</a>
+        <a href="{% url 'calculator' %}" class="dropdown-item">Calculator</a>
+        {% if not user.is_authenticated %}
+            <a href="{% url 'login' %}" class="dropdown-item">Log In</a>
+            <a href="{% url 'signup' %}" class="dropdown-item" style="color:var(--pw-gold); font-weight:bold;">Sign Up</a>
+        {% endif %}
+    </div>
+
+    <!-- MESSAGES BLOCK -->
+    <div class="msg-container">
         {% if messages %}
             {% for message in messages %}
-                <div class="alert alert-{{ message.tags }}" style="padding: 15px; background: #d4edda; color: #155724; border: 1px solid #c3e6cb; border-radius: 4px; margin-bottom: 10px;">
+                <div class="alert alert-{{ message.tags }}">
                     {{ message }}
                 </div>
             {% endfor %}
         {% endif %}
     </div>
 
+    <!-- CONTENT INJECTION -->
     {% block content %}
-    {% endblock content %}
+    {% endblock %}
 
-    <!-- JAVASCRIPT FOR THE NOTIFICATION DROPDOWN -->
+    <!-- SCRIPTS -->
     <script>
-        function toggleNotifs() {
-            var dropdown = document.getElementById("notif-dropdown");
-            if (dropdown.style.display === "block") {
-                dropdown.style.display = "none";
+        function toggleID(id) {
+            const el = document.getElementById(id);
+            // Close others
+            ['notif-drop', 'user-drop', 'mobile-menu'].forEach(other => {
+                if (other !== id) {
+                    const x = document.getElementById(other);
+                    if(x) { x.style.display = 'none'; x.classList.remove('active'); }
+                }
+            });
+
+            // Toggle target
+            if (el.style.display === 'flex' || el.style.display === 'block') {
+                el.style.display = 'none';
+                el.classList.remove('active');
             } else {
-                dropdown.style.display = "block";
+                el.style.display = (id === 'mobile-menu') ? 'block' : 'flex';
+                el.classList.add('active');
             }
         }
-        
-        // Close the dropdown if the user clicks outside of it
-        window.onclick = function(event) {
-            if (!event.target.matches('.notif-container') && !event.target.matches('.notif-icon') && !event.target.matches('.notif-badge')) {
-                var dropdown = document.getElementById("notif-dropdown");
-                if (dropdown && dropdown.style.display === "block") {
-                    dropdown.style.display = "none";
-                }
+
+        // Close on outside click
+        window.onclick = function(e) {
+            if (!e.target.closest('.nav-icon') && 
+                !e.target.closest('.user-menu-container') && 
+                !e.target.closest('.hamburger') && 
+                !e.target.closest('#mobile-menu')) {
+                
+                document.getElementById('user-drop').style.display = 'none';
+                document.getElementById('notif-drop').style.display = 'none';
+                document.getElementById('mobile-menu').style.display = 'none';
             }
         }
     </script>
-
 </body>
 </html>

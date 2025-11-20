@@ -1,31 +1,214 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Sign Up - PropWise</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        form { max-width: 500px; margin: auto; padding: 20px; border: 1px solid #ccc; border-radius: 8px; }
-        form p { display: grid; grid-template-columns: 1fr 2fr; gap: 10px; align-items: center; }
-        form label { font-weight: bold; }
-        form input, form select { padding: 8px; width: 100%; box-sizing: border-box; }
-        button { background-color: #007bff; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; }
-    </style>
-</head>
-<body>
+{% extends 'base.html' %}
+{% load static %}
 
-    <form method="post">
-        <h2>Create your PropWise Account</h2>
-        
-        {% csrf_token %}
-        
-        {{ form.as_p }}
-        
-        <button type="submit">Sign Up</button>
-    </form>
-    <p style="text-align: center;">
-        Already have an account? <a href="{% url 'login' %}">Log In</a>
-    </p>
+{% block content %}
 
-</body>
-</html>
+<style>
+    /* --- PAGE CONTAINER (Split Screen) --- */
+    .auth-container {
+        display: flex;
+        min-height: calc(100vh - 120px); /* Full height minus navbar */
+        background: white;
+    }
+
+    /* --- LEFT SIDE: LUXURY IMAGE --- */
+    .auth-image {
+        flex: 1;
+        /* Different image for Signup (Modern Exterior) */
+        background: url('https://images.unsplash.com/photo-1512917774080-9991f1c4c750?q=80&w=1920&auto=format&fit=crop') no-repeat center center/cover;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    /* Dark Overlay */
+    .auth-overlay {
+        position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+        background: linear-gradient(135deg, rgba(15, 23, 42, 0.3), rgba(15, 23, 42, 0.7));
+    }
+
+    .auth-quote {
+        position: relative; z-index: 2; color: white; text-align: center; padding: 40px;
+        font-family: 'Playfair Display', serif;
+    }
+    .quote-text { font-size: 2.5rem; font-weight: 700; margin-bottom: 15px; }
+    .quote-sub { font-family: 'Poppins', sans-serif; font-size: 1.1rem; opacity: 0.9; font-weight: 300; }
+
+    /* --- RIGHT SIDE: FORM --- */
+    .auth-form-wrapper {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 40px;
+        background: white;
+        overflow-y: auto; /* Allow scroll if form is long */
+    }
+
+    .auth-box {
+        width: 100%;
+        max-width: 500px; /* Slightly wider for signup fields */
+    }
+
+    .auth-header { margin-bottom: 30px; text-align: center; }
+    .auth-title {
+        font-family: 'Playfair Display', serif;
+        font-size: 2.2rem;
+        color: var(--pw-navy);
+        font-weight: 700;
+        margin-bottom: 10px;
+    }
+    .auth-subtitle { color: #64748b; font-size: 0.95rem; }
+
+    /* --- DJANGO FORM AUTOMATIC STYLING --- */
+    
+    /* Target the paragraphs Django generates with {{ form.as_p }} */
+    .auth-box form p {
+        margin-bottom: 20px;
+    }
+
+    /* Style Labels */
+    .auth-box form label {
+        display: block;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--pw-navy);
+        margin-bottom: 8px;
+    }
+
+    /* Style Inputs & Selects */
+    .auth-box form input[type="text"],
+    .auth-box form input[type="password"],
+    .auth-box form input[type="email"],
+    .auth-box form select {
+        width: 100%;
+        padding: 14px 16px;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        font-family: 'Poppins', sans-serif;
+        font-size: 1rem;
+        color: var(--pw-navy);
+        background: #f8fafc;
+        transition: all 0.3s ease;
+        box-sizing: border-box; /* Ensures padding doesn't break width */
+    }
+
+    .auth-box form input:focus, .auth-box form select:focus {
+        background: white;
+        border-color: var(--pw-gold);
+        box-shadow: 0 0 0 4px rgba(212, 175, 55, 0.1);
+        outline: none;
+    }
+
+    /* Help Text (like 'Password must be 8 chars') */
+    .helptext {
+        display: block;
+        font-size: 0.75rem;
+        color: #94a3b8;
+        margin-top: 5px;
+    }
+
+    /* Checkbox logic (e.g. 'Is Agent') */
+    .auth-box form input[type="checkbox"] {
+        width: auto;
+        margin-right: 10px;
+        accent-color: var(--pw-gold);
+        transform: scale(1.2);
+    }
+    
+    /* Special handling for checkbox label alignment */
+    .auth-box form label[for*="is_agent"], 
+    .auth-box form label[for*="is_buyer"] {
+        display: inline-block;
+        margin-bottom: 0;
+    }
+
+
+    /* BUTTON */
+    .btn-auth {
+        width: 100%;
+        padding: 14px;
+        background: var(--pw-navy);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: 0.3s;
+        margin-top: 20px;
+        box-shadow: 0 4px 12px rgba(15, 23, 42, 0.2);
+    }
+    .btn-auth:hover {
+        background: var(--pw-gold);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4);
+    }
+
+    /* LINKS */
+    .auth-footer {
+        margin-top: 25px;
+        text-align: center;
+        font-size: 0.9rem;
+        color: #64748b;
+    }
+    .auth-link { color: var(--pw-gold); font-weight: 600; text-decoration: none; }
+    .auth-link:hover { text-decoration: underline; }
+
+    /* Error Styling */
+    .errorlist {
+        color: #ef4444;
+        font-size: 0.85rem;
+        list-style: none;
+        padding: 0;
+        margin-top: 5px;
+    }
+
+    /* RESPONSIVE */
+    @media (max-width: 900px) {
+        .auth-image { display: none; }
+        .auth-form-wrapper { padding: 20px; }
+        .auth-container { min-height: auto; padding: 40px 0; }
+    }
+</style>
+
+<div class="auth-container">
+    
+    <!-- LEFT: IMAGE & QUOTE -->
+    <div class="auth-image">
+        <div class="auth-overlay"></div>
+        <div class="auth-quote">
+            <div class="quote-text">"Join the Future of Real Estate."</div>
+            <div class="quote-sub">Create an account to save listings, contact agents, and more.</div>
+        </div>
+    </div>
+
+    <!-- RIGHT: SIGNUP FORM -->
+    <div class="auth-form-wrapper">
+        <div class="auth-box">
+            
+            <div class="auth-header">
+                <h1 class="auth-title">Create Account</h1>
+                <p class="auth-subtitle">Join PropWise today for free.</p>
+            </div>
+
+            <form method="post">
+                {% csrf_token %}
+                
+                <!-- This renders all your form fields automatically -->
+                {{ form.as_p }}
+                
+                <button type="submit" class="btn-auth">Sign Up</button>
+            </form>
+
+            <div class="auth-footer">
+                Already have an account? <a href="{% url 'login' %}" class="auth-link">Log In</a>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}

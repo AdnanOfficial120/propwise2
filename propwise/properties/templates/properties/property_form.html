@@ -1,225 +1,377 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Create New Listing - PropWise</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        
-        /* This style now applies to all form-like boxes */
-        .form-box {
-            max-width: 600px; 
-            margin: 20px auto; 
-            padding: 20px; 
-            border: 1px solid #ccc; 
-            border-radius: 8px;
-        }
+{% extends 'base.html' %}
+{% load static %}
 
-        /* Form row styles */
-        .form-row { 
-            display: grid; 
-            grid-template-columns: 1fr 2fr; 
-            gap: 10px; 
-            align-items: center; 
-            margin-bottom: 15px;
-        }
-        
-        form label { font-weight: bold; }
-        form input, form select, form textarea { padding: 8px; width: 100%; box-sizing: border-box; }
-        .field-errors { color: red; font-size: 0.9em; grid-column: 2; }
-        button { background-color: #28a745; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; }
+{% block content %}
 
-        /* Image manager styles */
-        .image-manager {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-        .image-card {
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 10px;
-            text-align: center;
-            background: #f9f9f9;
-        }
-        .image-card img {
-            height: 100px;
-            width: 100px;
-            object-fit: cover;
-            display: block;
-            border-radius: 4px;
-            margin-bottom: 10px;
-        }
-        /* Style for the delete button (inside its form) */
-        .image-card form button {
-            color: #dc3545;
-            font-size: 0.9em;
-            text-decoration: none;
-            font-weight: bold;
-            background: none;
-            border: none;
-            padding: 0;
-            cursor: pointer;
-            font-family: inherit;
-        }
-    </style>
-</head>
-<body>
-    <div style="max-width: 600px; margin: auto; margin-bottom: 10px;">
-        <a href="/"> &larr; Back to Homepage</a>
+<style>
+    /* --- PAGE LAYOUT --- */
+    .wizard-container {
+        max-width: 900px;
+        margin: 40px auto;
+        padding: 0 20px;
+    }
+
+    .wizard-header {
+        text-align: center;
+        margin-bottom: 40px;
+    }
+    .wizard-title {
+        font-family: 'Playfair Display', serif;
+        font-size: 2.5rem;
+        color: var(--pw-navy);
+        font-weight: 700;
+    }
+    .wizard-sub { color: #64748b; }
+
+    /* --- FORM SECTIONS (CARDS) --- */
+    .form-section {
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+        padding: 30px;
+        margin-bottom: 30px;
+        border: 1px solid #f1f5f9;
+    }
+
+    .section-title {
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: var(--pw-navy);
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #f1f5f9;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .section-icon { color: var(--pw-gold); background: rgba(212, 175, 55, 0.1); padding: 8px; border-radius: 8px; }
+
+    /* --- GRID SYSTEM --- */
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr); /* 2 Columns default */
+        gap: 20px;
+    }
+    .full-width { grid-column: span 2; }
+    .three-col { grid-template-columns: repeat(3, 1fr); }
+
+    /* --- INPUT STYLING --- */
+    .form-group label {
+        display: block;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #64748b;
+        margin-bottom: 8px;
+        text-transform: uppercase;
+    }
+
+    /* Target Django Widgets */
+    .form-section input[type="text"],
+    .form-section input[type="number"],
+    .form-section input[type="url"],
+    .form-section select,
+    .form-section textarea {
+        width: 100%;
+        padding: 12px 15px;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        font-family: 'Poppins', sans-serif;
+        font-size: 1rem;
+        color: var(--pw-navy);
+        background: #f8fafc;
+        transition: all 0.3s;
+        box-sizing: border-box;
+    }
+
+    .form-section input:focus, 
+    .form-section select:focus, 
+    .form-section textarea:focus {
+        background: white;
+        border-color: var(--pw-gold);
+        box-shadow: 0 0 0 4px rgba(212, 175, 55, 0.1);
+        outline: none;
+    }
+
+    /* File Input Style */
+    input[type="file"] {
+        padding: 10px;
+        background: white;
+        border: 2px dashed #cbd5e1;
+        cursor: pointer;
+    }
+
+    /* --- AI BUTTON --- */
+    .ai-box {
+        background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+        padding: 20px;
+        border-radius: 12px;
+        border: 1px solid #bae6fd;
+        margin-bottom: 20px;
+    }
+    .btn-ai {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 6px;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.9rem;
+        transition: 0.3s;
+        width: 100%;
+        justify-content: center;
+    }
+    .btn-ai:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); }
+
+    /* --- IMAGE MANAGER --- */
+    .img-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+    .img-card {
+        position: relative;
+        border-radius: 8px;
+        overflow: hidden;
+        border: 1px solid #e2e8f0;
+    }
+    .img-card img { width: 100%; height: 100px; object-fit: cover; display: block; }
+    
+    .btn-delete-img {
+        width: 100%;
+        background: #fee2e2;
+        color: #ef4444;
+        border: none;
+        padding: 5px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: 0.2s;
+    }
+    .btn-delete-img:hover { background: #ef4444; color: white; }
+
+    /* --- SUBMIT BUTTON --- */
+    .btn-submit {
+        width: 100%;
+        padding: 16px;
+        background: var(--pw-gold);
+        color: var(--pw-navy);
+        font-size: 1.1rem;
+        font-weight: 700;
+        border: none;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: 0.3s;
+        box-shadow: 0 4px 15px var(--pw-gold-glow);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    .btn-submit:hover { transform: translateY(-3px); background: white; }
+
+    /* Error Text */
+    .error-text { color: #ef4444; font-size: 0.85rem; margin-top: 5px; display: block; }
+    .help-text { color: #94a3b8; font-size: 0.8rem; margin-top: 4px; }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .form-grid { grid-template-columns: 1fr; }
+        .full-width { grid-column: span 1; }
+    }
+</style>
+
+<div class="wizard-container">
+    
+    <div class="wizard-header">
+        <h1 class="wizard-title">{% if form.instance.pk %}Edit Property{% else %}List Your Property{% endif %}</h1>
+        <p class="wizard-sub">Fill in the details below to publish your listing to thousands of buyers.</p>
     </div>
 
-    {% if form.instance.pk %}
-        <div class="form-box"> <h3>Manage Existing Images</h3>
-            <div class="image-manager">
-                {% for image in form.instance.images.all %}
-                <div class="image-card">
-                    <img src="{{ image.image.url }}" alt="Gallery Image">
-                    
-                    <form action="{% url 'delete_property_image' image_pk=image.pk %}" method="POST" style="margin: 0;">
-                        {% csrf_token %}
-                        <button type="submit">Delete Image</button>
-                    </form>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <!-- SECTION 1: BASIC INFO -->
+        <div class="form-section">
+            <div class="section-title"><i class="fa-solid fa-info section-icon"></i> Basic Information</div>
+            <div class="form-grid">
+                <div class="form-group full-width">
+                    <label for="{{ form.title.id_for_label }}">Property Title</label>
+                    {{ form.title }}
+                    {% if form.title.errors %}<span class="error-text">{{ form.title.errors.0 }}</span>{% endif %}
                 </div>
-                {% empty %}
-                <p>No gallery images have been uploaded yet.</p>
-                {% endfor %}
+                <div class="form-group">
+                    <label for="{{ form.property_type.id_for_label }}">Property Type</label>
+                    {{ form.property_type }}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.purpose.id_for_label }}">Purpose</label>
+                    {{ form.purpose }}
+                </div>
+                <div class="form-group full-width">
+                    <label for="{{ form.price.id_for_label }}">Price (PKR)</label>
+                    {{ form.price }}
+                    {% if form.price.errors %}<span class="error-text">{{ form.price.errors.0 }}</span>{% endif %}
+                </div>
             </div>
         </div>
-    {% endif %}
-    <form method="post" enctype="multipart/form-data" class="form-box">
-        <h2>{{ title|default:"Post Your Property" }}</h2>
-        
-        {% csrf_token %}
-        
-        {% for field in form %}
-            <div class="form-row">
-                {{ field.label_tag }}
 
-            
-                <!-- also for ai description  -->
-               <div>
-                  {% if field.name == 'gallery_images' %}
-                    <input type="file" 
-                           name="gallery_images" 
-                           id="{{ field.id_for_label }}" 
-                           class="form-control" 
-                           multiple>
-                
-                {% elif field.name == 'description' %}
-                    
-                    <div style="margin-bottom: 10px; border: 1px dashed #007bff; padding: 10px; border-radius: 5px;">
-                        <button type="button" id="generate-ai-desc-btn" style="background: #007bff; width: 100%;">
-                            ✨ Generate Description with AI
-                        </button>
-                        <p style="font-size: 0.9em; color: #666; margin-top: 8px; margin-bottom: 0;">
-                            <b>Note:</b> Please fill in the City, Area, Price, Beds, Baths, and Size fields *first* for the best results.
-                        </p>
-                        <div id="ai-loading-message" style="display: none; color: #007bff; font-weight: bold; margin-top: 5px;">
-                            Generating...
-                        </div>
-                    </div>
-                    {{ field }} {% else %}
-                    {{ field }} {% endif %}
-                    
-                    {% comment %} --- ADD THIS NEW BLOCK --- {% endcomment %}
-                    {% if field.help_text %}
-                        <p style="font-size: 0.9em; color: #666; margin-top: 5px;">
-                            {{ field.help_text }}
-                        </p>
-                    {% endif %}
-                    {% comment %} --- END OF NEW BLOCK --- {% endcomment %}
-
-                    {% if field.errors %}
-                        <div class="field-errors">
-                            {{ field.errors|striptags }}
-                        </div>
-                    {% endif %}
+        <!-- SECTION 2: LOCATION -->
+        <div class="form-section">
+            <div class="section-title"><i class="fa-solid fa-map-location-dot section-icon"></i> Location</div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="{{ form.city.id_for_label }}">City</label>
+                    {{ form.city }}
                 </div>
-
-                    {% if field.errors %}
-                        <div class="field-errors">
-                            {{ field.errors|striptags }}
-                        </div>
-                    {% endif %}
+                <div class="form-group">
+                    <label for="{{ form.area.id_for_label }}">Area</label>
+                    {{ form.area }}
+                </div>
+                <div class="form-group full-width">
+                    <label for="{{ form.address.id_for_label }}">Full Address</label>
+                    {{ form.address }} <!-- Ensure 'address' field exists in form, or remove if not -->
                 </div>
             </div>
-        {% endfor %}
-        
-        <button type="submit">Submit Listing</button>
+        </div>
+
+        <!-- SECTION 3: FEATURES -->
+        <div class="form-section">
+            <div class="section-title"><i class="fa-solid fa-layer-group section-icon"></i> Features & Size</div>
+            <div class="form-grid three-col"> <!-- 3 Columns on Desktop -->
+                <div class="form-group">
+                    <label for="{{ form.bedrooms.id_for_label }}">Bedrooms</label>
+                    {{ form.bedrooms }}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.bathrooms.id_for_label }}">Bathrooms</label>
+                    {{ form.bathrooms }}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.area_size.id_for_label }}">Size</label>
+                    <div style="display:flex; gap:5px;">
+                        {{ form.area_size }}
+                        {{ form.area_unit }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 4: DESCRIPTION (AI POWERED) -->
+        <div class="form-section">
+            <div class="section-title"><i class="fa-solid fa-pen-nib section-icon"></i> Description</div>
+            
+            <!-- AI TOOL -->
+            <div class="ai-box">
+                <button type="button" id="generate-ai-desc-btn" class="btn-ai">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> Generate with AI Assistant
+                </button>
+                <p class="help-text" style="text-align:center; margin-bottom:0;">Tip: Fill in the details above first for the best result.</p>
+                <div id="ai-loading-message" style="display: none; text-align:center; color:#2563eb; font-weight:bold; margin-top:10px;">
+                    <i class="fa-solid fa-circle-notch fa-spin"></i> Writing your description...
+                </div>
+            </div>
+
+            <div class="form-group">
+                {{ form.description }}
+                {% if form.description.errors %}<span class="error-text">{{ form.description.errors.0 }}</span>{% endif %}
+            </div>
+        </div>
+
+        <!-- SECTION 5: MEDIA -->
+        <div class="form-section">
+            <div class="section-title"><i class="fa-solid fa-images section-icon"></i> Media Gallery</div>
+
+            <!-- Main Image -->
+            <div class="form-group" style="margin-bottom:20px;">
+                <label for="{{ form.main_image.id_for_label }}">Main Cover Image</label>
+                {{ form.main_image }}
+            </div>
+
+            <!-- Video URL -->
+            <div class="form-group" style="margin-bottom:20px;">
+                 <!-- Assuming you have a video_url field based on detail page -->
+                 {% if form.video_url %}
+                    <label for="{{ form.video_url.id_for_label }}">Video Tour URL (YouTube)</label>
+                    {{ form.video_url }}
+                 {% endif %}
+            </div>
+
+            <!-- Gallery Images Upload -->
+            <div class="form-group">
+                <label>Gallery Images (Select Multiple)</label>
+                <input type="file" name="gallery_images" multiple>
+            </div>
+
+            <!-- Existing Images Manager -->
+            {% if form.instance.pk and form.instance.images.all %}
+                <hr style="border:0; border-top:1px solid #f1f5f9; margin:20px 0;">
+                <label style="margin-bottom:10px; display:block;">Manage Existing Photos:</label>
+                <div class="img-grid">
+                    {% for image in form.instance.images.all %}
+                    <div class="img-card">
+                        <img src="{{ image.image.url }}" alt="Prop Image">
+                        <button type="submit" formaction="{% url 'delete_property_image' image_pk=image.pk %}" class="btn-delete-img">
+                            <i class="fa-solid fa-trash"></i> Delete
+                        </button>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- SUBMIT -->
+        <button type="submit" class="btn-submit">
+            {% if form.instance.pk %}Update Listing{% else %}Publish Listing{% endif %}
+        </button>
+
     </form>
+</div>
 
-
-
-    <button type="submit">Submit Listing</button>
-</form>
-
+<!-- JAVASCRIPT LOGIC (Ajax Locations + AI) -->
 <script>
-    // This script runs after the page is loaded
     document.addEventListener('DOMContentLoaded', function() {
         
-        // 1. Get references to our two dropdowns
+        // 1. AJAX LOCATION LOADING
         const cityDropdown = document.getElementById('id_city');
         const areaDropdown = document.getElementById('id_area');
-        
-        // 2. Set the URL for our new API view.
-        //    The '0' is a placeholder that we will replace.
-        const ajaxUrl = "{% url 'ajax_load_areas' %}";
+        const ajaxUrl = "{% url 'ajax_load_areas' %}"; // Ensure this URL name matches your urls.py
 
-        // 3. Listen for a 'change' event on the City dropdown
-        cityDropdown.addEventListener('change', function() {
-            
-            // Get the ID of the selected city
-            const cityId = this.value;
-            
-            // Clear the Area dropdown and add a "Loading..." message
-            areaDropdown.innerHTML = '<option value="">Loading...</option>';
+        if(cityDropdown && areaDropdown) {
+            cityDropdown.addEventListener('change', function() {
+                const cityId = this.value;
+                areaDropdown.innerHTML = '<option value="">Loading...</option>';
 
-            if (cityId) {
-                // --- If a real city is selected ---
-                
-                // Use the fetch API to call our view
-                // This creates a URL like: /locations/ajax/load-areas/?city_id=1
-                fetch(`${ajaxUrl}?city_id=${cityId}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        // The server has sent us the list of areas
-                        
-                        // Clear the "Loading..." message
-                        areaDropdown.innerHTML = '<option value="">---------</option>';
-                        
-                        // Loop through the data and add each area as an <option>
-                        data.forEach(function(area) {
-                            const option = document.createElement('option');
-                            option.value = area.id;
-                            option.textContent = area.name;
-                            areaDropdown.appendChild(option);
+                if (cityId) {
+                    fetch(`${ajaxUrl}?city_id=${cityId}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            areaDropdown.innerHTML = '<option value="">---------</option>';
+                            data.forEach(function(area) {
+                                const option = document.createElement('option');
+                                option.value = area.id;
+                                option.textContent = area.name;
+                                areaDropdown.appendChild(option);
+                            });
+                        })
+                        .catch(err => {
+                            console.error(err);
+                            areaDropdown.innerHTML = '<option value="">Error loading areas</option>';
                         });
-                    })
-                    .catch(error => {
-                        console.error('Error loading areas:', error);
-                        areaDropdown.innerHTML = '<option value="">Error loading areas</option>';
-                    });
-            } else {
-                // --- If the user selected the blank "---" option ---
-                // Clear the Area dropdown
-                areaDropdown.innerHTML = '<option value="">---------</option>';
-            }
-        });
-    });
+                } else {
+                    areaDropdown.innerHTML = '<option value="">---------</option>';
+                }
+            });
+        }
 
-
-// === START: NEW AI ASSISTANT JAVASCRIPT ===
-
-        // 1. Get references to the new elements
+        // 2. AI GENERATION LOGIC
         const genButton = document.getElementById('generate-ai-desc-btn');
         const descriptionBox = document.getElementById('id_description');
         const loadingMessage = document.getElementById('ai-loading-message');
-        const aiApiUrl = "{% url 'generate_ai_description' %}";
-        
-        // This function gets the CSRF token, which is required for a POST request
+        const aiApiUrl = "{% url 'generate_ai_description' %}"; // Ensure this URL name matches
+
         function getCookie(name) {
             let cookieValue = null;
             if (document.cookie && document.cookie !== '') {
@@ -236,74 +388,61 @@
         }
         const csrftoken = getCookie('csrftoken');
 
-        // 2. Listen for a click on our new button
-        genButton.addEventListener('click', function(e) {
-            e.preventDefault(); // Stop the form from submitting
+        if(genButton && descriptionBox) {
+            genButton.addEventListener('click', function(e) {
+                e.preventDefault();
 
-            // 3. Get all the data from the form
-            // We use .options[...].text to get the *name* (e.g., "Lahore")
-            // not the ID (e.g., "1")
-            const city = document.getElementById('id_city').options[document.getElementById('id_city').selectedIndex].text;
-            const area = document.getElementById('id_area').options[document.getElementById('id_area').selectedIndex].text;
+                // Gather Data safely (check if elements exist first)
+                const cityEl = document.getElementById('id_city');
+                const areaEl = document.getElementById('id_area');
+                const cityText = cityEl && cityEl.selectedIndex >= 0 ? cityEl.options[cityEl.selectedIndex].text : '';
+                const areaText = areaEl && areaEl.selectedIndex >= 0 ? areaEl.options[areaEl.selectedIndex].text : '';
 
-            const data = {
-                purpose: document.getElementById('id_purpose').value,
-                property_type: document.getElementById('id_property_type').value,
-                city: city.includes('---') ? '' : city, // Don't send '---'
-                area: area.includes('---') ? '' : area, // Don't send '---'
-                bedrooms: document.getElementById('id_bedrooms').value,
-                bathrooms: document.getElementById('id_bathrooms').value,
-                area_size: document.getElementById('id_area_size').value,
-                area_unit: document.getElementById('id_area_unit').value,
-                price: document.getElementById('id_price').value,
-            };
+                const data = {
+                    purpose: document.getElementById('id_purpose') ? document.getElementById('id_purpose').value : '',
+                    property_type: document.getElementById('id_property_type') ? document.getElementById('id_property_type').value : '',
+                    city: cityText.includes('---') ? '' : cityText,
+                    area: areaText.includes('---') ? '' : areaText,
+                    bedrooms: document.getElementById('id_bedrooms') ? document.getElementById('id_bedrooms').value : '',
+                    bathrooms: document.getElementById('id_bathrooms') ? document.getElementById('id_bathrooms').value : '',
+                    area_size: document.getElementById('id_area_size') ? document.getElementById('id_area_size').value : '',
+                    area_unit: document.getElementById('id_area_unit') ? document.getElementById('id_area_unit').value : '',
+                    price: document.getElementById('id_price') ? document.getElementById('id_price').value : '',
+                };
 
-            // 4. Show loading message and disable button
-            loadingMessage.style.display = 'block';
-            genButton.disabled = true;
-            genButton.textContent = 'Generating...';
+                // Loading State
+                loadingMessage.style.display = 'block';
+                genButton.disabled = true;
+                genButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Working...';
 
-            // 5. Send the data to our new Django API view
-            fetch(aiApiUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': csrftoken // Include the CSRF token
-                },
-                body: JSON.stringify(data)
-            })
-            .then(response => response.json())
-            .then(result => {
-                if (result.description) {
-                    // 6. Success! Put the text in the box.
-                    descriptionBox.value = result.description;
-                } else {
-                    alert('An error occurred: ' + result.error);
-                }
-                
-                // 7. Re-enable the button
-                loadingMessage.style.display = 'none';
-                genButton.disabled = false;
-                genButton.textContent = '✨ Generate Description with AI';
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('A network error occurred. Please try again.');
-                
-                // 7. Re-enable the button
-                loadingMessage.style.display = 'none';
-                genButton.disabled = false;
-                genButton.textContent = '✨ Generate Description with AI';
+                fetch(aiApiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrftoken
+                    },
+                    body: JSON.stringify(data)
+                })
+                .then(response => response.json())
+                .then(result => {
+                    if (result.description) {
+                        descriptionBox.value = result.description;
+                    } else {
+                        alert('Could not generate description. Please try manually.');
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    alert('Network error. Please try again.');
+                })
+                .finally(() => {
+                    loadingMessage.style.display = 'none';
+                    genButton.disabled = false;
+                    genButton.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> Generate with AI Assistant';
+                });
             });
-        });
-
-        // === END: NEW AI ASSISTANT JAVASVCRIPT ===
-    ;
-
-    
+        }
+    });
 </script>
 
-</body>
-</html>
-    </body>
-</html>
+{% endblock content %}

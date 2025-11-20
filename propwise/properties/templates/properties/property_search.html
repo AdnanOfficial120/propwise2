@@ -1,308 +1,407 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Search Properties - PropWise</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        .container { display: flex; }
-        .filters { flex: 1; padding: 20px; background: #f9f9f9; border-radius: 8px; }
-        .results { flex: 3; padding-left: 30px; }
-        .property-card { border: 1px solid #ccc; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
-        .property-card img { max-width: 150px; height: auto; border-radius: 4px; float: left; margin-right: 15px; }
+{% extends 'base.html' %}
+{% load static %}
 
-/* --- ADD THIS verifies bage setting --- */
-        .verified-badge {
-            display: inline-block;
-            padding: 4px 8px;
-            background-color: #d4edda; /* Light green background */
-            color: #155724; /* Dark green text */
-            font-size: 0.85em;
-            font-weight: bold;
-            border-radius: 4px;
-            margin-left: 8px; /* Space between title and badge */
-            vertical-align: middle; /* Aligns it nicely with the title */
-        }
-        /* --- END OF NEW STYLE --- */
+{% block content %}
 
+<style>
+    /* --- PAGE LAYOUT --- */
+    .search-page-container {
+        max-width: 1400px;
+        margin: 40px auto;
+        padding: 0 20px;
+        display: grid;
+        grid-template-columns: 300px 1fr; /* Sidebar | Results */
+        gap: 30px;
+        align-items: start;
+    }
 
+    /* --- SIDEBAR (FILTERS) --- */
+    .sidebar {
+        background: white;
+        border-radius: 12px;
+        padding: 25px;
+        border: 1px solid #f1f5f9;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.03);
+        position: sticky;
+        top: 140px; /* Stick below navbar */
+        height: fit-content;
+        max-height: 85vh;
+        overflow-y: auto;
+    }
 
-        /* --- STYLES FOR COMPARE FEATURE --- */
-        .property-card {
-            position: relative; /* This is needed for the checkbox */
-        }
-        
-        .compare-box {
-            position: absolute; /* Positions the checkbox */
-            top: 10px;
-            right: 10px;
-            background: rgba(255,255,255,0.9);
-            border-radius: 5px;
-            padding: 5px;
-            z-index: 2; /* Sits on top of the card */
-        }
-        .compare-box input {
-            width: 18px;
-            height: 18px;
-            vertical-align: middle;
-        }
-        .compare-box label {
-            font-size: 0.9em;
-            font-weight: bold;
-            color: #333;
-            vertical-align: middle;
-            margin-left: 5px;
-        }
+    .sidebar-title {
+        font-family: 'Playfair Display', serif;
+        font-size: 1.2rem;
+        color: var(--pw-navy);
+        margin-bottom: 20px;
+        font-weight: 700;
+        border-bottom: 2px solid #f1f5f9;
+        padding-bottom: 10px;
+    }
 
-        /* This is the floating bar at the bottom */
-        .floating-compare-bar {
-            position: fixed; /* Sticks to the bottom */
-            bottom: -100px; /* Hidden by default */
-            left: 50%;
-            transform: translateX(-50%); /* Centered */
-            width: 90%;
-            max-width: 500px;
-            background: #0056b3; /* Dark blue */
-            color: white;
-            padding: 15px 25px;
-            border-radius: 10px 10px 0 0;
-            box-shadow: 0 -4px 10px rgba(0,0,0,0.2);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            transition: bottom 0.3s ease-in-out;
-            z-index: 1000;
-        }
-        .floating-compare-bar.visible {
-            bottom: 0; /* Slides into view */
-        }
-        .floating-compare-bar span {
-            font-size: 1.1em;
-            font-weight: bold;
-        }
-        /* This is the "Compare Now" button */
-        .floating-compare-bar a {
-            background: #fff;
-            color: #0056b3;
-            padding: 8px 16px;
-            text-decoration: none;
-            border-radius: 5px;
-            font-weight: bold;
-            white-space: nowrap;
-        }
-        /* --- END OF COMPARE STYLES --- */
-
-    </style>
-</head>
-<body>
-    <h1>Search Properties</h1>
-    <p><a href="/"> &larr; Back to Homepage</a></p>
-
-    <div class="container">
-       <hr style="margin: 25px 0;">
-
-{% if user.is_authenticated %}
-    
-    <h4>Save This Search</h4>
-    <p style="font-size: 14px; color: #555;">
-        Get email alerts for new properties that match these filters.
-    </p>
-
-    <form method="post" style="margin-top: 10px;">
-        {% csrf_token %}
-        
-        {{ saved_search_form.as_p }}
-        
-        <button type="submit" style="
-            background-color: #28a745; 
-            color: white; 
-            padding: 10px 15px; 
-            border: none; 
-            border-radius: 4px; 
-            cursor: pointer;
-            width: 100%;
-        ">
-            Save Search & Get Alerts
-        </button>
-    </form>
-
-{% else %}
-
-    <h4>Save This Search</h4>
-    <p style="font-size: 14px; color: #555;">
-        Want alerts for new properties?
-    </p>
-    
-    <a href="{% url 'login' %}?next={{ request.get_full_path|urlencode }}" style="
+    /* Filter Form Styles */
+    .filter-group label {
         display: block;
-        text-align: center;
-        background-color: #007bff;
-        color: white;
-        padding: 10px 15px;
-        border-radius: 4px;
-        text-decoration: none;
-    ">
-        Login to Save This Search
-    </a>
-
-{% endif %}
-        </div>
-        
-        <div class="results">
-            <h3>Results</h3>
-            
-           {% for prop in filter.qs %}
-                <div class="property-card">
-
-                    {% comment %} --- 1. ADD THE COMPARE CHECKBOX --- {% endcomment %}
-                    <div class="compare-box">
-                        <input type="checkbox"
-                               class="compare-checkbox"
-                               id="compare-{{ prop.pk }}" 
-                               data-id="{{ prop.pk }}"
-                               {% if prop.pk in request.session.compare_list %}checked{% endif %}>
-                        <label for="compare-{{ prop.pk }}">Compare</label>
-                    </div>
-                    {% comment %} --- END OF CHECKBOX --- {% endcomment %}
-
-                    {% if prop.main_image %}
-                        <img src="{{ prop.main_image.url }}" alt="{{ prop.title }}">
-                    {% endif %}
-                    <h4>
-                        <a href="{% url 'property_detail' pk=prop.pk %}">
-                            {{ prop.title }}
-                        </a>
-                        {% comment %} --- THIS IS THE NEW BADGE --- {% endcomment %}
-                            {% if prop.is_verified %}
-                                <span class="verified-badge">✅ Verified</span>
-                            {% endif %}
-                    </h4>
-                    <p><strong>Price:</strong> PKR {{ prop.price }}</p>
-                    <p><strong>Location:</strong> {{ prop.area }}</p>
-                    <p><strong>Type:</strong> {{ prop.get_property_type_display }}</foo></p>
-                    <!-- thsi is fo radd ot fav an dremove  -->
-                     {% comment %} --- THIS IS THE NEW BLOCK TO PASTE --- {% endcomment %}
-
-<div style="clear: both; padding-top: 10px;">
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #64748b;
+        margin-bottom: 5px;
+    }
     
-    {% comment %} This is the "View Details" button you were missing {% endcomment %}
-    <a href="{% url 'property_detail' pk=prop.pk %}" style="
-        display: inline-block;
-        padding: 8px 16px;
-        background-color: #0066cc;
-        color: white;
-        text-decoration: none;
-        border-radius: 4px;
-        font-size: 14px;
-    ">
-        View Details
-    </a>
+    .filter-group input, .filter-group select {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        margin-bottom: 15px;
+        font-family: 'Poppins', sans-serif;
+    }
 
-    {% comment %} This is the new "Save/Unsave" button logic {% endcomment %}
-    {% if user.is_authenticated %}
-        {% if prop in user.favorites.all %}
-            {% comment %} If YES, show the "Unsave" button {% endcomment %}
-            <form action="{% url 'remove_from_favorites' pk=prop.pk %}" method="POST" style="display: inline;">
-                {% csrf_token %}
-                <button type="submit" style="
-                    background: #dc3545; /* Red */
-                    color: white;
-                    padding: 5px 10px;
-                    border: none;
-                    border-radius: 4px;
-                    cursor: pointer;
-                    font-size: 14px;
-                    margin-left: 10px;
-                ">
-                    Unsave
-                </button>
-            </form>
-        {% else %}
-            {% comment %} If NO, show the "Save" button {% endcomment %}
-            <form action="{% url 'add_to_favorites' pk=prop.pk %}" method="POST" style="display: inline;">
-                {% csrf_token %}
-                <button type="submit" style="
-                    background: #007bff; /* Blue */
-                    color: white;
-                    padding: 5px 10px;
-                    border: none;
-                    border-radius: 4px;
-                    cursor: pointer;
-                    font-size: 14px;
-                    margin-left: 10px;
-                ">
-                    Save
-                </button>
-            </form>
-        {% endif %}
-    {% else %}
-        {% comment %} If user is NOT logged in, link to login page {% endcomment %}
-        <a href="{% url 'login' %}?next={{ request.path }}" style="
-            background: #007bff; /* Blue */
-            color: white;
-            padding: 5px 10px;
-            border: none;
-            border-radius: 4px;
-            font-size: 14px;
-            margin-left: 10px;
-            text-decoration: none;
-        ">
-            Save
-        </a>
-    {% endif %}
+    .btn-filter {
+        width: 100%;
+        background: var(--pw-navy);
+        color: white;
+        padding: 10px;
+        border: none;
+        border-radius: 6px;
+        font-weight: 600;
+        cursor: pointer;
+        margin-top: 10px;
+    }
+    .btn-filter:hover { background: var(--pw-gold); color: var(--pw-navy); }
+
+    /* Mobile Toggle for Sidebar */
+    .mobile-filter-toggle {
+        display: none; /* Hidden on Desktop */
+        width: 100%;
+        padding: 12px;
+        background: white;
+        border: 1px solid #e2e8f0;
+        color: var(--pw-navy);
+        font-weight: 700;
+        text-align: center;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        cursor: pointer;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+
+    /* --- SAVE SEARCH WIDGET --- */
+    .save-search-box {
+        background: #f8fafc;
+        padding: 15px;
+        border-radius: 8px;
+        margin-top: 30px;
+        border: 1px dashed #cbd5e1;
+        text-align: center;
+    }
+    .btn-save-search {
+        background: #10b981;
+        color: white;
+        border: none;
+        padding: 8px 15px;
+        border-radius: 4px;
+        font-size: 0.9rem;
+        width: 100%;
+        cursor: pointer;
+        margin-top: 10px;
+    }
+
+    /* --- RESULTS GRID --- */
+    .results-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+    .results-count { color: #64748b; font-size: 0.9rem; }
+
+    .property-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 25px;
+    }
+
+    /* --- PREMIUM PROPERTY CARD --- */
+    .prop-card {
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        border: 1px solid #f1f5f9;
+        transition: 0.3s;
+        position: relative;
+    }
+    .prop-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 30px rgba(0,0,0,0.08);
+        border-color: rgba(212, 175, 55, 0.3);
+    }
+
+    /* Image Area */
+    .card-img-wrap {
+        position: relative;
+        height: 200px;
+        overflow: hidden;
+    }
+    .card-img {
+        width: 100%; height: 100%; object-fit: cover; transition: 0.5s;
+    }
+    .prop-card:hover .card-img { transform: scale(1.05); }
+
+    /* Badges Overlay */
+    .badge-verified {
+        position: absolute; top: 10px; left: 10px;
+        background: #10b981; color: white;
+        font-size: 0.7rem; font-weight: 700;
+        padding: 4px 10px; border-radius: 20px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+
+    /* Compare Checkbox Overlay */
+    .compare-overlay {
+        position: absolute; top: 10px; right: 10px;
+        background: rgba(255,255,255,0.95);
+        padding: 5px 10px; border-radius: 20px;
+        display: flex; align-items: center; gap: 5px;
+        font-size: 0.75rem; font-weight: 600;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        cursor: pointer;
+    }
+    .compare-overlay input { cursor: pointer; }
+
+    /* Card Content */
+    .card-content { padding: 20px; }
+    
+    .card-price {
+        font-size: 1.2rem; color: var(--pw-gold);
+        font-weight: 700; margin-bottom: 5px;
+    }
+    
+    .card-title {
+        font-size: 1.1rem; font-weight: 700; color: var(--pw-navy);
+        margin-bottom: 5px; display: block;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+
+    .card-loc {
+        font-size: 0.85rem; color: #64748b; margin-bottom: 15px;
+        display: flex; align-items: center; gap: 5px;
+    }
+
+    /* Card Footer */
+    .card-footer {
+        display: flex; justify-content: space-between; align-items: center;
+        padding-top: 15px; border-top: 1px solid #f1f5f9;
+    }
+
+    .btn-view {
+        background: var(--pw-navy); color: white;
+        padding: 6px 15px; border-radius: 4px; font-size: 0.85rem;
+    }
+    .btn-view:hover { background: var(--pw-gold); }
+
+    /* --- PAGINATION --- */
+    .pagination {
+        margin-top: 50px; text-align: center;
+    }
+    .page-link {
+        display: inline-block; padding: 8px 16px;
+        background: white; border: 1px solid #e2e8f0;
+        color: var(--pw-navy); border-radius: 6px;
+        margin: 0 5px; font-weight: 500;
+    }
+    .page-link:hover { background: #f8fafc; border-color: var(--pw-navy); }
+    .page-current {
+        background: var(--pw-navy); color: white; border-color: var(--pw-navy);
+    }
+
+    /* --- FLOATING COMPARE BAR --- */
+    .floating-compare-bar {
+        position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%);
+        width: 90%; max-width: 500px;
+        background: var(--pw-navy); color: white;
+        padding: 15px 25px; border-radius: 50px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        display: flex; justify-content: space-between; align-items: center;
+        transition: bottom 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        z-index: 2000;
+        border: 2px solid var(--pw-gold);
+    }
+    .floating-compare-bar.visible { bottom: 30px; }
+    
+    .btn-compare-now {
+        background: var(--pw-gold); color: var(--pw-navy);
+        padding: 8px 20px; border-radius: 30px; text-decoration: none; font-weight: 700;
+    }
+
+    /* --- RESPONSIVE --- */
+    @media (max-width: 900px) {
+        .search-page-container { grid-template-columns: 1fr; }
+        .sidebar { display: none; } /* Hide sidebar by default */
+        .sidebar.active { display: block; animation: fadeIn 0.3s; }
+        .mobile-filter-toggle { display: block; }
+    }
+    @keyframes fadeIn { from { opacity:0; transform:translateY(-10px); } to { opacity:1; transform:translateY(0); } }
+</style>
+
+<!-- HEADER -->
+<div style="background: var(--pw-navy); padding: 40px 0; text-align: center; color: white; margin-top: -20px;">
+    <h1 style="font-family: 'Playfair Display', serif;">Find Your Property</h1>
+    <p style="color: #94a3b8; font-size: 0.9rem;"><a href="/" style="color:white;">Home</a> / Search Results</p>
 </div>
-                </div>
-            {% empty %}
-                <p>No properties match your search. Try broadening your criteria.</p>
-            {% endfor %}
-        </div>
+
+<div class="search-page-container">
+
+    <!-- MOBILE TOGGLE BUTTON -->
+    <div class="mobile-filter-toggle" onclick="toggleSidebar()">
+        <i class="fa-solid fa-sliders"></i> Show Filters
     </div>
 
-<!-- Pagination Controls -->
-        <div style="margin-top: 30px; text-align: center;">
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="filterSidebar">
+        <div class="sidebar-title">Refine Search</div>
+        
+        <!-- Filter Form -->
+        <form method="get" class="filter-group">
+            {% if filter.form %}
+                {{ filter.form.as_p }}
+            {% else %}
+                <p style="font-size:0.9rem; color:#64748b;">Use the homepage to search.</p>
+            {% endif %}
+            <button type="submit" class="btn-filter">Apply Filters</button>
+        </form>
+
+        <!-- Save Search Widget -->
+        <div class="save-search-box">
+            <h5 style="margin-bottom:5px; color:var(--pw-navy);">Save Search</h5>
+            <p style="font-size:0.8rem; color:#64748b; margin-bottom:10px;">Get alerts for new matches.</p>
+            
+            {% if user.is_authenticated %}
+                <form method="post">
+                    {% csrf_token %}
+                    {{ saved_search_form.as_p }}
+                    <button type="submit" class="btn-save-search">Save & Alert Me</button>
+                </form>
+            {% else %}
+                <a href="{% url 'login' %}?next={{ request.get_full_path|urlencode }}" class="btn-save-search" style="display:block; text-decoration:none;">Log in to Save</a>
+            {% endif %}
+        </div>
+    </aside>
+
+    <!-- RESULTS -->
+    <main class="results-area">
+        <div class="results-header">
+            <h3 style="font-family:'Playfair Display', serif; color:var(--pw-navy);">Properties</h3>
+            <span class="results-count">{{ page_obj.paginator.count }} Listings Found</span>
+        </div>
+
+        <div class="property-grid">
+            {% for prop in filter.qs %}
+                <div class="prop-card">
+                    
+                    <div class="card-img-wrap">
+                        <!-- Link Image to Detail -->
+                        {% if prop.main_image %}
+                            <a href="{% url 'property_detail' pk=prop.pk %}">
+                                <img src="{{ prop.main_image.url }}" alt="{{ prop.title }}" class="card-img">
+                            </a>
+                        {% endif %}
+
+                        <!-- Badges -->
+                        {% if prop.is_verified %}
+                            <div class="badge-verified"><i class="fa-solid fa-check"></i> Verified</div>
+                        {% endif %}
+
+                        <!-- Compare Overlay -->
+                        <div class="compare-overlay">
+                            <input type="checkbox" class="compare-checkbox" id="compare-{{ prop.pk }}" data-id="{{ prop.pk }}" {% if prop.pk in request.session.compare_list %}checked{% endif %}>
+                            <label for="compare-{{ prop.pk }}" style="cursor:pointer;">Compare</label>
+                        </div>
+                    </div>
+
+                    <div class="card-content">
+                        <div class="card-price">PKR {{ prop.price }}</div>
+                        <a href="{% url 'property_detail' pk=prop.pk %}" class="card-title">{{ prop.title }}</a>
+                        <div class="card-loc"><i class="fa-solid fa-location-dot"></i> {{ prop.area }}</div>
+                        
+                        <div style="font-size:0.85rem; color:#64748b; display:flex; gap:15px; border-bottom:1px solid #f1f5f9; padding-bottom:10px; margin-bottom:10px;">
+                            <span><i class="fa-solid fa-bed"></i> {{ prop.bedrooms|default:"-" }}</span>
+                            <span><i class="fa-solid fa-bath"></i> {{ prop.bathrooms|default:"-" }}</span>
+                            <span><i class="fa-solid fa-ruler-combined"></i> {{ prop.get_property_type_display }}</span>
+                        </div>
+
+                        <div class="card-footer">
+                            <a href="{% url 'property_detail' pk=prop.pk %}" class="btn-view">Details</a>
+                            
+                            <!-- Save Button Logic -->
+                            {% if user.is_authenticated %}
+                                {% if prop in user.favorites.all %}
+                                    <form action="{% url 'remove_from_favorites' pk=prop.pk %}" method="POST">{% csrf_token %}<button type="submit" style="background:none; border:none; cursor:pointer; color:#ef4444; font-size:1.2rem;"><i class="fa-solid fa-heart"></i></button></form>
+                                {% else %}
+                                    <form action="{% url 'add_to_favorites' pk=prop.pk %}" method="POST">{% csrf_token %}<button type="submit" style="background:none; border:none; cursor:pointer; color:#cbd5e1; font-size:1.2rem;"><i class="fa-regular fa-heart"></i></button></form>
+                                {% endif %}
+                            {% else %}
+                                <a href="{% url 'login' %}?next={{ request.path }}" style="color:#cbd5e1; font-size:1.2rem;"><i class="fa-regular fa-heart"></i></a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            {% empty %}
+                <div style="grid-column: 1 / -1; text-align: center; padding: 50px; background: #f8fafc; border-radius: 12px;">
+                    <i class="fa-regular fa-folder-open" style="font-size: 3rem; color: #cbd5e1; margin-bottom: 15px;"></i>
+                    <h3>No Properties Found</h3>
+                    <p style="color:#64748b;">Try adjusting your filters or search for a different location.</p>
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- PAGINATION -->
+        {% if is_paginated %}
+        <div class="pagination">
             <span class="step-links">
                 {% if page_obj.has_previous %}
-                    <a href="?page=1{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" style="margin-right: 10px;">&laquo; First</a>
-                    <a href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Previous</a>
+                    <a href="?page=1{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" class="page-link">&laquo; First</a>
+                    <a href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" class="page-link">Prev</a>
                 {% endif %}
 
-                <span class="current" style="margin: 0 15px; font-weight: bold;">
+                <span class="page-link page-current">
                     Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
                 </span>
 
                 {% if page_obj.has_next %}
-                    <a href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Next</a>
-                    <a href="?page={{ page_obj.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" style="margin-left: 10px;">Last &raquo;</a>
+                    <a href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" class="page-link">Next</a>
+                    <a href="?page={{ page_obj.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" class="page-link">Last &raquo;</a>
                 {% endif %}
             </span>
         </div>
-   
-        </div>
-    </div>
+        {% endif %}
 
-{% comment %}
-{% endcomment %}
+    </main>
+</div>
 
-{% comment %} --- 1. THE FLOATING COMPARE BAR --- {% endcomment %}
+<!-- FLOATING COMPARE BAR -->
 {% with compare_count=request.session.compare_list|length %}
 <div id="compare-bar" class="floating-compare-bar {% if compare_count > 0 %}visible{% endif %}">
-    <span>
-        <span id="compare-count">{{ compare_count }}</span> 
-        <span id="compare-text">
-            {% if compare_count == 1 %}Property{% else %}Properties{% endif %} Selected
-        </span>
-    </span>
-    <a href="{% url 'compare_page' %}">Compare Now</a>
+    <div style="display:flex; align-items:center; gap:10px;">
+        <i class="fa-solid fa-scale-balanced" style="color:var(--pw-gold); font-size:1.2rem;"></i>
+        <div>
+            <strong id="compare-count" style="font-size:1.1rem;">{{ compare_count }}</strong>
+            <span id="compare-text" style="font-size:0.9rem; opacity:0.9;">{% if compare_count == 1 %}Property{% else %}Properties{% endif %} Selected</span>
+        </div>
+    </div>
+    <a href="{% url 'compare_page' %}" class="btn-compare-now">Compare Now</a>
 </div>
 {% endwith %}
 
-
-{% comment %} --- 2. THE JAVASCRIPT "BRAIN" --- {% endcomment %}
+<!-- SCRIPTS -->
 <script>
+    function toggleSidebar() {
+        const sidebar = document.getElementById('filterSidebar');
+        sidebar.classList.toggle('active');
+    }
+
+    // COMPARE LOGIC (Kept your existing logic, just cleaned up)
     document.addEventListener('DOMContentLoaded', function() {
-        
-        // --- This function gets the CSRF token for secure POST requests ---
         function getCookie(name) {
             let cookieValue = null;
             if (document.cookie && document.cookie !== '') {
@@ -318,47 +417,27 @@
             return cookieValue;
         }
         const csrftoken = getCookie('csrftoken');
-
-        // --- Get all our elements ---
         const compareBar = document.getElementById('compare-bar');
         const compareCountSpan = document.getElementById('compare-count');
         const compareTextSpan = document.getElementById('compare-text');
         const checkboxes = document.querySelectorAll('.compare-checkbox');
 
-        // --- These are the URLs we created in Step 1 ---
         const addUrl = "{% url 'add_to_compare' pk=0 %}";
         const removeUrl = "{% url 'remove_from_compare' pk=0 %}";
 
-        // --- Listen for a click on ANY compare checkbox ---
         checkboxes.forEach(function(checkbox) {
             checkbox.addEventListener('change', function() {
-                
                 const propertyId = this.dataset.id;
-                let url;
-                
-                // Determine which URL to call
-                if (this.checked) {
-                    // Checkbox is now CHECKED, so we ADD to the list
-                    url = addUrl.replace('0', propertyId);
-                } else {
-                    // Checkbox is now UNCHECKED, so we REMOVE from the list
-                    url = removeUrl.replace('0', propertyId);
-                }
+                let url = this.checked ? addUrl.replace('0', propertyId) : removeUrl.replace('0', propertyId);
 
-                // --- Call our Django view in the background ---
                 fetch(url, {
                     method: 'POST',
-                    headers: {
-                        'X-CSRFToken': csrftoken,
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
+                    headers: { 'X-CSRFToken': csrftoken, 'X-Requested-With': 'XMLHttpRequest' }
                 })
-                .then(response => response.json()) // We'll make our views return JSON
+                .then(response => response.json())
                 .then(data => {
-                    // --- Update the floating bar ---
                     const count = data.compare_list_count;
                     compareCountSpan.textContent = count;
-                    
                     if (count > 0) {
                         compareBar.classList.add('visible');
                         compareTextSpan.textContent = (count == 1) ? "Property Selected" : "Properties Selected";
@@ -372,7 +451,4 @@
     });
 </script>
 
-</body>
-</html>
-</body>
-</html>
+{% endblock content %}

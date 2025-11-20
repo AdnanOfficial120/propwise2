@@ -1,246 +1,359 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block content %}
 
-{% comment %} --- 1. NEW STYLES FOR BADGES AND SLIDER --- {% endcomment %}
 <style>
-    /* This is the badge for your new "Featured" (Paid) listings */
-    .featured-badge {
-        display: inline-block;
-        padding: 4px 8px;
-        background-color: #fff3cd; /* Light yellow */
-        color: #856404; /* Dark yellow/brown */
-        font-size: 0.85em;
-        font-weight: bold;
-        border-radius: 4px;
-        margin-left: 8px;
-        vertical-align: middle;
-    }
-    
-    /* This is the badge for your "Verified" (Admin-Approved) listings */
-    .verified-badge {
-        display: inline-block;
-        padding: 4px 8px;
-        background-color: #d4edda; /* Light green */
-        color: #155724; /* Dark green */
-        font-size: 0.85em;
-        font-weight: bold;
-        border-radius: 4px;
-        margin-left: 8px;
-        vertical-align: middle;
+    /* --- 1. HERO SECTION --- */
+    .hero-section {
+        position: relative;
+        min-height: 85vh;
+        height: auto;
+        background: url('https://images.unsplash.com/photo-1600596542815-2a4d9fbea409?q=80&w=2000&auto=format&fit=crop') no-repeat center center/cover;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-top: -120px;
+        padding-top: 160px;
+        padding-bottom: 80px;
+        color: white;
+        text-align: center;
     }
 
-    /* This creates the horizontal scrolling "slider" for featured properties */
-    .slider-container {
-        display: flex;
-        overflow-x: auto; /* This is what makes it scroll horizontally */
-        gap: 20px;
-        padding: 10px 0 20px 0; /* Add some padding for the scrollbar */
+    .hero-overlay {
+        position: absolute;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background: linear-gradient(to bottom, rgba(15, 23, 42, 0.4), rgba(15, 23, 42, 0.9));
+        z-index: 1;
     }
-    .slider-card {
-        flex: 0 0 300px; /* Each card is 300px wide, and won't shrink */
-        border: 1px solid #ccc; 
-        padding: 15px; 
-        border-radius: 8px; 
+
+    .hero-content {
+        position: relative;
+        z-index: 2;
+        width: 90%;
+        max-width: 1100px;
+        animation: fadeInUp 1s ease-out;
     }
-    .slider-card img {
+
+    .hero-title {
+        font-family: 'Playfair Display', serif;
+        font-size: 3.5rem;
+        font-weight: 700;
+        margin-bottom: 15px;
+        text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        line-height: 1.2;
+    }
+    .hero-subtitle {
+        font-size: 1.2rem;
+        color: #e2e8f0;
+        margin-bottom: 40px;
+        font-weight: 300;
+    }
+
+    /* --- 2. GLASS SEARCH BAR --- */
+    .search-glass {
+        background: rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        padding: 25px;
+        border-radius: 16px;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+        transition: all 0.3s ease;
+    }
+
+    /* Mobile Toggle Button (Hidden on Desktop) */
+    .mobile-search-trigger {
+        display: none; /* Hidden by default */
         width: 100%;
-        height: 180px;
-        object-fit: cover;
-        border-radius: 4px;
+        padding: 15px;
+        background: var(--pw-gold);
+        color: var(--pw-navy);
+        font-weight: 700;
+        border-radius: 8px;
+        text-transform: uppercase;
+        cursor: pointer;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        font-size: 1rem;
+        box-shadow: 0 4px 15px var(--pw-gold-glow);
     }
-    /* Simple Grid for Categories */
-        .category-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 15px;
-            margin-bottom: 40px;
+
+    /* Form Container */
+    #hero-search-form {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        align-items: flex-end;
+        justify-content: center;
+    }
+
+    /* Django Form Styling */
+    .search-glass p {
+        margin: 0;
+        text-align: left;
+        flex: 1;
+        min-width: 200px;
+    }
+
+    .search-glass label {
+        display: block;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #cbd5e1;
+        margin-bottom: 8px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .search-glass input, .search-glass select {
+        width: 100%;
+        padding: 14px 15px;
+        border-radius: 8px;
+        border: 1px solid rgba(255,255,255,0.4);
+        background: rgba(255, 255, 255, 0.95);
+        font-family: 'Poppins', sans-serif;
+        font-size: 1rem;
+        color: var(--pw-navy);
+        outline: none;
+        transition: 0.3s;
+        height: 50px;
+    }
+    .search-glass input:focus, .search-glass select:focus {
+        background: white;
+        box-shadow: 0 0 15px rgba(212, 175, 55, 0.5);
+        border-color: var(--pw-gold);
+    }
+
+    .btn-search {
+        background: var(--pw-gold);
+        color: var(--pw-navy);
+        padding: 0 30px;
+        border: none;
+        border-radius: 8px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: 0.3s;
+        height: 50px;
+        text-transform: uppercase;
+        box-shadow: 0 4px 15px var(--pw-gold-glow);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        min-width: 150px;
+    }
+    .btn-search:hover {
+        background: white;
+        transform: translateY(-2px);
+    }
+
+    /* --- CATEGORIES & LISTINGS --- */
+    .section-container { max-width: 1200px; margin: 60px auto; padding: 0 20px; }
+    
+    .section-title {
+        font-family: 'Playfair Display', serif; font-size: 2.2rem; color: var(--pw-navy);
+        margin-bottom: 30px; border-left: 5px solid var(--pw-gold); padding-left: 15px;
+    }
+
+    .cat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 20px; }
+    
+    .cat-card {
+        background: white; border-radius: 12px; padding: 25px 15px; text-align: center; text-decoration: none;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.05); transition: all 0.3s ease; border: 1px solid transparent;
+    }
+    .cat-card:hover { transform: translateY(-10px); box-shadow: 0 15px 30px rgba(0,0,0,0.1); border-color: var(--pw-gold); }
+    
+    .cat-icon { font-size: 2.5rem; color: var(--pw-gold); margin-bottom: 15px; display: block; }
+    .cat-title { font-weight: 600; color: var(--pw-navy); font-size: 1.1rem; }
+
+    /* Slider & Grid CSS (Same as before) */
+    .slider-wrapper {
+        display: flex; overflow-x: auto; gap: 25px; padding: 20px 5px; scroll-snap-type: x mandatory;
+    }
+    .slider-wrapper::-webkit-scrollbar { height: 6px; }
+    .slider-wrapper::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    
+    .featured-card {
+        flex: 0 0 320px; background: white; border-radius: 16px; overflow: hidden;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.08); scroll-snap-align: start; transition: 0.3s;
+    }
+    
+    .listings-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 30px; }
+    
+    .listing-card {
+        background: white; border-radius: 16px; overflow: hidden;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.05); transition: 0.3s; border: 1px solid #f1f5f9;
+    }
+
+    .btn-detail { display: inline-block; padding: 8px 20px; background: var(--pw-navy); color: white; border-radius: 6px; font-size: 0.9rem; font-weight: 500; }
+    .btn-heart { background: none; border: none; cursor: pointer; font-size: 1.5rem; padding: 5px; }
+    .heart-saved { color: #ef4444; }
+    .heart-outline { color: #94a3b8; }
+
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* --- MOBILE RESPONSIVE LOGIC --- */
+    @media (max-width: 900px) {
+        .hero-title { font-size: 2.5rem; }
+        
+        /* Show Toggle Button */
+        .mobile-search-trigger { display: flex; }
+        
+        /* Hide Form Initially */
+        #hero-search-form { 
+            display: none; /* Hidden by default on mobile */
+            flex-direction: column; 
+            align-items: stretch; 
+            gap: 10px; 
+            margin-top: 15px;
+            border-top: 1px solid rgba(255,255,255,0.2);
+            padding-top: 15px;
         }
         
-        .cat-card {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            background: white;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 20px;
-            text-decoration: none;
-            color: #333;
-            transition: all 0.2s;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-        }
-        
-        .cat-card:hover {
-            transform: translateY(-3px);
-            border-color: #0066cc;
-            color: #0066cc;
-            box-shadow: 0 4px 10px rgba(0,102,204,0.15);
-        }
-        
-        .cat-icon {
-            font-size: 2em;
-            margin-bottom: 10px;
-            color: #0066cc;
-        }
-        
-        .cat-title {
-            font-weight: bold;
-            font-size: 1.1em;
-        }
+        /* When class 'open' is added via JS, show it */
+        #hero-search-form.open { display: flex; animation: slideDown 0.3s ease-out; }
+
+        .btn-search { width: 100%; }
+    }
+
+    @keyframes slideDown {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
 </style>
 
+<!-- 1. HERO SECTION -->
+<div class="hero-section">
+    <div class="hero-overlay"></div>
+    
+    <div class="hero-content">
+        <h1 class="hero-title">Find Your <span style="color: var(--pw-gold);">Dream Home</span></h1>
+        <p class="hero-subtitle">Search premium properties, apartments, and plots.</p>
 
-<h1>Welcome to PropWise</h1>
+        <div class="search-glass">
+            
+            <!-- MOBILE TRIGGER BUTTON -->
+            <div class="mobile-search-trigger" onclick="toggleSearch()">
+                <span><i class="fa-solid fa-sliders"></i> Start Search</span>
+                <i class="fa-solid fa-chevron-down" id="search-arrow" style="transition: transform 0.3s;"></i>
+            </div>
 
-{% comment %} --- YOUR SEARCH BOX (No changes, this is perfect) --- {% endcomment %}
-<div style="background: #eee; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-    <h3>Find Your Perfect Property</h3>
-    <form action="{% url 'property_search' %}" method="get">
-        {{ filter_form.form.as_p }}
-        <button type="submit" style="background: #0066cc; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; margin-top: 10px;">
-            Search
-        </button>
-    </form>
+            <!-- SEARCH FORM -->
+            <form action="{% url 'property_search' %}" method="get" id="hero-search-form">
+                {{ filter_form.form.as_p }}
+                <button type="submit" class="btn-search">
+                    <i class="fa-solid fa-magnifying-glass"></i> Search Result
+                </button>
+            </form>
+
+        </div>
+    </div>
 </div>
 
-<h3>Browse by Category</h3>
-    <div class="category-grid">
-        <!-- by category -->
-        <!-- 1. HOUSES -->
-        <!-- Notice the link: ?property_type=house -->
+<!-- 2. CATEGORIES -->
+<div class="section-container">
+    <h2 class="section-title">Browse by Category</h2>
+    <div class="cat-grid">
         <a href="{% url 'property_search' %}?property_type=house" class="cat-card">
-            <i class="fa fa-home cat-icon"></i>
-            <span class="cat-title">Houses</span>
+            <i class="fa-solid fa-house-chimney cat-icon"></i>
+            <div class="cat-title">Houses</div>
         </a>
-
-        <!-- 2. PLOTS -->
         <a href="{% url 'property_search' %}?property_type=plot" class="cat-card">
-            <i class="fa fa-map-o cat-icon"></i>
-            <span class="cat-title">Plots</span>
+            <i class="fa-solid fa-map-location-dot cat-icon"></i>
+            <div class="cat-title">Plots</div>
         </a>
-
-        <!-- 3. APARTMENTS -->
         <a href="{% url 'property_search' %}?property_type=apartment" class="cat-card">
-            <i class="fa fa-building cat-icon"></i>
-            <span class="cat-title">Apartments</span>
+            <i class="fa-regular fa-building cat-icon"></i>
+            <div class="cat-title">Apartments</div>
         </a>
-
-        <!-- 4. COMMERCIAL -->
         <a href="{% url 'property_search' %}?property_type=commercial" class="cat-card">
-            <i class="fa fa-briefcase cat-icon"></i>
-            <span class="cat-title">Commercial</span>
+            <i class="fa-solid fa-briefcase cat-icon"></i>
+            <div class="cat-title">Commercial</div>
         </a>
-
     </div>
+</div>
 
-{% comment %}
-{% endcomment %}
+<!-- 3. FEATURED PROPERTIES -->
 {% if featured_properties %}
-    <h3 style="border-bottom: 2px solid #0056b3; padding-bottom: 5px;">⭐ Featured Properties</h3>
-    
-    <div class="slider-container">
+<div class="section-container" style="background: #fff; padding: 40px 20px; border-radius: 20px; margin-bottom: 60px;">
+    <h2 class="section-title" style="border-color: var(--pw-navy);">⭐ Featured Collections</h2>
+    <div class="slider-wrapper">
         {% for prop in featured_properties %}
-            <div class="slider-card">
-                
-                {% if prop.main_image %}
-                    <a href="{% url 'property_detail' pk=prop.pk %}">
-                        <img src="{{ prop.main_image.url }}" alt="{{ prop.title }}">
-                    </a>
-                {% endif %}
-                
-                <h4>
-                    <a href="{% url 'property_detail' pk=prop.pk %}">{{ prop.title }}</a>
-                    
-                    {% comment %} --- ADD THE FEATURED BADGE --- {% endcomment %}
-                    <span class="featured-badge">⭐ Featured</span>
-                </h4>
-
-                <p><strong>Price:</strong> PKR {{ prop.price }}</p>
-                <p><strong>Location:</strong> {{ prop.area }}</p>
-                <p><strong>Type:</strong> {{ prop.get_property_type_display }}</p>
+        <div class="featured-card">
+            {% if prop.main_image %}
+            <a href="{% url 'property_detail' pk=prop.pk %}" style="display:block; position:relative;">
+                <img src="{{ prop.main_image.url }}" alt="{{ prop.title }}" class="card-img-top" style="height:200px; object-fit:cover; width:100%;">
+                <div style="position:absolute; top:15px; left:15px; background:rgba(255,255,255,0.9); padding:5px 12px; border-radius:20px; font-weight:bold; font-size:0.8rem; color:var(--pw-navy);">
+                    <i class="fa-solid fa-crown" style="color: #D4AF37;"></i> Featured
+                </div>
+            </a>
+            {% endif %}
+            <div class="card-body" style="padding:20px;">
+                <a href="{% url 'property_detail' pk=prop.pk %}" class="card-title" style="display:block; font-size:1.2rem; font-weight:bold; color:var(--pw-navy); margin-bottom:5px;">{{ prop.title }}</a>
+                <div style="color:var(--pw-gold); font-weight:bold;">PKR {{ prop.price }}</div>
             </div>
+        </div>
         {% endfor %}
     </div>
-{% endif %}
-{% comment %}
-{% endcomment %}
-
-
-{% comment %} --- 3. UPGRADED "LATEST LISTINGS" SECTION --- {% endcomment %}
-<h3>Latest Verified Listings</h3>
-
-<div class="property-list">
-    
-    {% comment %} --- USE THE 'latest_properties' VARIABLE FROM THE VIEW --- {% endcomment %}
-    {% for prop in latest_properties %} 
-        <div class="property-card">
-            
-            {% if prop.main_image %}
-                <a href="{% url 'property_detail' pk=prop.pk %}">
-                    <img src="{{ prop.main_image.url }}" alt="{{ prop.title }}">
-                </a>
-            {% endif %}
-            
-            <h4>
-                <a href="{% url 'property_detail' pk=prop.pk %}">
-                    {{ prop.title }}
-                </a>
-                
-                {% comment %} --- ADD THE VERIFIED BADGE --- {% endcomment %}
-                {% if prop.is_verified %}
-                    <span class="verified-badge">✅ Verified</span>
-                {% endif %}
-            </h4>
-
-            <p><strong>Price:</strong> PKR {{ prop.price }}</p>
-            <p><strong>Location:</strong> {{ prop.area }}</p>
-            <p><strong>Type:</strong> {{ prop.get_property_type_display }}</p>
-            
-            <p style="margin-top: 10px;">
-                <a href="{% url 'property_detail' pk=prop.pk %}" style="
-                    display: inline-block;
-                    padding: 8px 16px;
-                    background-color: #0066cc;
-                    color: white;
-                    text-decoration: none;
-                    border-radius: 4px;
-                    font-size: 14px;
-                ">
-                    View Details
-                </a>
-                
-                {% comment %} Save/Unsave Button Logic (Copied from your template) {% endcomment %}
-                {% if user.is_authenticated %}
-                    {% if prop in user.favorites.all %}
-                        <form action="{% url 'remove_from_favorites' pk=prop.pk %}" method="POST" style="display: inline;">
-                            {% csrf_token %}
-                            <button type="submit" style="
-                                background: #dc3545; color: white; padding: 5px 10px; border: none; 
-                                border-radius: 4px; cursor: pointer; font-size: 14px; margin-left: 10px;
-                            ">Unsave</button>
-                        </form>
-                    {% else %}
-                        <form action="{% url 'add_to_favorites' pk=prop.pk %}" method="POST" style="display: inline;">
-                            {% csrf_token %}
-                            <button type="submit" style="
-                                background: #007bff; color: white; padding: 5px 10px; border: none; 
-                                border-radius: 4px; cursor: pointer; font-size: 14px; margin-left: 10px;
-                            ">Save</button>
-                        </form>
-                    {% endif %}
-                {% else %}
-                    <a href="{% url 'login' %}?next={{ request.path }}" style="
-                        background: #007bff; color: white; padding: 5px 10px; border: none; 
-                        border-radius: 4px; font-size: 14px; margin-left: 10px; text-decoration: none;
-                    ">Save</a>
-                {% endif %}
-            </p>
-        </div>
-    {% empty %}
-        <p>No properties have been listed yet. Please check back soon!</p>
-    {% endfor %}
 </div>
+{% endif %}
+
+<!-- 4. LATEST LISTINGS -->
+<div class="section-container">
+    <h2 class="section-title">Latest Verified Listings</h2>
+    <div class="listings-grid">
+        {% for prop in latest_properties %}
+        <div class="listing-card">
+            <div style="position: relative;">
+                {% if prop.main_image %}
+                <a href="{% url 'property_detail' pk=prop.pk %}">
+                    <img src="{{ prop.main_image.url }}" alt="{{ prop.title }}" style="width:100%; height:220px; object-fit:cover;">
+                </a>
+                {% endif %}
+                {% if prop.is_verified %}
+                <div style="position: absolute; top: 10px; right: 10px; background: #10b981; color: white; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: bold;">
+                    <i class="fa-solid fa-check-circle"></i> Verified
+                </div>
+                {% endif %}
+            </div>
+            <div style="padding: 20px;">
+                <a href="{% url 'property_detail' pk=prop.pk %}" style="font-weight:bold; font-size:1.1rem; color:var(--pw-navy); display:block; margin-bottom:5px;">{{ prop.title }}</a>
+                <div style="color:var(--pw-gold); font-weight:bold; margin-bottom:10px;">PKR {{ prop.price }}</div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <a href="{% url 'property_detail' pk=prop.pk %}" class="btn-detail">View Details</a>
+                    {% if user.is_authenticated %}
+                        {% if prop in user.favorites.all %}
+                            <form action="{% url 'remove_from_favorites' pk=prop.pk %}" method="POST" style="display: inline;">{% csrf_token %}<button type="submit" class="btn-heart heart-saved"><i class="fa-solid fa-heart"></i></button></form>
+                        {% else %}
+                            <form action="{% url 'add_to_favorites' pk=prop.pk %}" method="POST" style="display: inline;">{% csrf_token %}<button type="submit" class="btn-heart heart-outline"><i class="fa-regular fa-heart"></i></button></form>
+                        {% endif %}
+                    {% else %}
+                        <a href="{% url 'login' %}?next={{ request.path }}" class="btn-heart heart-outline"><i class="fa-regular fa-heart"></i></a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div style="grid-column: 1 / -1; text-align: center; padding: 40px;">No listings yet.</div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+    function toggleSearch() {
+        const form = document.getElementById('hero-search-form');
+        const arrow = document.getElementById('search-arrow');
+        
+        form.classList.toggle('open');
+        
+        // Rotate Arrow Animation
+        if (form.classList.contains('open')) {
+            arrow.style.transform = 'rotate(180deg)';
+        } else {
+            arrow.style.transform = 'rotate(0deg)';
+        }
+    }
+</script>
 
 {% endblock content %}

@@ -1,45 +1,192 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block content %}
-<div class="container" style="max-width: 400px; margin: 50px auto;">
-    <h2 style="text-align: center; margin-bottom: 20px;">Log In</h2>
+
+<style>
+    /* --- PAGE CONTAINER (Split Screen) --- */
+    .auth-container {
+        display: flex;
+        min-height: calc(100vh - 120px); /* Full height minus navbar */
+        background: white;
+    }
+
+    /* --- LEFT SIDE: LUXURY IMAGE --- */
+    .auth-image {
+        flex: 1;
+        background: url('https://images.unsplash.com/photo-1613545325278-f24b0cae1224?q=80&w=1920&auto=format&fit=crop') no-repeat center center/cover;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
     
-    <form method="post" style="background: #f9f9f9; padding: 30px; border-radius: 8px; border: 1px solid #ddd; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
-        {% csrf_token %}
-        
-        <!-- Display Form Errors (if any) -->
-        {% if form.errors %}
-            <div style="color: red; margin-bottom: 15px; text-align: center;">
-                Your username and password didn't match. Please try again.
+    /* Dark Overlay on Image */
+    .auth-overlay {
+        position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+        background: linear-gradient(135deg, rgba(15, 23, 42, 0.4), rgba(15, 23, 42, 0.8));
+    }
+
+    .auth-quote {
+        position: relative; z-index: 2; color: white; text-align: center; padding: 40px;
+        font-family: 'Playfair Display', serif;
+    }
+    .quote-text { font-size: 2.5rem; font-weight: 700; margin-bottom: 15px; }
+    .quote-sub { font-family: 'Poppins', sans-serif; font-size: 1.1rem; opacity: 0.9; font-weight: 300; }
+
+    /* --- RIGHT SIDE: FORM --- */
+    .auth-form-wrapper {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 40px;
+        background: white;
+    }
+
+    .auth-box {
+        width: 100%;
+        max-width: 450px;
+    }
+
+    .auth-header { margin-bottom: 30px; text-align: center; }
+    .auth-title {
+        font-family: 'Playfair Display', serif;
+        font-size: 2.2rem;
+        color: var(--pw-navy);
+        font-weight: 700;
+        margin-bottom: 10px;
+    }
+    .auth-subtitle { color: #64748b; font-size: 0.95rem; }
+
+    /* FORM INPUT STYLING */
+    .form-group { margin-bottom: 20px; }
+    
+    .form-label {
+        display: block;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--pw-navy);
+        margin-bottom: 8px;
+    }
+
+    /* Target Django's Rendered Inputs */
+    .auth-box input {
+        width: 100%;
+        padding: 14px 16px;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        font-family: 'Poppins', sans-serif;
+        font-size: 1rem;
+        color: var(--pw-navy);
+        background: #f8fafc;
+        transition: all 0.3s ease;
+    }
+
+    .auth-box input:focus {
+        background: white;
+        border-color: var(--pw-gold);
+        box-shadow: 0 0 0 4px rgba(212, 175, 55, 0.1);
+        outline: none;
+    }
+
+    /* BUTTON */
+    .btn-auth {
+        width: 100%;
+        padding: 14px;
+        background: var(--pw-navy);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: 0.3s;
+        margin-top: 10px;
+        box-shadow: 0 4px 12px rgba(15, 23, 42, 0.2);
+    }
+    .btn-auth:hover {
+        background: var(--pw-gold);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4);
+    }
+
+    /* LINKS */
+    .auth-footer {
+        margin-top: 25px;
+        text-align: center;
+        font-size: 0.9rem;
+        color: #64748b;
+    }
+    .auth-link { color: var(--pw-gold); font-weight: 600; text-decoration: none; }
+    .auth-link:hover { text-decoration: underline; }
+
+    .error-msg {
+        background: #fee2e2; color: #991b1b; padding: 12px; border-radius: 6px;
+        font-size: 0.9rem; margin-bottom: 20px; border-left: 4px solid #ef4444;
+    }
+
+    /* RESPONSIVE */
+    @media (max-width: 900px) {
+        .auth-image { display: none; } /* Hide image on mobile */
+        .auth-form-wrapper { padding: 20px; }
+        .auth-container { min-height: auto; padding: 40px 0; }
+    }
+</style>
+
+<div class="auth-container">
+    
+    <!-- LEFT: IMAGE & QUOTE -->
+    <div class="auth-image">
+        <div class="auth-overlay"></div>
+        <div class="auth-quote">
+            <div class="quote-text">"Home is where your story begins."</div>
+            <div class="quote-sub">Welcome back to PropWise.</div>
+        </div>
+    </div>
+
+    <!-- RIGHT: LOGIN FORM -->
+    <div class="auth-form-wrapper">
+        <div class="auth-box">
+            
+            <div class="auth-header">
+                <h1 class="auth-title">Welcome Back</h1>
+                <p class="auth-subtitle">Log in to manage your properties and saved listings.</p>
             </div>
-        {% endif %}
 
-        <div style="margin-bottom: 15px;">
-            <label for="id_username" style="font-weight: bold; display: block; margin-bottom: 5px;">Username:</label>
-            {{ form.username }}
+            <form method="post">
+                {% csrf_token %}
+                
+                <!-- Errors -->
+                {% if form.errors %}
+                    <div class="error-msg">
+                        <i class="fa-solid fa-circle-exclamation"></i> Invalid username or password.
+                    </div>
+                {% endif %}
+
+                <div class="form-group">
+                    <label for="id_username" class="form-label">Username</label>
+                    {{ form.username }}
+                </div>
+
+                <div class="form-group">
+                    <div style="display:flex; justify-content:space-between;">
+                        <label for="id_password" class="form-label">Password</label>
+                        <a href="{% url 'password_reset' %}" style="font-size:0.85rem; color:#64748b;">Forgot Password?</a>
+                    </div>
+                    {{ form.password }}
+                </div>
+
+                <button type="submit" class="btn-auth">Log In</button>
+            </form>
+
+            <div class="auth-footer">
+                Don't have an account? <a href="{% url 'signup' %}" class="auth-link">Sign Up</a>
+            </div>
+
         </div>
+    </div>
 
-        <div style="margin-bottom: 20px;">
-            <label for="id_password" style="font-weight: bold; display: block; margin-bottom: 5px;">Password:</label>
-            {{ form.password }}
-        </div>
-
-        <button type="submit" style="background: #0066cc; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; width: 100%; font-size: 1.1em;">
-            Log In
-        </button>
-        
-        <!-- === THIS IS THE NEW FORGOT PASSWORD LINK === -->
-        <p style="text-align: center; margin-top: 15px;">
-            <a href="{% url 'password_reset' %}" style="color: #666; font-size: 0.9em; text-decoration: none;">
-                Forgot your password?
-            </a>
-        </p>
-        <!-- === END NEW LINK === -->
-
-    </form>
-
-    <p style="text-align: center; margin-top: 20px;">
-        Don't have an account? <a href="{% url 'signup' %}" style="color: #0066cc; font-weight: bold;">Sign up</a>
-    </p>
 </div>
+
 {% endblock %}
