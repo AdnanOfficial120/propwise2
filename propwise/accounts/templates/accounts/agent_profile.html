@@ -1,278 +1,339 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block content %}
 
-{% comment %}
-    We will add some simple styles for the new review sections.
-    This keeps everything in one file for now.
-{% endcomment %}
 <style>
-    .review-section-container {
-        display: grid;
-        grid-template-columns: 1fr; /* Default to 1 column */
-        gap: 30px;
-        margin-top: 30px;
+    /* --- PAGE CONTAINER --- */
+    .profile-container {
+        max-width: 1100px;
+        margin: 40px auto;
+        padding: 0 20px;
     }
+
+    /* --- 1. HERO PROFILE CARD --- */
+    .profile-card {
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        border: 1px solid #f1f5f9;
+        padding: 40px;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+        margin-bottom: 50px;
+    }
+
+    /* Background Accent */
+    .profile-card::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; width: 100%; height: 120px;
+        background: var(--pw-navy);
+        z-index: 0;
+    }
+
+    .profile-avatar {
+        position: relative;
+        z-index: 1;
+        width: 140px; height: 140px;
+        margin: 0 auto 20px;
+        border-radius: 50%;
+        border: 5px solid white;
+        background: #e2e8f0;
+        display: flex; align-items: center; justify-content: center;
+        overflow: hidden;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    .profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .profile-avatar i { font-size: 3rem; color: #94a3b8; }
+
+    .profile-info { position: relative; z-index: 1; }
     
-    /* On larger screens, split into 2 columns */
-    @media (min-width: 768px) {
-        .review-section-container {
-            grid-template-columns: 1fr 2fr; /* 1/3 for form, 2/3 for list */
-        }
-    }
-
-    .review-form-box, .review-list-box {
-        border: 1px solid #ddd;
-        border-radius: 8px;
-        padding: 20px;
-        background: #f9f9f9;
-    }
-
-    .review-card {
-        border-bottom: 1px solid #eee;
-        padding: 15px 0;
-    }
-    .review-card:last-child {
-        border-bottom: none;
-    }
-    .review-card-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
+    .agent-name {
+        font-family: 'Playfair Display', serif;
+        font-size: 2.2rem;
+        color: var(--pw-navy);
         margin-bottom: 5px;
-    }
-    .review-card-header strong {
-        font-size: 1.1em;
-    }
-    .review-card-header .rating-stars {
-        font-size: 1.2em;
-        color: #f0ad4e; /* Yellow for stars */
-    }
-    .review-card p {
-        margin: 5px 0 0 0;
-        line-height: 1.5;
-    }
-
-    /* Simple star rating display */
-    .star-rating-display {
-        color: #f0ad4e; /* Yellow for stars */
-        font-size: 1.3em;
-        font-weight: bold;
+        font-weight: 700;
     }
     
-    /* Make the new form fields look good */
-    .review-form-box select,
-    .review-form-box textarea,
-    .review-form-box button {
-        width: 100%;
-        padding: 10px;
-        margin-bottom: 10px;
-        border-radius: 5px;
-        border: 1px solid #ccc;
-        box-sizing: border-box; /* Important for 100% width */
+    .agent-badge {
+        display: inline-flex; align-items: center; gap: 5px;
+        background: #ecfdf5; color: #059669;
+        padding: 4px 12px; border-radius: 20px;
+        font-size: 0.8rem; font-weight: 700;
+        vertical-align: middle; margin-left: 10px;
     }
-    .review-form-box button {
-        background: #28a745;
-        color: white;
-        font-weight: bold;
-        cursor: pointer;
+
+    .agent-username { color: #64748b; font-size: 1rem; margin-bottom: 15px; }
+
+    /* Rating */
+    .rating-box {
+        display: inline-flex; align-items: center; gap: 8px;
+        background: #fffbeb; color: #d97706;
+        padding: 8px 15px; border-radius: 8px;
+        font-weight: 700; font-size: 1rem;
+        margin-bottom: 25px;
+    }
+
+    /* Contact Buttons */
+    .contact-bar {
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+        flex-wrap: wrap;
+    }
+    
+    .btn-contact {
+        padding: 12px 25px;
+        border-radius: 50px;
+        font-weight: 600;
+        text-decoration: none;
+        display: flex; align-items: center; gap: 8px;
+        transition: 0.3s;
+        border: 1px solid transparent;
+    }
+    
+    .btn-wa { background: #dcfce7; color: #16a34a; border-color: #bbf7d0; }
+    .btn-wa:hover { background: #16a34a; color: white; }
+    
+    .btn-call { background: #f1f5f9; color: var(--pw-navy); border-color: #e2e8f0; }
+    .btn-call:hover { background: var(--pw-navy); color: white; }
+    
+    .btn-email { background: #fff; color: #64748b; border-color: #e2e8f0; }
+    .btn-email:hover { border-color: var(--pw-navy); color: var(--pw-navy); }
+
+
+    /* --- 2. LISTINGS SECTION --- */
+    .section-header {
+        display: flex; justify-content: space-between; align-items: center;
+        margin-bottom: 30px; border-bottom: 2px solid #f1f5f9; padding-bottom: 15px;
+    }
+    .section-title { font-family: 'Playfair Display', serif; font-size: 1.8rem; color: var(--pw-navy); }
+
+    .listings-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 25px;
+        margin-bottom: 60px;
+    }
+
+    /* Listing Card (reused style) */
+    .prop-card {
+        background: white; border-radius: 12px; overflow: hidden;
+        border: 1px solid #f1f5f9; transition: 0.3s; box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+    }
+    .prop-card:hover { transform: translateY(-5px); box-shadow: 0 15px 30px rgba(0,0,0,0.08); }
+    
+    .prop-img { width: 100%; height: 200px; object-fit: cover; }
+    .prop-body { padding: 20px; }
+    .prop-price { color: var(--pw-gold); font-weight: 700; font-size: 1.1rem; margin-bottom: 5px; }
+    .prop-title { font-weight: 700; color: var(--pw-navy); display: block; text-decoration: none; margin-bottom: 5px; }
+    .prop-loc { color: #64748b; font-size: 0.85rem; }
+
+
+    /* --- 3. REVIEWS SECTION --- */
+    .reviews-wrapper {
+        display: grid;
+        grid-template-columns: 1fr 2fr; /* Form | List */
+        gap: 40px;
+    }
+
+    /* Review Form */
+    .review-form-card {
+        background: white; padding: 25px; border-radius: 12px;
+        border: 1px solid #f1f5f9; box-shadow: 0 5px 20px rgba(0,0,0,0.03);
+        height: fit-content;
+    }
+    .review-form-card h4 { margin-bottom: 15px; color: var(--pw-navy); }
+    
+    .review-form-card label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 5px; color: #64748b; }
+    .review-form-card select, .review-form-card textarea {
+        width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px;
+        background: #f8fafc; margin-bottom: 15px; font-family: 'Poppins', sans-serif;
+        box-sizing: border-box;
+    }
+    .btn-review {
+        width: 100%; background: var(--pw-navy); color: white; padding: 10px; border: none;
+        border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.2s;
+    }
+    .btn-review:hover { background: var(--pw-gold); color: var(--pw-navy); }
+
+    /* Review List */
+    .review-item {
+        background: white; padding: 20px; border-radius: 12px;
+        border: 1px solid #f1f5f9; margin-bottom: 15px;
+    }
+    .review-head { display: flex; justify-content: space-between; margin-bottom: 10px; }
+    .reviewer-name { font-weight: 700; color: var(--pw-navy); }
+    .review-stars { color: #d97706; letter-spacing: 2px; }
+    .review-date { font-size: 0.8rem; color: #94a3b8; }
+    .review-text { color: #475569; line-height: 1.6; font-size: 0.95rem; }
+
+    /* Alerts */
+    .alert-box { padding: 12px; border-radius: 8px; font-size: 0.9rem; margin-bottom: 20px; }
+    .al-success { background: #ecfdf5; color: #065f46; }
+    .al-warn { background: #fffbeb; color: #92400e; }
+    .al-info { background: #eff6ff; color: #1e40af; }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+        .reviews-wrapper { grid-template-columns: 1fr; }
+        .contact-bar { flex-direction: column; width: 100%; }
+        .btn-contact { justify-content: center; }
     }
 </style>
 
+<div class="profile-container">
 
-<div class="container" style="margin-top: 20px;">
-    
-    {% comment %} --- 1. AGENT INFO HEADER (UPGRADED) --- {% endcomment %}
-    <div class="agent-header" style="background: #f4f4f4; padding: 20px; border-radius: 8px; margin-bottom: 30px; display: flex; align-items: center; gap: 20px;">
-        
-        {% if agent.profile_picture %}
-            <img src="{{ agent.profile_picture.url }}" alt="{{ agent.username }}'s profile picture" style="height: 120px; width: 120px; object-fit: cover; border-radius: 50%;">
-        {% else %}
-            <div style="height: 120px; width: 120px; background: #ccc; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2em; color: #666;">
-                {{ agent.username.0|upper }}
-            </div>
-        {% endif %}
-        
-        <div>
-            <h2 style="margin: 0 0 5px 0;">{{ agent.first_name }} {{ agent.last_name }}</h2>
-            <p style="margin: 0; font-size: 1.2em; color: #333;">@{{ agent.username }}</p>
-            
-            {% if agent.phone_number %}
-                <p style="margin: 10px 0 0 0; color: #555;"><strong>Phone:</strong> {{ agent.phone_number }}</p>
-            {% endif %}
-            <p style="margin: 5px 0 0 0; color: #555;"><strong>Email:</strong> {{ agent.email }}</p>
-
-            {% comment %} --- START: NEW RATING DISPLAY --- {% endcomment %}
-            <div style="margin-top: 10px;">
-                {% if rating_stats.total_reviews > 0 %}
-                    <span class="star-rating-display">
-                        {{ rating_stats.avg_rating|floatformat:1 }} ★
-                    </span>
-                    <span style="color: #666; margin-left: 5px;">
-                        (based on {{ rating_stats.total_reviews }} review{{ rating_stats.total_reviews|pluralize }})
-                    </span>
+    <!-- 1. HERO CARD -->
+    <div class="profile-card">
+        <div class="profile-info">
+            <!-- Avatar -->
+            <div class="profile-avatar">
+                {% if agent.profile_picture %}
+                    <img src="{{ agent.profile_picture.url }}" alt="{{ agent.username }}">
                 {% else %}
-                    <strong style="color: #666;">This agent has no reviews yet.</strong>
+                    <i class="fa-solid fa-user-tie"></i>
                 {% endif %}
             </div>
-            {% comment %} --- END: NEW RATING DISPLAY --- {% endcomment %}
 
+            <!-- Name & Badge -->
+            <div class="agent-name">
+                {{ agent.first_name }} {{ agent.last_name }}
+                <span class="agent-badge"><i class="fa-solid fa-check-circle"></i> Verified Agent</span>
+            </div>
+            <div class="agent-username">@{{ agent.username }}</div>
+
+            <!-- Rating -->
+            <div class="rating-box">
+                {% if rating_stats.total_reviews > 0 %}
+                    <i class="fa-solid fa-star"></i> {{ rating_stats.avg_rating|floatformat:1 }}
+                    <span style="font-weight:400; color:#b45309; font-size:0.9rem;">({{ rating_stats.total_reviews }} reviews)</span>
+                {% else %}
+                    <span style="font-weight:400; color:#94a3b8;">No reviews yet</span>
+                {% endif %}
+            </div>
+
+            <!-- Contact Actions -->
+            <div class="contact-bar">
+                {% if agent.phone_number %}
+                    <a href="https://wa.me/{{ agent.phone_number }}" target="_blank" class="btn-contact btn-wa">
+                        <i class="fa-brands fa-whatsapp"></i> WhatsApp
+                    </a>
+                    <a href="tel:{{ agent.phone_number }}" class="btn-contact btn-call">
+                        <i class="fa-solid fa-phone"></i> Call Agent
+                    </a>
+                {% endif %}
+                <a href="mailto:{{ agent.email }}" class="btn-contact btn-email">
+                    <i class="fa-regular fa-envelope"></i> Email
+                </a>
+            </div>
         </div>
     </div>
 
-    {% comment %} --- 2. AGENT'S LISTINGS (No changes here) --- {% endcomment %}
-    <h3>Listings by {{ agent.first_name|default:agent.username }}</h3>
+    <!-- 2. ACTIVE LISTINGS -->
+    <div class="section-header">
+        <div class="section-title">Active Listings</div>
+        <div style="color:#64748b;">{{ properties.count }} Properties</div>
+    </div>
 
-    <div class="property-list">
+    <div class="listings-grid">
         {% for prop in properties %}
-            <div class="property-card">
-                
+            <div class="prop-card">
                 {% if prop.main_image %}
-                    <img src="{{ prop.main_image.url }}" alt="{{ prop.title }}">
-                {% endif %}
-                
-                <h4>
                     <a href="{% url 'property_detail' pk=prop.pk %}">
-                        {{ prop.title }}
+                        <img src="{{ prop.main_image.url }}" alt="{{ prop.title }}" class="prop-img">
                     </a>
-                </h4>
-
-                <p><strong>Price:</strong> PKR {{ prop.price }}</p>
-                <p><strong>Location:</strong> {{ prop.area }}</p>
-                <p><strong>Type:</strong> {{ prop.get_property_type_display }}</p>
-                
-                <p style="margin-top: 10px;">
-                    <a href="{% url 'property_detail' pk=prop.pk %}" style="
-                        display: inline-block;
-                        padding: 8px 16px;
-                        background-color: #0066cc;
-                        color: white;
-                        text-decoration: none;
-                        border-radius: 4px;
-                        font-size: 14px;
-                    ">
-                        View Details
-                    </a>
-                    
-                    {% comment %} Save/Unsave logic (No changes here) {% endcomment %}
-                    {% if user.is_authenticated %}
-                        {% if prop in user.favorites.all %}
-                            <form action="{% url 'remove_from_favorites' pk=prop.pk %}" method="POST" style="display: inline;">
-                                {% csrf_token %}
-                                <button type="submit" style="
-                                    background: #dc3545; color: white; padding: 5px 10px; border: none; 
-                                    border-radius: 4px; cursor: pointer; font-size: 14px; margin-left: 10px;
-                                ">Unsave</button>
-                            </form>
-                        {% else %}
-                            <form action="{% url 'add_to_favorites' pk=prop.pk %}" method="POST" style="display: inline;">
-                                {% csrf_token %}
-                                <button type="submit" style="
-                                    background: #007bff; color: white; padding: 5px 10px; border: none; 
-                                    border-radius: 4px; cursor: pointer; font-size: 14px; margin-left: 10px;
-                                ">Save</button>
-                            </form>
-                        {% endif %}
-                    {% else %}
-                        <a href="{% url 'login' %}?next={{ request.path }}" style="
-                            background: #007bff; color: white; padding: 5px 10px; border: none; 
-                            border-radius: 4px; font-size: 14px; margin-left: 10px; text-decoration: none;
-                        ">Save</a>
-                    {% endif %}
-                </p>
+                {% endif %}
+                <div class="prop-body">
+                    <div class="prop-price">PKR {{ prop.price }}</div>
+                    <a href="{% url 'property_detail' pk=prop.pk %}" class="prop-title">{{ prop.title|truncatechars:30 }}</a>
+                    <div class="prop-loc"><i class="fa-solid fa-location-dot"></i> {{ prop.area }}</div>
+                    <a href="{% url 'property_detail' pk=prop.pk %}" style="display:block; margin-top:15px; font-size:0.9rem; font-weight:600; color:var(--pw-navy);">View Details &rarr;</a>
+                </div>
             </div>
         {% empty %}
-            <p>{{ agent.first_name|default:"This agent" }} has no active listings at this time.</p>
+            <div style="grid-column:1/-1; text-align:center; padding:40px; color:#94a3b8; background:#f8fafc; border-radius:12px;">
+                No active listings at the moment.
+            </div>
         {% endfor %}
     </div>
 
-    <hr style="margin: 40px 0;">
+    <!-- 3. REVIEWS SECTION -->
+    <div class="section-header">
+        <div class="section-title">Client Reviews</div>
+    </div>
 
-    {% comment %} --- START: NEW RATINGS & REVIEWS SECTION --- {% endcomment %}
-
-    <h2>Ratings & Reviews for {{ agent.first_name|default:agent.username }}</h2>
-
-    <div class="review-section-container">
+    <div class="reviews-wrapper">
         
-        <div class="review-form-box">
-            <h4>Leave a Review</h4>
+        <!-- LEFT: REVIEW FORM -->
+        <div class="review-form-card">
+            <h4>Write a Review</h4>
             
             {% if user_can_review %}
-                <form method="POST" class="review-form">
+                <form method="POST">
                     {% csrf_token %}
-                    
                     <div>
-                        <label for="{{ review_form.rating.id_for_label }}">{{ review_form.rating.label }}</label>
+                        <label for="{{ review_form.rating.id_for_label }}">Rating</label>
                         {{ review_form.rating }}
                     </div>
-                    
-                    <div style="margin-top: 10px;">
-                        <label for="{{ review_form.comment.id_for_label }}">{{ review_form.comment.label }}</label>
+                    <div>
+                        <label for="{{ review_form.comment.id_for_label }}">Your Experience</label>
                         {{ review_form.comment }}
                     </div>
-                    
-                    {% if review_form.errors %}
-                        <div style="color: red; font-size: 0.9em; margin-top: 5px;">
-                            {{ review_form.errors }}
-                        </div>
-                    {% endif %}
-                    
-                    <button type="submit" style="margin-top: 15px;">Submit Review</button>
+                    <button type="submit" class="btn-review">Submit Review</button>
                 </form>
 
             {% elif user_has_reviewed %}
-                <p style="color: #155724; background: #d4edda; padding: 10px; border-radius: 5px;">
-                    <strong>Thank you!</strong> You have already submitted a review for this agent.
-                </p>
+                <div class="alert-box al-success">
+                    <i class="fa-solid fa-check-circle"></i> You have already reviewed this agent.
+                </div>
 
             {% elif not user.is_authenticated %}
-                <p>
-                    <a href="{% url 'login' %}?next={{ request.path }}">Log in</a> as a buyer to leave a review.
-                </p>
+                <div class="alert-box al-info">
+                    <a href="{% url 'login' %}?next={{ request.path }}" style="color:inherit; font-weight:bold;">Log in</a> to leave a review.
+                </div>
 
             {% elif user == agent %}
-                <p style="color: #856404; background: #fff3cd; padding: 10px; border-radius: 5px;">
-                    You cannot review your own profile.
-                </p>
+                <div class="alert-box al-warn">
+                    You cannot review yourself.
+                </div>
                 
             {% else %}
-                 <p style="color: #721c24; background: #f8d7da; padding: 10px; border-radius: 5px;">
+                <div class="alert-box al-warn">
                     Only buyers can leave reviews.
-                </p>
+                </div>
             {% endif %}
         </div>
 
-        <div class="review-list-box">
-            <h4>What Others Say</h4>
-
+        <!-- RIGHT: REVIEW LIST -->
+        <div class="review-list">
             {% for review in all_reviews %}
-                <div class="review-card">
-                    <div class="review-card-header">
-                        <strong>
-                            {% if review.reviewer %}
-                                {{ review.reviewer.username }}
-                            {% else %}
-                                Anonymized User
-                            {% endif %}
-                        </strong>
-                        <span class="rating-stars">
-                            {{ review.rating }} ★
-                        </span>
+                <div class="review-item">
+                    <div class="review-head">
+                        <div>
+                            <div class="reviewer-name">
+                                {% if review.reviewer %} {{ review.reviewer.username }} {% else %} Anonymous {% endif %}
+                            </div>
+                            <div class="review-date">{{ review.created_at|timesince }} ago</div>
+                        </div>
+                        <div class="review-stars">{{ review.rating }} ★</div>
                     </div>
-                    <p style="color: #666; font-size: 0.9em;">
-                        Reviewed {{ review.created_at|timesince }} ago
-                    </p>
-                    
-                    {% if review.comment %}
-                        <p>{{ review.comment }}</p>
-                    {% endif %}
+                    <div class="review-text">
+                        {% if review.comment %} {{ review.comment }} {% else %} <em>No comment provided.</em> {% endif %}
+                    </div>
                 </div>
             {% empty %}
-                <p>This agent has no reviews yet. Be the first to leave one!</p>
+                <div style="padding:30px; text-align:center; color:#94a3b8; border:1px dashed #e2e8f0; border-radius:12px;">
+                    No reviews yet. Be the first to share your experience!
+                </div>
             {% endfor %}
         </div>
+
     </div>
-    {% comment %} --- END: NEW RATINGS & REVIEWS SECTION --- {% endcomment %}
 
 </div>
-{% endblock content %}
+
+{% endblock %}

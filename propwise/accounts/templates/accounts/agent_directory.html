@@ -4,104 +4,290 @@
 {% block content %}
 
 <style>
-    /* Styles for our new Agent Directory */
-    .agent-directory-container {
-        max-width: 900px;
-        margin: 20px auto;
+    /* --- PAGE CONTAINER --- */
+    .directory-container {
+        max-width: 1200px;
+        margin: 40px auto;
+        padding: 0 20px;
+        min-height: 60vh;
     }
 
+    /* --- HERO SECTION --- */
+    .directory-hero {
+        text-align: center;
+        margin-bottom: 50px;
+        padding: 40px 20px;
+        background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);
+        border-radius: 20px;
+        border: 1px solid #e0e7ff;
+    }
+
+    .hero-title {
+        font-family: 'Playfair Display', serif;
+        font-size: 2.5rem;
+        color: var(--pw-navy);
+        margin-bottom: 10px;
+        font-weight: 700;
+    }
+    .hero-sub { color: #64748b; font-size: 1.1rem; margin-bottom: 30px; }
+
+    /* Search Bar */
+    .agent-search-box {
+        max-width: 500px;
+        margin: 0 auto;
+        position: relative;
+    }
+    .agent-search-input {
+        width: 100%;
+        padding: 15px 20px;
+        padding-right: 50px;
+        border-radius: 50px;
+        border: 1px solid #cbd5e1;
+        font-size: 1rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        outline: none;
+        transition: 0.3s;
+    }
+    .agent-search-input:focus {
+        border-color: var(--pw-gold);
+        box-shadow: 0 4px 20px rgba(212, 175, 55, 0.15);
+    }
+    .search-icon {
+        position: absolute;
+        right: 20px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--pw-navy);
+        font-size: 1.2rem;
+    }
+
+    /* --- AGENT GRID --- */
     .agent-grid {
         display: grid;
-        /* Create 3 columns on desktop, 2 on tablet, 1 on mobile */
-        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-        gap: 20px;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 30px;
     }
 
+    /* --- AGENT CARD --- */
     .agent-card {
-        border: 1px solid #ddd;
-        border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        padding: 20px;
+        background: white;
+        border-radius: 16px;
+        border: 1px solid #f1f5f9;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+        overflow: hidden;
+        transition: 0.3s;
         text-align: center;
-        background: #fff;
-        transition: all 0.2s ease-in-out;
+        padding: 30px 20px;
+        position: relative;
     }
-
     .agent-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        transform: translateY(-8px);
+        box-shadow: 0 15px 40px rgba(0,0,0,0.1);
+        border-color: rgba(212, 175, 55, 0.3);
     }
 
-    .agent-card img {
-        width: 120px;
-        height: 120px;
-        border-radius: 50%; /* Makes the image a circle */
-        object-fit: cover;
-        border: 3px solid #f0f0f0;
+    /* Top Banner Accent */
+    .card-accent {
+        position: absolute;
+        top: 0; left: 0; width: 100%; height: 5px;
+        background: var(--pw-gold);
+    }
+
+    /* Avatar */
+    .card-avatar {
+        width: 100px; height: 100px;
+        border-radius: 50%;
+        margin: 0 auto 15px;
+        border: 3px solid white;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        overflow: hidden;
+        background: #f1f5f9;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 2.5rem; color: #cbd5e1;
+    }
+    .card-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+    /* Info */
+    .card-name {
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: var(--pw-navy);
+        margin-bottom: 5px;
+        font-family: 'Playfair Display', serif;
+    }
+    .card-role {
+        font-size: 0.85rem;
+        color: #64748b;
         margin-bottom: 15px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-weight: 600;
     }
 
-    .agent-card h3 {
-        margin: 10px 0 5px 0;
-        color: #333;
+    .verified-tag {
+        display: inline-flex; align-items: center; gap: 4px;
+        background: #ecfdf5; color: #059669;
+        padding: 3px 8px; border-radius: 12px;
+        font-size: 0.7rem; font-weight: 700;
+        margin-top: 5px;
     }
 
-    .agent-card p {
-        margin: 5px 0;
-        color: #666;
-        font-size: 0.95em;
+    /* Stats Row */
+    .card-stats {
+        display: flex;
+        justify-content: center;
+        gap: 20px;
+        margin: 20px 0;
+        padding: 15px 0;
+        border-top: 1px solid #f1f5f9;
+        border-bottom: 1px solid #f1f5f9;
     }
+    .stat-item { text-align: center; }
+    .stat-val { font-weight: 700; color: var(--pw-navy); font-size: 1.1rem; }
+    .stat-lbl { font-size: 0.75rem; color: #94a3b8; }
 
-    .agent-card-link {
-        display: inline-block;
-        margin-top: 15px;
-        padding: 10px 20px;
-        background-color: #007bff;
-        color: white;
+    /* Actions */
+    .card-actions {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+    }
+    .btn-icon {
+        width: 35px; height: 35px;
+        border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        background: #f8fafc;
+        color: var(--pw-navy);
         text-decoration: none;
-        border-radius: 5px;
-        font-weight: bold;
+        transition: 0.2s;
+        font-size: 1rem;
     }
-    .agent-card-link:hover {
-        background-color: #0056b3;
+    .btn-icon:hover { background: var(--pw-navy); color: white; }
+    
+    .btn-profile {
+        padding: 8px 20px;
+        border-radius: 50px;
+        background: var(--pw-navy);
+        color: white;
+        font-size: 0.9rem;
+        font-weight: 600;
+        text-decoration: none;
+        transition: 0.2s;
+    }
+    .btn-profile:hover { background: var(--pw-gold); color: var(--pw-navy); }
+
+    /* Empty State */
+    .empty-dir {
+        grid-column: 1 / -1;
+        text-align: center;
+        padding: 60px;
+        color: #94a3b8;
     }
 
+    @media (max-width: 768px) {
+        .hero-title { font-size: 2rem; }
+        .directory-hero { padding: 30px 15px; }
+    }
 </style>
 
-<div class="agent-directory-container">
-    <h2 style="text-align: center; margin-bottom: 25px;">Find a Professional Agent</h2>
+<div class="directory-container">
 
-    <div class="agent-grid">
+    <!-- HERO SECTION -->
+    <div class="directory-hero">
+        <h1 class="hero-title">Meet Our Experts</h1>
+        <p class="hero-sub">Connect with top-rated agents to find your perfect property.</p>
+        
+        <!-- Simple JS Filter (Optional) or just visual -->
+        <div class="agent-search-box">
+            <input type="text" id="agentSearch" class="agent-search-input" placeholder="Search by name or city..." onkeyup="filterAgents()">
+            <i class="fa-solid fa-magnifying-glass search-icon"></i>
+        </div>
+    </div>
+
+    <!-- AGENT GRID -->
+    <div class="agent-grid" id="agentGrid">
         {% for agent in agents %}
-            <div class="agent-card">
-
-                {% if agent.profile_picture %}
-                    <img src="{{ agent.profile_picture.url }}" alt="{{ agent.username }}'s profile picture">
-                {% else %}
-                    <img src="https" alt="Default profile picture">
-                {% endif %}
-
-                <h3>
-                    {% if agent.first_name and agent.last_name %}
-                        {{ agent.get_full_name }}
+            <div class="agent-card" data-name="{{ agent.first_name }} {{ agent.last_name }} {{ agent.username }}">
+                <div class="card-accent"></div>
+                
+                <!-- Avatar -->
+                <div class="card-avatar">
+                    {% if agent.profile_picture %}
+                        <img src="{{ agent.profile_picture.url }}" alt="{{ agent.username }}">
                     {% else %}
-                        {{ agent.username }}
+                        <i class="fa-solid fa-user-tie"></i>
                     {% endif %}
-                </h3>
+                </div>
 
-                {% if agent.phone_number %}
-                    <p>Phone: {{ agent.phone_number }}</p>
-                {% endif %}
+                <!-- Info -->
+                <div class="card-name">
+                    {{ agent.first_name|default:agent.username }} {{ agent.last_name }}
+                </div>
+                <div class="card-role">Real Estate Agent</div>
+                
+                <!-- Verified Badge -->
+                <div class="verified-tag">
+                    <i class="fa-solid fa-check-circle"></i> Verified
+                </div>
 
-                <a href="{% url 'agent_profile' pk=agent.pk %}" class="agent-card-link">
-                    View Profile
-                </a>
+                <!-- Stats (Optional - needs context data) -->
+                <div class="card-stats">
+                    <!-- You can pass active_listing_count in views.py for this -->
+                    <div class="stat-item">
+                        <div class="stat-val">{{ agent.property_set.count }}</div>
+                        <div class="stat-lbl">Listings</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-val">
+                            {% if agent.average_rating %}{{ agent.average_rating|floatformat:1 }}{% else %}-{% endif %}
+                        </div>
+                        <div class="stat-lbl">Rating</div>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="card-actions">
+                    {% if agent.phone_number %}
+                        <a href="https://wa.me/{{ agent.phone_number }}" target="_blank" class="btn-icon" title="WhatsApp">
+                            <i class="fa-brands fa-whatsapp"></i>
+                        </a>
+                        <a href="tel:{{ agent.phone_number }}" class="btn-icon" title="Call">
+                            <i class="fa-solid fa-phone"></i>
+                        </a>
+                    {% endif %}
+                    
+                    <a href="{% url 'agent_profile' pk=agent.pk %}" class="btn-profile">View Profile</a>
+                </div>
+
             </div>
         {% empty %}
-            <p>No agents have registered yet. Check back soon!</p>
+            <div class="empty-dir">
+                <i class="fa-solid fa-users-slash" style="font-size:3rem; margin-bottom:15px;"></i>
+                <h3>No Agents Found</h3>
+                <p>We are currently onboarding new partners. Check back soon!</p>
+            </div>
         {% endfor %}
     </div>
 
 </div>
+
+<!-- Simple Client-Side Filter Script -->
+<script>
+    function filterAgents() {
+        const input = document.getElementById('agentSearch');
+        const filter = input.value.toUpperCase();
+        const grid = document.getElementById('agentGrid');
+        const cards = grid.getElementsByClassName('agent-card');
+
+        for (let i = 0; i < cards.length; i++) {
+            const name = cards[i].getAttribute('data-name');
+            if (name.toUpperCase().indexOf(filter) > -1) {
+                cards[i].style.display = "";
+            } else {
+                cards[i].style.display = "none";
+            }
+        }
+    }
+</script>
 
 {% endblock content %}

@@ -1,169 +1,390 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block content %}
 
-{% comment %}
-    STEP 1: Custom styles for our calculator
-{% endcomment %}
+<!-- Add Chart.js for the visual graph -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <style>
-    .calculator-container {
-        max-width: 600px;
+    /* --- PAGE LAYOUT --- */
+    .calc-wrapper {
+        max-width: 1100px;
         margin: 40px auto;
-        padding: 30px;
-        background: #f9f9f9;
-        border: 1px solid #ddd;
-        border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-    }
-    .calculator-container h2 {
-        margin-top: 0;
-        text-align: center;
-        color: #333;
-    }
-    .calc-row {
-        margin-bottom: 20px;
-    }
-    .calc-row label {
-        display: block;
-        font-weight: bold;
-        margin-bottom: 8px;
-        color: #555;
-    }
-    .calc-input {
-        width: 100%;
-        padding: 12px;
-        font-size: 1.1em;
-        border-radius: 5px;
-        border: 1px solid #ccc;
-        box-sizing: border-box; /* Important for 100% width */
-    }
-    .input-group {
-        display: flex;
-    }
-    .input-group-text {
-        padding: 12px;
-        background: #eee;
-        border: 1px solid #ccc;
-        border-right: none;
-        border-radius: 5px 0 0 5px;
-        font-weight: bold;
-    }
-    .input-group .calc-input {
-        border-radius: 0 5px 5px 0;
+        padding: 0 20px;
     }
 
-    .result-box {
-        margin-top: 30px;
-        padding: 20px;
-        background: #0056b3; /* Dark blue */
-        color: white;
-        border-radius: 8px;
+    .calc-header {
         text-align: center;
+        margin-bottom: 50px;
     }
-    .result-box p {
-        margin: 0;
-        font-size: 1.2em;
+    .calc-title {
+        font-family: 'Playfair Display', serif;
+        font-size: 2.5rem;
+        color: var(--pw-navy);
+        margin-bottom: 10px;
+        font-weight: 700;
     }
-    .result-box h3 {
-        margin: 5px 0 0 0;
-        font-size: 2.5em;
+    .calc-subtitle { color: #64748b; font-size: 1.1rem; }
+
+    .calc-grid {
+        display: grid;
+        grid-template-columns: 1.5fr 1fr; /* Input Panel | Summary Panel */
+        gap: 40px;
+        align-items: start;
+    }
+
+    /* --- INPUT PANEL --- */
+    .input-card {
+        background: white;
+        padding: 35px;
+        border-radius: 16px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.05);
+        border: 1px solid #f1f5f9;
+    }
+
+    .input-group { margin-bottom: 30px; }
+    
+    .label-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 10px;
+        font-weight: 600;
+        color: var(--pw-navy);
+    }
+    .val-display { color: var(--pw-gold); }
+
+    /* Range Slider Styling (Fixed Standard Property) */
+    input[type=range] {
+        -webkit-appearance: none; /* Chrome/Safari/Edge */
+        appearance: none;         /* Standard Property */
+        width: 100%; 
+        background: transparent; 
+    }
+
+    /* Thumb (The circle you drag) */
+    input[type=range]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        height: 20px;
+        width: 20px;
+        border-radius: 50%;
+        background: var(--pw-navy);
+        cursor: pointer;
+        margin-top: -8px; 
+        box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        transition: 0.2s;
+    }
+    
+    /* Firefox Thumb */
+    input[type=range]::-moz-range-thumb {
+        height: 20px;
+        width: 20px;
+        border-radius: 50%;
+        background: var(--pw-navy);
+        cursor: pointer;
+        border: none;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    }
+
+    input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.2); background: var(--pw-gold); }
+    input[type=range]::-moz-range-thumb:hover { transform: scale(1.2); background: var(--pw-gold); }
+
+    /* Track (The line) */
+    input[type=range]::-webkit-slider-runnable-track {
+        width: 100%;
+        height: 4px;
+        cursor: pointer;
+        background: #e2e8f0;
+        border-radius: 2px;
+    }
+    input[type=range]::-moz-range-track {
+        width: 100%;
+        height: 4px;
+        cursor: pointer;
+        background: #e2e8f0;
+        border-radius: 2px;
+    }
+    
+    /* Number Input Styling */
+    .num-input {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        font-family: 'Poppins', sans-serif;
+        font-size: 1rem;
+        color: var(--pw-navy);
+        background: #f8fafc;
+        margin-top: 10px;
+        box-sizing: border-box;
+    }
+
+    /* --- SUMMARY PANEL --- */
+    .result-card {
+        background: var(--pw-navy);
+        color: white;
+        padding: 35px;
+        border-radius: 16px;
+        text-align: center;
+        box-shadow: 0 20px 50px rgba(15, 23, 42, 0.3);
+        position: sticky;
+        top: 140px;
+    }
+
+    .monthly-label {
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        opacity: 0.8;
+        margin-bottom: 5px;
+    }
+    
+    .monthly-val {
+        font-family: 'Playfair Display', serif;
+        font-size: 3rem;
+        font-weight: 700;
+        color: var(--pw-gold);
+        margin-bottom: 20px;
+    }
+
+    /* Chart Container */
+    .chart-box {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        padding: 20px;
+        margin-top: 20px;
+        height: 250px; /* Fixed height to prevent layout shifts */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    .breakdown-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 0;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+        font-size: 0.9rem;
+    }
+    .breakdown-row:last-child { border-bottom: none; }
+
+    /* --- RESPONSIVE MOBILE FIX --- */
+    @media (max-width: 900px) {
+        .calc-grid { 
+            grid-template-columns: 1fr; /* Stack vertically */
+            gap: 30px;
+        }
+        
+        /* On mobile, move result card to bottom and remove sticky behavior */
+        .result-card { 
+            position: relative; 
+            top: 0; 
+            order: 2; /* Ensure it comes AFTER inputs on mobile */
+            margin-bottom: 30px;
+        }
+        
+        .input-card {
+            order: 1; /* Inputs come first */
+        }
+
+        .calc-title { font-size: 2rem; }
+        .monthly-val { font-size: 2.5rem; }
     }
 </style>
 
-{% comment %}
-    STEP 2: The HTML for the calculator form
-{% endcomment %}
-<div class="calculator-container">
-    <h2>Affordability Calculator</h2>
-    <p style="text-align: center; color: #666; margin-top: -10px; margin-bottom: 25px;">
-        Estimate your monthly mortgage payment.
-    </p>
+<div class="calc-wrapper">
+    
+    <div class="calc-header">
+        <h1 class="calc-title">Mortgage Estimator</h1>
+        <p class="calc-subtitle">Plan your future with our interactive financial tool.</p>
+    </div>
 
-    <div class="calc-row">
-        <label for="price">Property Price</label>
-        <div class="input-group">
-            <span class="input-group-text">PKR</span>
-            <input type="number" id="price" class="calc-input" value="10000000">
+    <div class="calc-grid">
+        
+        <!-- LEFT: INPUTS -->
+        <div class="input-card">
+            
+            <!-- Price -->
+            <div class="input-group">
+                <div class="label-row">
+                    <label>Property Price</label>
+                    <span class="val-display" id="display-price">PKR 10,000,000</span>
+                </div>
+                <input type="range" id="price-slider" min="1000000" max="100000000" step="500000" value="10000000">
+                <input type="number" id="price-input" class="num-input" value="10000000">
+            </div>
+
+            <!-- Down Payment -->
+            <div class="input-group">
+                <div class="label-row">
+                    <label>Down Payment</label>
+                    <span class="val-display" id="display-down">20%</span>
+                </div>
+                <input type="range" id="down-slider" min="0" max="90" step="1" value="20">
+                <div style="display:flex; gap:10px; margin-top:10px;">
+                    <input type="number" id="down-percent" class="num-input" value="20" style="margin:0;">
+                    <span style="padding:10px; background:#eee; border-radius:8px; display:flex; align-items:center;">%</span>
+                </div>
+            </div>
+
+            <!-- Interest Rate -->
+            <div class="input-group">
+                <div class="label-row">
+                    <label>Interest Rate</label>
+                    <span class="val-display" id="display-rate">12%</span>
+                </div>
+                <input type="range" id="rate-slider" min="1" max="25" step="0.1" value="12">
+                <input type="number" id="rate-input" class="num-input" value="12" step="0.1">
+            </div>
+
+            <!-- Loan Term -->
+            <div class="input-group">
+                <div class="label-row">
+                    <label>Loan Duration</label>
+                    <span class="val-display" id="display-term">20 Years</span>
+                </div>
+                <input type="range" id="term-slider" min="1" max="30" step="1" value="20">
+                <input type="number" id="term-input" class="num-input" value="20">
+            </div>
+
         </div>
-    </div>
 
-    <div class="calc-row">
-        <label for="down_payment">Down Payment</label>
-        <div class="input-group">
-            <span class="input-group-text">%</span>
-            <input type="number" id="down_payment" class="calc-input" value="20">
+        <!-- RIGHT: RESULTS -->
+        <div class="result-card">
+            <div class="monthly-label">Estimated Monthly Payment</div>
+            <div class="monthly-val" id="monthly-payment">PKR 0</div>
+
+            <div class="chart-box">
+                <canvas id="paymentChart"></canvas>
+            </div>
+
+            <div style="margin-top:20px; text-align:left;">
+                <div class="breakdown-row">
+                    <span>Loan Amount</span>
+                    <span id="loan-total" style="font-weight:bold;">-</span>
+                </div>
+                <div class="breakdown-row">
+                    <span>Total Interest</span>
+                    <span id="interest-total" style="font-weight:bold;">-</span>
+                </div>
+                <div class="breakdown-row">
+                    <span>Total Payable</span>
+                    <span id="payable-total" style="font-weight:bold; color:var(--pw-gold);">-</span>
+                </div>
+            </div>
         </div>
+
     </div>
 
-    <div class="calc-row">
-        <label for="interest_rate">Interest Rate</label>
-        <div class="input-group">
-            <span class="input-group-text">%</span>
-            <input type="number" id="interest_rate" class="calc-input" value="8" step="0.1">
-        </div>
-    </div>
-
-    <div class="calc-row">
-        <label for="loan_term">Loan Term (Years)</label>
-        <input type="number" id="loan_term" class="calc-input" value="20">
-    </div>
-
-    <div class="result-box">
-        <p>Estimated Monthly Payment:</p>
-        <h3 id="monthly-payment">PKR 0</h3>
-    </div>
 </div>
 
-{% comment %}
-    STEP 3: The JavaScript "Brain" that does the math
-{% endcomment %}
+<!-- CALCULATION LOGIC -->
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // 1. Get all the elements we need
-        const priceInput = document.getElementById('price');
-        const downPaymentInput = document.getElementById('down_payment');
-        const rateInput = document.getElementById('interest_rate');
-        const termInput = document.getElementById('loan_term');
-        const paymentDisplay = document.getElementById('monthly-payment');
+        
+        // Elements
+        const priceSlider = document.getElementById('price-slider');
+        const priceInput = document.getElementById('price-input');
+        
+        const downSlider = document.getElementById('down-slider');
+        const downInput = document.getElementById('down-percent');
+        
+        const rateSlider = document.getElementById('rate-slider');
+        const rateInput = document.getElementById('rate-input');
+        
+        const termSlider = document.getElementById('term-slider');
+        const termInput = document.getElementById('term-input');
 
-        // This is the main calculation function
-        function calculateMonthlyPayment() {
-            // 2. Get the values from the form
-            const P = parseFloat(priceInput.value); // Principal loan amount
-            const downPercent = parseFloat(downPaymentInput.value) / 100;
-            const r = parseFloat(rateInput.value) / 100 / 12; // Monthly interest rate
-            const n = parseFloat(termInput.value) * 12; // Total number of payments
-            
-            // 3. Calculate the loan amount
-            const loanAmount = P - (P * downPercent);
+        // Chart Instance
+        let myChart = null;
 
-            // 4. Do the mortgage math
-            // This is the standard formula: M = P[r(1+r)^n] / [(1+r)^n – 1]
+        // Sync Helper
+        function syncInputs(source, target) {
+            target.value = source.value;
+            calculate();
+        }
+
+        // Listeners
+        [priceSlider, priceInput].forEach(el => el.addEventListener('input', () => syncInputs(el, el === priceSlider ? priceInput : priceSlider)));
+        [downSlider, downInput].forEach(el => el.addEventListener('input', () => syncInputs(el, el === downSlider ? downInput : downSlider)));
+        [rateSlider, rateInput].forEach(el => el.addEventListener('input', () => syncInputs(el, el === rateSlider ? rateInput : rateSlider)));
+        [termSlider, termInput].forEach(el => el.addEventListener('input', () => syncInputs(el, el === termSlider ? termInput : termSlider)));
+
+        // Core Calculation
+        function calculate() {
+            const P = parseFloat(priceInput.value);
+            const downPercent = parseFloat(downInput.value);
+            const r = parseFloat(rateInput.value);
+            const years = parseFloat(termInput.value);
+
+            // Update Displays
+            document.getElementById('display-price').innerText = "PKR " + P.toLocaleString();
+            document.getElementById('display-down').innerText = downPercent + "%";
+            document.getElementById('display-rate').innerText = r + "%";
+            document.getElementById('display-term').innerText = years + " Years";
+
+            // Math
+            const loanAmount = P * (1 - (downPercent / 100));
+            const monthlyRate = (r / 100) / 12;
+            const totalMonths = years * 12;
+
             let monthlyPayment = 0;
-            if (r > 0) {
-                monthlyPayment = loanAmount * (r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
-            } else if (loanAmount > 0 && n > 0) {
-                monthlyPayment = loanAmount / n; // No interest
+
+            if (monthlyRate > 0) {
+                monthlyPayment = loanAmount * (monthlyRate * Math.pow(1 + monthlyRate, totalMonths)) / (Math.pow(1 + monthlyRate, totalMonths) - 1);
+            } else {
+                monthlyPayment = loanAmount / totalMonths;
             }
 
-            // 5. Check for valid numbers and display the result
-            if (isFinite(monthlyPayment) && monthlyPayment > 0) {
-                // Format the number to look nice
-                paymentDisplay.textContent = "PKR " + Math.round(monthlyPayment).toLocaleString('en-US');
+            if (!isFinite(monthlyPayment) || monthlyPayment < 0) monthlyPayment = 0;
+
+            const totalPayable = monthlyPayment * totalMonths;
+            const totalInterest = totalPayable - loanAmount;
+
+            // Update Result Box
+            document.getElementById('monthly-payment').innerText = "PKR " + Math.round(monthlyPayment).toLocaleString();
+            document.getElementById('loan-total').innerText = "PKR " + Math.round(loanAmount).toLocaleString();
+            document.getElementById('interest-total').innerText = "PKR " + Math.round(totalInterest).toLocaleString();
+            document.getElementById('payable-total').innerText = "PKR " + Math.round(totalPayable).toLocaleString();
+
+            // Update Chart
+            updateChart(loanAmount, totalInterest);
+        }
+
+        function updateChart(principal, interest) {
+            const ctx = document.getElementById('paymentChart').getContext('2d');
+            
+            if (myChart) {
+                myChart.data.datasets[0].data = [principal, interest];
+                myChart.update();
             } else {
-                paymentDisplay.textContent = "PKR 0";
+                myChart = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Principal', 'Interest'],
+                        datasets: [{
+                            data: [principal, interest],
+                            backgroundColor: ['#3b82f6', '#D4AF37'], // Blue & Gold
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false, /* Key for mobile resizing */
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: { color: 'white', font: { size: 10 } }
+                            }
+                        }
+                    }
+                });
             }
         }
 
-        // 6. Add "event listeners" to all the inputs
-        // This makes the calculator update *instantly* as you type
-        priceInput.addEventListener('input', calculateMonthlyPayment);
-        downPaymentInput.addEventListener('input', calculateMonthlyPayment);
-        rateInput.addEventListener('input', calculateMonthlyPayment);
-        termInput.addEventListener('input', calculateMonthlyPayment);
-
-        // 7. Run the calculation once on page load
-        calculateMonthlyPayment();
+        // Init
+        calculate();
     });
 </script>
 

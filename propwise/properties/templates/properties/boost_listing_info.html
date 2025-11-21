@@ -1,59 +1,209 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block content %}
+
 <style>
-    .info-box {
-        max-width: 700px;
-        margin: 40px auto;
+    /* --- PAGE CONTAINER --- */
+    .boost-container {
+        max-width: 900px;
+        margin: 50px auto;
+        padding: 0 20px;
+    }
+
+    /* --- HEADER --- */
+    .boost-header {
+        text-align: center;
+        margin-bottom: 50px;
+    }
+    .boost-title {
+        font-family: 'Playfair Display', serif;
+        font-size: 2.5rem;
+        color: var(--pw-navy);
+        margin-bottom: 15px;
+    }
+    .boost-sub {
+        color: #64748b;
+        font-size: 1.1rem;
+        max-width: 600px;
+        margin: 0 auto;
+        line-height: 1.6;
+    }
+
+    /* --- PRICING CARD --- */
+    .pricing-card {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.1);
+        border: 2px solid var(--pw-gold);
+        padding: 40px;
+        max-width: 500px;
+        margin: 0 auto 50px;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+    }
+
+    /* "Best Value" Ribbon */
+    .ribbon {
+        position: absolute;
+        top: 20px;
+        right: -35px;
+        transform: rotate(45deg);
+        background: var(--pw-gold);
+        color: var(--pw-navy);
+        padding: 5px 40px;
+        font-size: 0.8rem;
+        font-weight: 700;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    .price-icon {
+        font-size: 3rem;
+        color: var(--pw-gold);
+        margin-bottom: 20px;
+        display: inline-block;
+        background: #fffbeb;
+        padding: 20px;
+        border-radius: 50%;
+    }
+
+    .plan-name {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--pw-navy);
+        margin-bottom: 5px;
+    }
+    
+    .plan-price {
+        font-size: 3rem;
+        font-weight: 800;
+        color: var(--pw-navy);
+        font-family: 'Playfair Display', serif;
+    }
+    .plan-period { font-size: 1rem; color: #94a3b8; font-weight: 400; }
+
+    /* Benefits List */
+    .benefits-list {
+        text-align: left;
+        margin: 30px 0;
+        padding: 0;
+        list-style: none;
+    }
+    .benefits-list li {
+        padding: 10px 0;
+        border-bottom: 1px dashed #e2e8f0;
+        color: #475569;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .benefits-list li:last-child { border-bottom: none; }
+    .check-icon { color: #10b981; }
+
+    /* --- PAYMENT INSTRUCTIONS --- */
+    .payment-box {
+        background: #f8fafc;
+        border-radius: 12px;
         padding: 30px;
-        background: #f9f9f9;
-        border: 1px solid #ddd;
+        border: 1px solid #e2e8f0;
+        text-align: center;
+    }
+    
+    .payment-title {
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: var(--pw-navy);
+        margin-bottom: 15px;
+    }
+
+    .contact-grid {
+        display: flex;
+        justify-content: center;
+        gap: 30px;
+        margin-top: 20px;
+        flex-wrap: wrap;
+    }
+
+    .contact-item {
+        background: white;
+        padding: 15px 25px;
         border-radius: 8px;
-        line-height: 1.7;
+        border: 1px solid #e2e8f0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: var(--pw-navy);
+        font-weight: 600;
     }
-    .info-box h2 {
-        margin-top: 0;
-        color: #0056b3;
+    .contact-icon { color: var(--pw-gold); font-size: 1.2rem; }
+
+    .back-link {
+        display: block;
+        text-align: center;
+        margin-top: 30px;
+        color: #94a3b8;
+        text-decoration: none;
+        font-size: 0.9rem;
     }
-    .info-box ul {
-        padding-left: 20px;
+    .back-link:hover { color: var(--pw-navy); }
+
+    /* Animation */
+    @keyframes float {
+        0% { transform: translateY(0px); }
+        50% { transform: translateY(-10px); }
+        100% { transform: translateY(0px); }
     }
-    .info-box .contact-details {
-        font-weight: bold;
-        color: #333;
-        font-size: 1.1em;
-    }
+    .pricing-card { animation: float 4s ease-in-out infinite; }
 </style>
 
-<div class="info-box">
-    <h2>⭐ Boost Your Property Listing</h2>
+<div class="boost-container">
     
-    <p>
-        Get your property in front of thousands of more buyers by featuring it on PropWise!
-        Featured properties are pinned to the top of our homepage and search results.
-    </p>
-
-    <h4>How It Works:</h4>
-    <ul>
-        <li><strong>Price:</strong> 500 PKR (example price)</li>
-        <li><strong>Duration:</strong> 7 Days of top visibility</li>
-    </ul>
-    
-    <h4>How to Pay (Manual Process):</h4>
-    <p>
-        To get started, please contact our admin team directly via one of the methods below.
-        We will activate your featured listing as soon as payment is confirmed.
-    </p>
-
-    <div class="contact-details">
-        <p><strong>Phone:</strong> +92 3277080627</p>
-        <p><strong>Email:</strong> adnanofficial224@gmail.com</p>
+    <div class="boost-header">
+        <h1 class="boost-title">Unlock Maximum Visibility</h1>
+        <p class="boost-sub">Get your property seen by 10x more buyers. Featured listings appear at the top of search results and on the homepage.</p>
     </div>
 
-    <br>
-    <p>
-        <a href="{% url 'agent_dashboard' %}">← Back to My Dashboard</a>
-    </p>
+    <!-- PRICING CARD -->
+    <div class="pricing-card">
+        <div class="ribbon">POPULAR</div>
+        
+        <div class="price-icon">
+            <i class="fa-solid fa-rocket"></i>
+        </div>
+        
+        <div class="plan-name">Premium Boost</div>
+        <div class="plan-price">PKR 500 <span class="plan-period">/ week</span></div>
+
+        <ul class="benefits-list">
+            <li><i class="fa-solid fa-circle-check check-icon"></i> Top of Search Results</li>
+            <li><i class="fa-solid fa-circle-check check-icon"></i> Homepage Feature Spot</li>
+            <li><i class="fa-solid fa-circle-check check-icon"></i> "Featured" Gold Badge</li>
+            <li><i class="fa-solid fa-circle-check check-icon"></i> 5x More Leads on Average</li>
+        </ul>
+    </div>
+
+    <!-- MANUAL PAYMENT INSTRUCTIONS -->
+    <div class="payment-box">
+        <div class="payment-title">How to Activate</div>
+        <p style="color:#64748b; max-width:500px; margin:0 auto;">
+            To activate your boost instantly, please contact our support team. Once payment is verified, your listing will go live as a Featured Property within 1 hour.
+        </p>
+
+        <div class="contact-grid">
+            <div class="contact-item">
+                <i class="fa-brands fa-whatsapp contact-icon"></i>
+                <div>+92 327 7080627</div>
+            </div>
+            <div class="contact-item">
+                <i class="fa-regular fa-envelope contact-icon"></i>
+                <div>adnanofficial224@gmail.com</div>
+            </div>
+        </div>
+    </div>
+
+    <a href="{% url 'agent_dashboard' %}" class="back-link">&larr; Back to Dashboard</a>
 
 </div>
+
 {% endblock content %}

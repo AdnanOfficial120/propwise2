@@ -1,354 +1,390 @@
 {% extends 'base.html' %}
 {% load static %}
-{% load humanize %} <!-- 1. ADD THIS to use the 'timesince' filter -->
+{% load humanize %}
 
 {% block content %}
 
-{% comment %}
-    ============================================================
-    STEP 1: ALL CSS LIBRARIES
-    ============================================================
-{% endcomment %}
+<!-- Libraries -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" />
-<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" />
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.css" />
-
-{% comment %}
-    ============================================================
-    STEP 2: ALL JAVASCRIPT LIBRARIES
-    ============================================================
-{% endcomment %}
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-
-{% comment %}
-    STEP 3: Our custom styles for the page
-{% endcomment %}
 <style>
-    #area-map { height: 450px; width: 100%; border-radius: 8px; border: 1px solid #ddd; }
-    .amenities-grid { display: grid; grid-template-columns: 1fr; gap: 20px; }
-    @media (min-width: 768px) { .amenities-grid { grid-template-columns: 1fr 1fr; } }
-    .amenity-group { background: #f9f9f9; border: 1px solid #eee; border-radius: 8px; padding: 15px 20px; }
-    .amenity-group h4 { margin-top: 0; border-bottom: 2px solid #007bff; padding-bottom: 8px; font-size: 1.2em; }
-    .amenity-group ul { list-style-type: none; padding-left: 0; margin: 0; }
-    .amenity-group li { padding: 6px 0; border-bottom: 1px dashed #ddd; }
-    .amenity-group li:last-child { border-bottom: none; }
-    .property-list { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
-    .property-card { border: 1px solid #ccc; padding: 15px; border-radius: 8px; }
-    .property-card img { max-width: 100%; height: 200px; object-fit: cover; border-radius: 4px; }
-    .price-chart-container {
-        margin-top: 30px;
-        background: #f9f9f9;
-        border: 1px solid #eee;
-        border-radius: 8px;
-        padding: 20px;
+    /* --- LAYOUT --- */
+    .area-container {
+        max-width: 1200px;
+        margin: 40px auto;
+        padding: 0 20px;
     }
-    
-    /* --- 2. START: NEW STYLES FOR Q&A SECTION --- */
-    .qa-container {
-        margin-top: 30px;
-        background: #fff;
-        border: 1px solid #eee;
-        border-radius: 8px;
-        padding: 20px;
-    }
-    .ask-question-form {
-        background: #f9f9f9;
-        padding: 20px;
-        border-radius: 8px;
-        margin-bottom: 30px;
-    }
-    .ask-question-form h3 { margin-top: 0; }
-    .ask-question-form input[type="text"],
-    .ask-question-form textarea {
-        width: 100%;
-        padding: 10px;
-        margin-bottom: 10px;
-        border-radius: 5px;
-        border: 1px solid #ccc;
-        box-sizing: border-box;
-    }
-    .ask-question-form button {
-        background: #007bff;
-        color: white;
-        padding: 12px 20px;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-        font-size: 1em;
-    }
-    
-    .question-card {
-        border-bottom: 1px solid #eee;
-        padding-bottom: 15px;
-        margin-bottom: 15px;
-    }
-    .question-card:last-child { border-bottom: none; }
-    
-    .question-header {
-        font-size: 1.2em;
-        font-weight: bold;
-        color: #333;
-    }
-    .question-meta {
-        font-size: 0.9em;
-        color: #666;
-        margin: 5px 0 10px 0;
-    }
-    .question-body {
-        line-height: 1.6;
-    }
-    
-    .answer-list {
-        padding-left: 20px;
-        border-left: 3px solid #007bff;
-        margin-top: 15px;
-    }
-    .answer-card {
-        padding: 10px 0;
-        border-bottom: 1px dashed #ddd;
-    }
-    .answer-card:last-child { border-bottom: none; }
-    .answer-meta {
-        font-size: 0.9em;
-        color: #666;
-        margin-bottom: 5px;
-    }
-    .answer-meta strong { color: #0056b3; }
-    
-    .answer-form textarea {
-        width: 100%;
-        padding: 8px;
-        margin-top: 10px;
-        border-radius: 5px;
-        border: 1px solid #ccc;
-        box-sizing: border-box;
-    }
-    .answer-form button {
-        background: #28a745;
-        color: white;
-        padding: 8px 15px;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-        font-size: 0.9em;
-        margin-top: 5px;
-    }
-    /* --- END: NEW STYLES FOR Q&A SECTION --- */
 
+    /* --- HEADER --- */
+    .area-header {
+        margin-bottom: 40px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    .area-title {
+        font-family: 'Playfair Display', serif;
+        font-size: 2.5rem;
+        color: var(--pw-navy);
+        font-weight: 700;
+        margin-bottom: 10px;
+    }
+    .area-breadcrumb {
+        color: #64748b;
+        font-size: 1rem;
+        text-decoration: none;
+        transition: 0.3s;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .area-breadcrumb:hover { color: var(--pw-gold); }
+
+    /* --- CARDS --- */
+    .section-card {
+        background: white;
+        border-radius: 16px;
+        border: 1px solid #f1f5f9;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.03);
+        padding: 30px;
+        margin-bottom: 40px;
+        overflow: hidden;
+    }
+    .section-head {
+        font-family: 'Playfair Display', serif;
+        font-size: 1.5rem;
+        color: var(--pw-navy);
+        margin-bottom: 20px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    /* --- MAP --- */
+    #area-map {
+        height: 400px;
+        width: 100%;
+        border-radius: 12px;
+        z-index: 1;
+    }
+
+    /* --- AMENITIES --- */
+    .amenities-wrapper {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 30px;
+    }
+    
+    .amenity-col {
+        background: #f8fafc;
+        padding: 20px;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+    }
+    
+    .amenity-col h4 {
+        font-size: 1.1rem;
+        color: var(--pw-navy);
+        margin-bottom: 15px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid var(--pw-gold);
+        text-transform: capitalize;
+    }
+    
+    .amenity-list { list-style: none; padding: 0; margin: 0; }
+    .amenity-list li {
+        padding: 8px 0;
+        border-bottom: 1px dashed #cbd5e1;
+        color: #475569;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 0.95rem;
+    }
+    .amenity-list li:last-child { border-bottom: none; }
+    .amenity-list li i { color: #94a3b8; width: 20px; text-align: center; }
+
+    /* --- MARKET TRENDS CHART --- */
+    .chart-wrapper {
+        background: #fff;
+        padding: 20px;
+        border-radius: 12px;
+        height: 350px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* --- Q&A FORUM STYLES --- */
+    .qa-form-box {
+        background: #f8fafc;
+        padding: 25px;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        margin-bottom: 40px;
+    }
+    
+    .qa-input-group { margin-bottom: 15px; }
+    .qa-input-group label { display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 5px; color: var(--pw-navy); }
+    .qa-input-group input, .qa-input-group textarea {
+        width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px;
+        font-family: 'Poppins', sans-serif; background: white; box-sizing: border-box;
+    }
+    
+    .btn-qa {
+        background: var(--pw-navy); color: white; padding: 10px 25px;
+        border-radius: 8px; border: none; cursor: pointer; font-weight: 600;
+        transition: 0.3s;
+    }
+    .btn-qa:hover { background: var(--pw-gold); color: var(--pw-navy); }
+
+    /* Question Card */
+    .question-thread {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 25px;
+        margin-bottom: 20px;
+    }
+    
+    .thread-head {
+        display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;
+    }
+    .thread-user { font-weight: 700; color: var(--pw-navy); display: flex; align-items: center; gap: 8px; }
+    .thread-date { font-size: 0.8rem; color: #94a3b8; }
+    
+    .thread-title { font-size: 1.2rem; font-weight: 700; color: #1e293b; margin-bottom: 5px; }
+    .thread-body { color: #475569; line-height: 1.6; font-size: 0.95rem; margin-bottom: 20px; }
+
+    /* Answers Section */
+    .answers-box {
+        background: #f1f5f9;
+        padding: 15px 20px;
+        border-radius: 8px;
+        margin-top: 15px;
+        border-left: 3px solid var(--pw-gold);
+    }
+    .answer-item {
+        padding-bottom: 15px; margin-bottom: 15px; border-bottom: 1px solid #e2e8f0;
+    }
+    .answer-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+    
+    .ans-meta { font-size: 0.85rem; color: #64748b; margin-bottom: 5px; display: flex; justify-content: space-between; }
+    .ans-agent-tag { background: #dcfce7; color: #16a34a; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; margin-left: 5px; }
+    .ans-body { color: #334155; font-size: 0.95rem; }
+
+    /* Answer Form (Compact) */
+    .mini-form { margin-top: 15px; display: flex; gap: 10px; }
+    .mini-input { flex: 1; padding: 10px; border-radius: 6px; border: 1px solid #cbd5e1; font-family: inherit; }
+    .btn-mini { padding: 0 20px; background: #0f172a; color: white; border: none; border-radius: 6px; cursor: pointer; }
+
+    /* --- LISTINGS GRID --- */
+    .prop-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 25px;
+    }
+    .prop-card {
+        background: white; border-radius: 12px; overflow: hidden;
+        border: 1px solid #f1f5f9; transition: 0.3s; box-shadow: 0 5px 15px rgba(0,0,0,0.03);
+    }
+    .prop-card:hover { transform: translateY(-5px); box-shadow: 0 15px 30px rgba(0,0,0,0.08); }
+    
+    .prop-img { height: 200px; width: 100%; object-fit: cover; display: block; }
+    .prop-details { padding: 20px; }
+    .prop-price { color: var(--pw-gold); font-weight: 700; font-size: 1.1rem; margin-bottom: 5px; }
+    .prop-title { font-weight: 700; color: var(--pw-navy); text-decoration: none; display: block; margin-bottom: 5px; }
+    .prop-meta { font-size: 0.85rem; color: #64748b; display: flex; gap: 10px; margin-bottom: 15px; }
+    
+    .btn-view {
+        display: block; text-align: center; padding: 10px; background: #f8fafc; 
+        color: var(--pw-navy); font-weight: 600; border-radius: 6px; text-decoration: none; transition: 0.2s;
+    }
+    .btn-view:hover { background: var(--pw-navy); color: white; }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .amenities-wrapper { grid-template-columns: 1fr; }
+        .prop-grid { grid-template-columns: 1fr; }
+    }
 </style>
 
-{% comment %}
-    ============================================================
-    STEP 4: THE HTML BODY OF THE PAGE
-    ============================================================
-{% endcomment %}
-<div class="container" style="margin-top: 20px;">
-    
-    <h2>Properties in {{ area.name }}, {{ area.city.name }}</h2>
-    <p>
-        <a href="{% url 'city_detail' city_pk=area.city.pk %}">
-            ← Back to all areas in {{ area.city.name }}
+<div class="area-container">
+
+    <!-- HEADER -->
+    <div class="area-header">
+        <a href="{% url 'city_detail' city_pk=area.city.pk %}" class="area-breadcrumb">
+            <i class="fa-solid fa-arrow-left"></i> Back to {{ area.city.name }}
         </a>
-    </p>
+        <h1 class="area-title">{{ area.name }}</h1>
+        <p style="color:#64748b; max-width: 800px;">Explore prices, amenities, and community discussions in this neighborhood.</p>
+    </div>
 
-    <hr style="margin: 20px 0;">
-    
-    <div class="insights-container" style="margin-bottom: 30px;">
-
+    <!-- 1. ABOUT & MAP SECTION -->
+    <div class="section-card">
+        <div class="section-head"><i class="fa-solid fa-map-location-dot"></i> Overview & Location</div>
+        
         {% if area.description %}
-            <div class="neighborhood-about" style="margin-bottom: 25px;">
-                <h3>About {{ area.name }}</h3>
-                <p style="font-size: 16px; line-height: 1.6;">
-                    {{ area.description|linebreaksbr }}
-                </p>
-            </div>
+            <p style="margin-bottom: 30px; line-height: 1.8; color: #475569;">{{ area.description|linebreaksbr }}</p>
         {% endif %}
 
         {% if area.latitude and area.longitude %}
-            <div class="neighborhood-map" style="margin-bottom: 30px;">
-                <h3>Location Map</h3>
-                <div id="area-map"
-                     data-lat="{{ area.latitude }}"
-                     data-lng="{{ area.longitude }}"
-                     data-area-name="{{ area.name|escapejs }}"
-                     data-amenities-json='{{ amenities_json|safe }}'>
-                </div>
+            <div id="area-map"
+                 data-lat="{{ area.latitude }}"
+                 data-lng="{{ area.longitude }}"
+                 data-area-name="{{ area.name|escapejs }}"
+                 data-amenities-json='{{ amenities_json|safe }}'>
             </div>
         {% endif %}
+    </div>
 
-        {% if amenities_by_type %}
-            <div class="neighborhood-nearby" style="margin-top: 30px;">
-                <h3>What's Nearby in {{ area.name }}</h3>
-                <div class="amenities-grid">
-                    {% for type_name, amenity_list in amenities_by_type.items %}
-                        <div class="amenity-group">
-                            <h4>{{ type_name }} ({{ amenity_list|length }})</h4>
-                            <ul>
-                                {% for amenity in amenity_list %}
-                                    <li>{{ amenity.name }}</li>
-                                {% endfor %}
-                            </ul>
-                        </div>
-                    {% endfor %}
-                </div>
-            </div>
-        {% endif %}
-        
-        {% if price_chart_labels %} 
-            <div class="price-chart-container">
-                <h3>Average Sold Price Trends in {{ area.name }}</h3>
-                <p style="font-size: 0.9em; color: #666;">
-                    Based on properties sold in the last 12 months.
-                </p>
-                <canvas id="priceTrendChart"
-                        data-labels='{{ price_chart_labels|safe }}'
-                        data-data='{{ price_chart_data|safe }}'>
-                </canvas>
-            </div>
-        {% endif %}
-        
-    </div> <!-- This closes the .insights-container -->
-
-    {% comment %}
-    <!-- ================================================== -->
-    <!-- === START: NEW "COMMUNITY Q&A" MODULE === -->
-    <!-- ================================================== -->
-    {% endcomment %}
-    <div class="qa-container">
-        <h2>Community Q&A for {{ area.name }}</h2>
-        
-        <!-- 1. "Ask a Question" Form -->
-        <div class="ask-question-form">
-            <h3>Ask a Question</h3>
-            {% if user.is_authenticated %}
-                <form action="{% url 'add_question' area_pk=area.pk %}" method="POST">
-                    {% csrf_token %}
-                    {{ question_form.as_p }}
-                    <button type="submit">Post Your Question</button>
-                </form>
-            {% else %}
-                <p><a href="{% url 'login' %}?next={{ request.path }}">Log in</a> to ask a question.</p>
-            {% endif %}
-        </div>
-        
-        <!-- 2. "Recent Questions" List -->
-        <h3>Recent Questions</h3>
-        <div class="question-list">
-            {% for question in questions %}
-                <div class="question-card">
-                    <p class="question-header">{{ question.title }}</p>
-                    <p class="question-meta">
-                        Asked by <strong>{{ question.user.username|default:"Anonymous" }}</strong>
-                        {{ question.created_at|timesince }} ago
-                    </p>
-                    {% if question.body %}
-                        <p class="question-body">{{ question.body|linebreaksbr }}</p>
-                    {% endif %}
-                    
-                    <!-- 3. List of Answers for this Question -->
-                    <div class="answer-list">
-                        {% for answer in question.answers.all %}
-                            <div class="answer-card">
-                                <p class="answer-meta">
-                                    <strong>{{ answer.user.username|default:"Anonymous" }}</strong>
-                                    {% if answer.user.is_agent %}(Agent){% endif %}
-                                    answered {{ answer.created_at|timesince }} ago:
-                                </p>
-                                <p>{{ answer.body|linebreaksbr }}</p>
-                            </div>
-                        {% empty %}
-                            <p style="font-size: 0.9em; color: #666;">No answers yet. Be the first to help!</p>
+    <!-- 2. AMENITIES -->
+    {% if amenities_by_type %}
+    <div class="section-card">
+        <div class="section-head"><i class="fa-solid fa-shop"></i> Neighborhood Amenities</div>
+        <div class="amenities-wrapper">
+            {% for type_name, amenity_list in amenities_by_type.items %}
+                <div class="amenity-col">
+                    <h4>{{ type_name }}</h4>
+                    <ul class="amenity-list">
+                        {% for amenity in amenity_list %}
+                            <li>
+                                {% if type_name == 'school' %}<i class="fa-solid fa-graduation-cap"></i>
+                                {% elif type_name == 'hospital' %}<i class="fa-solid fa-hospital"></i>
+                                {% elif type_name == 'park' %}<i class="fa-solid fa-tree"></i>
+                                {% elif type_name == 'restaurant' %}<i class="fa-solid fa-utensils"></i>
+                                {% else %}<i class="fa-solid fa-map-pin"></i>{% endif %}
+                                {{ amenity.name }}
+                            </li>
                         {% endfor %}
-                        
-                        <!-- 4. "Add an Answer" Form -->
-                        <div class="answer-form">
-                            {% if user.is_authenticated %}
-                                <form action="{% url 'add_answer' question_pk=question.pk %}" method="POST">
-                                    {% csrf_token %}
-                                    {{ answer_form.as_p }}
-                                    <button type="submit">Post Answer</button>
-                                </form>
-                            {% else %}
-                                <p style="font-size: 0.9em; margin-top: 10px;">
-                                    <a href="{% url 'login' %}?next={{ request.path }}">Log in</a> to post an answer.
-                                </p>
-                            {% endif %}
-                        </div>
-                    </div>
+                    </ul>
                 </div>
-            {% empty %}
-                <p>No questions have been asked about this area yet. Be the first!</p>
             {% endfor %}
         </div>
     </div>
-    {% comment %}
-    <!-- ================================================== -->
-    <!-- === END: "COMMUNITY Q&A" MODULE === -->
-    <!-- ================================================== -->
-    {% endcomment %}
+    {% endif %}
 
-    <hr style="margin: 40px 0;">
+    <!-- 3. MARKET TRENDS -->
+    {% if price_chart_labels %}
+    <div class="section-card">
+        <div class="section-head"><i class="fa-solid fa-chart-line"></i> Market Trends</div>
+        <p style="color:#64748b; margin-bottom: 20px;">Average property prices in {{ area.name }} over the last 12 months.</p>
+        <div class="chart-wrapper">
+            <canvas id="priceTrendChart"
+                    data-labels='{{ price_chart_labels|safe }}'
+                    data-data='{{ price_chart_data|safe }}'>
+            </canvas>
+        </div>
+    </div>
+    {% endif %}
 
-    <h3>Active Properties in {{ area.name }}</h3>
+    <!-- 4. COMMUNITY Q&A -->
+    <div class="section-card" style="background: #fff;">
+        <div class="section-head"><i class="fa-solid fa-comments"></i> Community Forum</div>
+        
+        <!-- Ask Form -->
+        <div class="qa-form-box">
+            {% if user.is_authenticated %}
+                <h4 style="margin-bottom:15px; color:var(--pw-navy);">Ask a Question</h4>
+                <form action="{% url 'add_question' area_pk=area.pk %}" method="POST">
+                    {% csrf_token %}
+                    <div class="qa-input-group">
+                        {{ question_form.title }} <!-- Ensure form renders title input -->
+                    </div>
+                    <div class="qa-input-group">
+                        {{ question_form.body }} <!-- Ensure form renders body textarea -->
+                    </div>
+                    <button type="submit" class="btn-qa">Post Question</button>
+                </form>
+            {% else %}
+                <div style="text-align:center;">
+                    <p style="color:#64748b; margin-bottom:10px;">Have a question about {{ area.name }}?</p>
+                    <a href="{% url 'login' %}?next={{ request.path }}" class="btn-qa" style="display:inline-block; text-decoration:none;">Log in to Ask</a>
+                </div>
+            {% endif %}
+        </div>
 
-    <div class="property-list">
-        {% for prop in properties %}
-            <div class="property-card">
+        <!-- Threads -->
+        {% for question in questions %}
+            <div class="question-thread">
+                <div class="thread-head">
+                    <div class="thread-user">
+                        <i class="fa-solid fa-circle-user" style="color:#cbd5e1; font-size:1.5rem;"></i>
+                        {{ question.user.username|default:"Anonymous" }}
+                    </div>
+                    <div class="thread-date">{{ question.created_at|timesince }} ago</div>
+                </div>
                 
-                {% if prop.main_image %}
-                    <img src="{{ prop.main_image.url }}" alt="{{ prop.title }}">
+                <div class="thread-title">{{ question.title }}</div>
+                {% if question.body %}<div class="thread-body">{{ question.body|linebreaksbr }}</div>{% endif %}
+
+                <!-- Answers -->
+                {% if question.answers.all %}
+                    <div class="answers-box">
+                        {% for answer in question.answers.all %}
+                            <div class="answer-item">
+                                <div class="ans-meta">
+                                    <span>
+                                        <strong>{{ answer.user.username }}</strong>
+                                        {% if answer.user.is_agent %}
+                                            <span class="ans-agent-tag">PRO AGENT</span>
+                                        {% endif %}
+                                    </span>
+                                    <span>{{ answer.created_at|timesince }} ago</span>
+                                </div>
+                                <div class="ans-body">{{ answer.body }}</div>
+                            </div>
+                        {% endfor %}
+                    </div>
                 {% endif %}
-                
-                <h4><a href="{% url 'property_detail' pk=prop.pk %}">{{ prop.title }}</a></h4>
-                <p><strong>Price:</strong> PKR {{ prop.price|intcomma }}</p>
-                <p><strong>Location:</strong> {{ prop.area }}</p>
-                <p><strong>Type:</strong> {{ prop.get_property_type_display }}</p>
-                
-                <p style="margin-top: 10px;">
-                    <a href="{% url 'property_detail' pk=prop.pk %}" style="display: inline-block; padding: 8px 16px; background-color: #0066cc; color: white; text-decoration: none; border-radius: 4px; font-size: 14px;">
-                        View Details
-                    </a>
-                    
-                    {% if user.is_authenticated %}
-                        {% if prop in user.favorites.all %}
-                            <form action="{% url 'remove_from_favorites' pk=prop.pk %}" method="POST" style="display: inline;">
-                                {% csrf_token %}
-                                <button type="submit" style="
-                                    background: #dc3545; color: white; padding: 5px 10px; border: none; 
-                                    border-radius: 4px; cursor: pointer; font-size: 14px; margin-left: 10px;
-                                ">Unsave</button>
-                            </form>
-                        {% else %}
-                            <form action="{% url 'add_to_favorites' pk=prop.pk %}" method="POST" style="display: inline;">
-                                {% csrf_token %}
-                                <button type="submit" style="
-                                    background: #007bff; color: white; padding: 5px 10px; border: none; 
-                                    border-radius: 4px; cursor: pointer; font-size: 14px; margin-left: 10px;
-                                ">Save</button>
-                            </form>
-                        {% endif %}
-                    {% else %}
-                        <a href="{% url 'login' %}?next={{ request.path }}" style="
-                            background: #007bff; color: white; padding: 5px 10px; border: none; 
-                            border-radius: 4px; font-size: 14px; margin-left: 10px; text-decoration: none;
-                        ">Save</a>
-                    {% endif %}
-                </p>
+
+                <!-- Answer Input -->
+                {% if user.is_authenticated %}
+                    <form action="{% url 'add_answer' question_pk=question.pk %}" method="POST" class="mini-form">
+                        {% csrf_token %}
+                        <input type="text" name="body" class="mini-input" placeholder="Write an answer..." required>
+                        <button type="submit" class="btn-mini">Reply</button>
+                    </form>
+                {% endif %}
             </div>
         {% empty %}
-            <p>There are no active properties listed in this area right now. Sold properties are not shown here.</p>
+            <div style="text-align:center; color:#94a3b8; padding:20px;">
+                No discussions yet. Be the first to start one!
+            </div>
+        {% endfor %}
+    </div>
+
+    <!-- 5. LISTINGS -->
+    <div class="section-head" style="margin-top:60px;"><i class="fa-solid fa-home"></i> Available Properties</div>
+    <div class="prop-grid">
+        {% for prop in properties %}
+            <div class="prop-card">
+                {% if prop.main_image %}
+                    <img src="{{ prop.main_image.url }}" alt="{{ prop.title }}" class="prop-img">
+                {% endif %}
+                <div class="prop-content">
+                    <div class="prop-price">PKR {{ prop.price|intcomma }}</div>
+                    <a href="{% url 'property_detail' pk=prop.pk %}" class="prop-title">{{ prop.title|truncatechars:30 }}</a>
+                    <div class="prop-meta">
+                        <span><i class="fa-solid fa-bed"></i> {{ prop.bedrooms }}</span>
+                        <span><i class="fa-solid fa-bath"></i> {{ prop.bathrooms }}</span>
+                        <span><i class="fa-solid fa-ruler"></i> {{ prop.area_size }}</span>
+                    </div>
+                    <a href="{% url 'property_detail' pk=prop.pk %}" class="btn-view">View Details</a>
+                </div>
+            </div>
+        {% empty %}
+            <div style="grid-column:1/-1; text-align:center; padding:40px; background:#f8fafc; color:#94a3b8; border-radius:12px;">
+                No active listings in this area right now.
+            </div>
         {% endfor %}
     </div>
 
 </div>
 
-{% comment %}
-    STEP 5: ALL JAVASCRIPT LOGIC (LOADED AT THE END)
-{% endcomment %}
+<!-- SCRIPTS -->
 <script src="{% static 'js/area_map.js' %}"></script>
 <script src="{% static 'js/price_chart.js' %}"></script>
 

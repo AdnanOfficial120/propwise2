@@ -1,142 +1,417 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block content %}
-<div class="container" style="margin-top: 20px;">
-    <div style="max-width: 800px; margin: auto;">
-        
-        <h2 style="margin-bottom: 5px;">
-            Chat about: {{ thread.property.title|default:"Deleted Property" }}
-        </h2>
-        <p style="margin-bottom: 20px;">
-            With: 
-            {% if thread.buyer == user %}
-                <strong>{{ thread.agent.username }}</strong> (Agent)
-            {% else %}
-                <strong>{{ thread.buyer.username }}</strong> (Buyer)
-            {% endif %}
-        </p>
 
-        {% comment %} 
-          This is the chat message display area.
-          We give it an ID so the JavaScript can find it.
-        {% endcomment %}
-        <div id="chat-messages-box" class="chat-messages" style="height: 400px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; background: #f9f9f9; border-radius: 8px; margin-bottom: 20px;">
-            
-            <p style="text-align: center; color: #777;">Loading messages...</p>
-            
+<style>
+    /* --- PAGE CONTAINER --- */
+    .chat-wrapper {
+        max-width: 900px;
+        margin: 40px auto;
+        padding: 0 20px;
+        /* Height calculation: Full screen - Navbar height */
+        height: calc(100vh - 140px); 
+        min-height: 500px;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .chat-window {
+        flex: 1;
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.05);
+        border: 1px solid #f1f5f9;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        position: relative;
+        width: 100%; /* Ensure it doesn't exceed parent */
+    }
+
+    /* --- 1. CHAT HEADER --- */
+    .chat-header {
+        padding: 15px 20px;
+        background: white;
+        border-bottom: 1px solid #f1f5f9;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        z-index: 10;
+    }
+
+    .chat-partner {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        overflow: hidden; /* Prevent long names from breaking layout */
+    }
+
+    .partner-avatar {
+        width: 40px; height: 40px;
+        border-radius: 50%;
+        background: #e2e8f0;
+        color: #64748b;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.1rem;
+        overflow: hidden;
+        flex-shrink: 0; /* Prevent shrinking */
+    }
+    .partner-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+    .partner-info {
+        min-width: 0; /* Allow text truncation */
+    }
+    .partner-info h3 {
+        font-size: 1rem;
+        color: var(--pw-navy);
+        font-weight: 700;
+        margin: 0;
+        line-height: 1.2;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .partner-info p {
+        font-size: 0.8rem;
+        color: #94a3b8;
+        margin: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .prop-link { color: var(--pw-gold); font-weight: 600; text-decoration: none; }
+
+    .btn-back {
+        color: #94a3b8;
+        font-size: 1rem;
+        text-decoration: none;
+        padding: 8px 12px;
+        border-radius: 6px;
+        background: #f8fafc;
+        transition: 0.2s;
+        flex-shrink: 0;
+    }
+    .btn-back:hover { background: #e2e8f0; color: var(--pw-navy); }
+
+
+    /* --- 2. MESSAGES AREA --- */
+    .chat-body {
+        flex: 1;
+        background-color: #f8fafc;
+        /* Subtle Dot Pattern */
+        background-image: radial-gradient(#e2e8f0 1px, transparent 1px);
+        background-size: 20px 20px; 
+        padding: 20px;
+        overflow-y: auto;
+        overflow-x: hidden; /* CRITICAL: Prevents horizontal scroll */
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    /* Scrollbar Styling */
+    .chat-body::-webkit-scrollbar { width: 5px; }
+    .chat-body::-webkit-scrollbar-track { background: transparent; }
+    .chat-body::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+
+    /* Message Bubbles */
+    .msg-row {
+        display: flex;
+        width: 100%;
+    }
+    
+    .msg-bubble {
+        max-width: 75%; /* Restrict width so it looks like a chat */
+        padding: 12px 16px;
+        font-size: 0.95rem;
+        line-height: 1.5;
+        position: relative;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+        
+        /* CRITICAL FIXES FOR MOBILE OVERFLOW */
+        word-wrap: break-word;
+        word-break: break-word;
+        overflow-wrap: break-word;
+    }
+
+    /* SENT (My Message) -> Right */
+    .msg-sent {
+        justify-content: flex-end;
+    }
+    .msg-sent .msg-bubble {
+        background: var(--pw-navy);
+        color: white;
+        border-radius: 12px 12px 0 12px;
+    }
+    .msg-sent .msg-time { color: rgba(255,255,255,0.7); text-align: right; }
+
+    /* RECEIVED (Their Message) -> Left */
+    .msg-received {
+        justify-content: flex-start;
+    }
+    .msg-received .msg-bubble {
+        background: white;
+        color: var(--pw-navy);
+        border-radius: 12px 12px 12px 0;
+        border: 1px solid #e2e8f0;
+    }
+    .msg-received .msg-time { color: #94a3b8; text-align: left; }
+
+    /* Timestamp */
+    .msg-time {
+        display: block;
+        font-size: 0.65rem;
+        margin-top: 4px;
+    }
+
+
+    /* --- 3. INPUT AREA --- */
+    .chat-footer {
+        padding: 15px;
+        background: white;
+        border-top: 1px solid #f1f5f9;
+        /* Ensure footer stays at bottom */
+        flex-shrink: 0; 
+    }
+
+    .chat-form {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        background: #f8fafc;
+        padding: 5px 5px 5px 15px;
+        border-radius: 50px;
+        border: 1px solid #e2e8f0;
+        transition: 0.3s;
+    }
+    .chat-form:focus-within {
+        background: white;
+        border-color: var(--pw-gold);
+        box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1);
+    }
+
+    /* Input Field */
+    .chat-form input[type="text"], .chat-form textarea {
+        flex: 1;
+        border: none;
+        background: transparent;
+        padding: 10px 0;
+        font-size: 1rem;
+        font-family: 'Poppins', sans-serif;
+        outline: none;
+        resize: none; 
+        color: var(--pw-navy);
+        min-width: 0; /* Flex fix */
+    }
+
+    /* Send Button */
+    .btn-send {
+        width: 40px; height: 40px;
+        border-radius: 50%;
+        background: var(--pw-navy);
+        color: white;
+        border: none;
+        display: flex; align-items: center; justify-content: center;
+        cursor: pointer;
+        transition: 0.2s;
+        flex-shrink: 0;
+        font-size: 1rem;
+    }
+    .btn-send:hover { background: var(--pw-gold); transform: scale(1.05); }
+
+    /* Loading State */
+    .loading-text {
+        text-align: center; font-size: 0.85rem; color: #94a3b8; padding: 20px;
+    }
+
+    /* --- MOBILE RESPONSIVE FIXES --- */
+    @media (max-width: 768px) {
+        /* Remove margins and make it full height/width */
+        .chat-wrapper { 
+            padding: 0; 
+            margin: 0; 
+            max-width: 100%;
+            height: calc(100vh - 80px); /* Adjust based on your mobile navbar height */
+            border-radius: 0; 
+        }
+        
+        .chat-window { 
+            border-radius: 0; 
+            border: none; 
+            box-shadow: none;
+        }
+        
+        .chat-header { 
+            padding: 10px 15px; 
+        }
+        
+        .chat-body { 
+            padding: 15px; 
+        }
+        
+        .partner-info h3 { font-size: 0.95rem; }
+        .partner-avatar { width: 35px; height: 35px; }
+    }
+</style>
+
+<div class="chat-wrapper">
+    <div class="chat-window">
+        
+        <!-- 1. HEADER -->
+        <div class="chat-header">
+            <div class="chat-partner">
+                <!-- Back Button -->
+                <a href="{% url 'chat_inbox' %}" class="btn-back"><i class="fa-solid fa-chevron-left"></i></a>
+                
+                <!-- Avatar Logic -->
+                <div class="partner-avatar">
+                    {% if thread.buyer == user %}
+                        {% if thread.agent.profile_picture %}
+                            <img src="{{ thread.agent.profile_picture.url }}" alt="">
+                        {% else %}
+                            <i class="fa-solid fa-user-tie"></i>
+                        {% endif %}
+                    {% else %}
+                        {% if thread.buyer.profile_picture %}
+                            <img src="{{ thread.buyer.profile_picture.url }}" alt="">
+                        {% else %}
+                            <i class="fa-solid fa-user"></i>
+                        {% endif %}
+                    {% endif %}
+                </div>
+
+                <!-- Info -->
+                <div class="partner-info">
+                    <h3>
+                        {% if thread.buyer == user %}
+                            {{ thread.agent.first_name|default:thread.agent.username }}
+                        {% else %}
+                            {{ thread.buyer.first_name|default:thread.buyer.username }}
+                        {% endif %}
+                    </h3>
+                    <p>
+                        {% if thread.property %}
+                            <a href="{% url 'property_detail' pk=thread.property.pk %}" class="prop-link">{{ thread.property.title|truncatechars:20 }}</a>
+                        {% else %}
+                            <span style="color:#cbd5e1;">Deleted Property</span>
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
         </div>
 
-        {% comment %}
-          This is the "Send Message" form.
-          We give it an ID so the JavaScript can find it.
-        {% endcomment %}
-        <div class="send-message-form">
-            <form id="send-message-form" method="POST" action="{% url 'chat_detail' thread_id=thread.id %}" style="display: flex; gap: 10px;">
+        <!-- 2. MESSAGES AREA -->
+        <div id="chat-messages-box" class="chat-body">
+            <div class="loading-text">
+                <i class="fa-solid fa-spinner fa-spin"></i> Loading conversation...
+            </div>
+        </div>
+
+        <!-- 3. INPUT FOOTER -->
+        <div class="chat-footer">
+            <form id="send-message-form" method="POST" action="{% url 'chat_detail' thread_id=thread.id %}" class="chat-form">
                 {% csrf_token %}
                 
-                <div style="flex-grow: 1;">
-                    {% comment %} 
-                      The form field from Django {{ form.body }}
-                      will automatically have an ID of "id_body"
-                    {% endcomment %}
-                    {{ form.body }}
-                </div>
+                <!-- This renders the input field without extra HTML -->
+                {{ form.body }}
                 
-                <button type="submit" style="background: #0066cc; color: white; padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; height: min-content;">
-                    Send
+                <button type="submit" class="btn-send" title="Send Message">
+                    <i class="fa-solid fa-paper-plane"></i>
                 </button>
             </form>
         </div>
-        
+
     </div>
 </div>
 
-{% comment %}
-=====================================================
- THIS IS THE NEW JAVASCRIPT FOR REAL-TIME CHAT
-=====================================================
-{% endcomment %}
+<!-- JAVASCRIPT FOR REAL-TIME CHAT -->
 <script>
-    // This code will run after the whole page has loaded
     document.addEventListener("DOMContentLoaded", function() {
         
-        // --- 1. Get all the HTML elements we need ---
+        // Elements
         const chatBox = document.getElementById('chat-messages-box');
         const messageForm = document.getElementById('send-message-form');
-        const messageInput = document.getElementById('id_body');
+        // Try to find the input by ID (default django ID) or just grab the first input/textarea in form
+        const messageInput = document.getElementById('id_body') || messageForm.querySelector('input[type="text"]');
         
-        // --- 2. Get important data from Django ---
-        const threadId = "{{ thread.id }}";
-        const currentUsername = "{{ user.username }}";
+        // Force styling on the Django Widget
+        if(messageInput) {
+            messageInput.placeholder = "Message...";
+            messageInput.autocomplete = "off";
+        }
+
+        // Data
         const apiURL = `{% url 'chat_api_messages' thread_id=thread.id %}`;
         const formURL = messageForm.getAttribute('action');
         const csrfToken = document.querySelector('input[name="csrfmiddlewaretoken"]').value;
+        const myUsername = "{{ user.username }}";
 
-        // --- 3. Function to scroll to the bottom of the chat ---
+        // Scroll to bottom
         function scrollToBottom() {
             chatBox.scrollTop = chatBox.scrollHeight;
         }
 
-        // --- 4. Function to draw messages on the screen ---
+        // Render Messages
         function renderMessages(messages) {
-            chatBox.innerHTML = ''; // Clear the "Loading..." text
+            chatBox.innerHTML = ''; 
             
             if (messages.length === 0) {
-                chatBox.innerHTML = '<p style="text-align: center; color: #777;">This is the beginning of your conversation.</p>';
+                chatBox.innerHTML = '<div class="loading-text">Say hello! 👋</div>';
                 return;
             }
 
             messages.forEach(function(message) {
-                let messageHTML = '';
-                if (message.is_sender) {
-                    // This is a message from ME
-                    messageHTML = `
-                    <div class="my-message" style="text-align: right; margin-bottom: 10px;">
-                        <div style="background: #0066cc; color: white; display: inline-block; padding: 10px; border-radius: 8px; max-width: 70%;">
-                            <strong>You</strong><br>
+                const isMe = message.is_sender || (message.sender_username === myUsername);
+                
+                let bubbleHTML = '';
+                
+                if (isMe) {
+                    // MY MESSAGE (Right / Navy)
+                    bubbleHTML = `
+                    <div class="msg-row msg-sent">
+                        <div class="msg-bubble">
                             ${message.body}
-                            <br>
-                            <small style="color: #ddd;">${message.timestamp}</small>
+                            <span class="msg-time">${message.timestamp}</span>
                         </div>
-                    </div>
-                    `;
+                    </div>`;
                 } else {
-                    // This is a message from the OTHER person
-                    messageHTML = `
-                    <div class="other-message" style="text-align: left; margin-bottom: 10px;">
-                        <div style="background: #e9e9e9; color: black; display: inline-block; padding: 10px; border-radius: 8px; max-width: 70%;">
-                            <strong>${message.sender_username}</strong><br>
+                    // THEIR MESSAGE (Left / White)
+                    bubbleHTML = `
+                    <div class="msg-row msg-received">
+                        <div class="msg-bubble">
                             ${message.body}
-                            <br>
-                            <small style="color: #555;">${message.timestamp}</small>
+                            <span class="msg-time">${message.timestamp}</span>
                         </div>
-                    </div>
-                    `;
+                    </div>`;
                 }
-                chatBox.innerHTML += messageHTML;
+                
+                chatBox.innerHTML += bubbleHTML;
             });
         }
 
-        // --- 5. Function to fetch new messages from our API ---
+        // Fetch Messages
         async function fetchMessages() {
             try {
                 const response = await fetch(apiURL);
                 const data = await response.json();
+                // Only re-render if message count changed to avoid scroll jumping (basic check)
+                // ideally you'd compare IDs, but for now just render:
                 renderMessages(data.messages);
             } catch (error) {
                 console.error("Error fetching messages:", error);
             }
         }
         
-        // --- 6. Function to handle sending a new message ---
+        // Handle Send
         async function handleFormSubmit(event) {
-            // Stop the form from doing a full page reload
             event.preventDefault(); 
             
             const messageBody = messageInput.value;
-            if (messageBody.trim() === '') {
-                return; // Don't send empty messages
-            }
+            if (messageBody.trim() === '') return;
+
+            // Optimistic UI: clear input immediately
+            messageInput.value = ''; 
 
             try {
                 const response = await fetch(formURL, {
@@ -151,28 +426,25 @@
                 const data = await response.json();
 
                 if (data.status === 'success') {
-                    // Message sent!
-                    messageInput.value = ''; // Clear the input box
-                    await fetchMessages(); // Instantly get new messages
+                    await fetchMessages(); // Refresh list
                     scrollToBottom(); // Scroll down
                 } else {
-                    // Handle form errors (e.g., "body is required")
-                    console.error("Error sending message:", data.errors);
+                    console.error("Error sending:", data.errors);
                 }
             } catch (error) {
                 console.error("Network error:", error);
             }
         }
 
-        // --- 7. Start everything! ---
-        
-        // Add the "submit" listener to our form
+        // Init
         messageForm.addEventListener('submit', handleFormSubmit);
         
-        // Fetch messages for the first time
-        fetchMessages().then(scrollToBottom); // Load and scroll
+        // Initial Load
+        fetchMessages().then(() => {
+            scrollToBottom();
+        });
         
-        // Start "polling" - check for new messages every 3 seconds
+        // Polling (Refresh every 3 seconds)
         setInterval(fetchMessages, 3000); 
     });
 </script>

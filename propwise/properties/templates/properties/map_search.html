@@ -1,144 +1,364 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block content %}
 
-{% comment %}
-    STEP 1: We must include the CSS and JavaScript files for Leaflet.js.
-    These are 100% free and open-source. We will load them from a CDN.
-{% endcomment %}
+<!-- Leaflet CSS & JS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
-    crossorigin=""/>
-
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-    crossorigin=""></script>
-
-{% comment %}
-    STEP 2: We need some custom styles for our map container and the popups.
-{% endcomment %}
 <style>
-    #map { 
-        /* You must give the map a height, or it will be invisible */
-        height: 75vh; /* 75% of the viewport height */
+    /* --- PAGE LAYOUT (Full Screen Split) --- */
+    .explorer-container {
+        display: flex;
+        height: calc(100vh - 80px); /* Full viewport minus navbar */
         width: 100%;
-        border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        position: relative;
+        overflow: hidden; /* Prevent double scrollbars */
+    }
+
+    /* --- LEFT: THE MAP --- */
+    .map-panel {
+        flex: 3; /* 60% width on Desktop */
+        position: relative;
+        z-index: 1;
+        height: 100%;
     }
     
-    /* Styles for the popups */
-    .leaflet-popup-content-wrapper {
-        border-radius: 8px;
-    }
-    .leaflet-popup-content {
-        margin: 10px;
-    }
-    .popup-card {
-        width: 250px;
-    }
-    .popup-card img {
+    #map {
+        height: 100%;
         width: 100%;
+        z-index: 1;
+    }
+
+    /* --- RIGHT: THE LIST --- */
+    .list-panel {
+        flex: 2; /* 40% width on Desktop */
+        background: #f8fafc;
+        overflow-y: auto;
+        padding: 20px;
+        box-shadow: -5px 0 15px rgba(0,0,0,0.05);
+        z-index: 2;
+        min-width: 350px;
+    }
+
+    .list-header {
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    .list-title {
+        font-family: 'Playfair Display', serif;
+        font-size: 1.8rem;
+        color: var(--pw-navy);
+        font-weight: 700;
+        margin-bottom: 5px;
+    }
+    .list-count { color: #64748b; font-size: 0.9rem; }
+
+    /* --- PROPERTY CARD --- */
+    .side-card {
+        display: flex;
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        margin-bottom: 20px;
+        border: 1px solid #e2e8f0;
+        transition: 0.3s;
+        cursor: pointer;
         height: 120px;
+    }
+    .side-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.08);
+        border-color: var(--pw-gold);
+    }
+
+    .side-img {
+        width: 130px;
+        height: 100%;
         object-fit: cover;
-        border-radius: 4px;
     }
-    .popup-card h5 {
-        margin: 10px 0 5px 0;
-        font-size: 1.1em;
+
+    .side-info {
+        padding: 12px 15px;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        min-width: 0; /* Fix flex text truncation */
     }
-    .popup-card p {
-        margin: 4px 0;
-        font-size: 0.95em;
-        color: #333;
+
+    .side-price {
+        color: var(--pw-gold);
+        font-weight: 700;
+        font-size: 1.1rem;
+        margin-bottom: 4px;
     }
-    .popup-card a {
-        display: block;
-        margin-top: 10px;
-        padding: 8px;
-        background-color: #007bff;
+    
+    .side-title {
+        font-weight: 700;
+        color: var(--pw-navy);
+        font-size: 0.95rem;
+        margin-bottom: 4px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .side-loc {
+        font-size: 0.8rem;
+        color: #64748b;
+        display: flex; align-items: center; gap: 5px;
+    }
+
+    /* --- MOBILE TOGGLE BUTTON --- */
+    .btn-map-toggle {
+        display: none; /* Hidden on Desktop */
+        position: fixed;
+        bottom: 30px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: var(--pw-navy);
         color: white;
-        text-align: center;
-        text-decoration: none;
-        border-radius: 4px;
-        font-weight: bold;
+        padding: 12px 25px;
+        border-radius: 50px;
+        font-weight: 600;
+        box-shadow: 0 5px 20px rgba(15, 23, 42, 0.4);
+        z-index: 9999;
+        border: none;
+        cursor: pointer;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.9rem;
+        white-space: nowrap;
+    }
+    .btn-map-toggle:hover { background: var(--pw-gold); color: var(--pw-navy); }
+
+    /* --- MAP POPUP STYLING --- */
+    .leaflet-popup-content-wrapper { border-radius: 8px; padding: 0; overflow: hidden; }
+    .leaflet-popup-content { margin: 0; width: 200px !important; }
+    
+    .popup-card img { width: 100%; height: 100px; object-fit: cover; }
+    .popup-body { padding: 10px; text-align: center; }
+    .popup-price { font-weight: 700; color: var(--pw-gold); font-size: 0.9rem; }
+    .popup-title { font-weight: 600; color: var(--pw-navy); font-size: 0.85rem; margin: 2px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .popup-btn {
+        display: inline-block; background: var(--pw-navy); color: white;
+        text-decoration: none; padding: 4px 10px; border-radius: 4px; 
+        font-size: 0.75rem; margin-top: 5px;
+    }
+
+    /* --- RESPONSIVE MOBILE VIEW --- */
+    @media (max-width: 900px) {
+        /* Force stack */
+        .explorer-container { position: relative; display: block; }
+        
+        /* List View (Default) */
+        .list-panel {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0; left: 0;
+            z-index: 20; /* On top initially */
+            background: #f8fafc;
+            transition: opacity 0.3s ease;
+        }
+
+        /* Map View (Background initially) */
+        .map-panel {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0; left: 0;
+            z-index: 10;
+        }
+
+        /* When Map is Active: Hide List */
+        .show-map .list-panel {
+            opacity: 0;
+            pointer-events: none;
+            z-index: 5;
+        }
+        
+        /* When Map is Active: Show Map */
+        .show-map .map-panel {
+            z-index: 20;
+        }
+
+        .btn-map-toggle { display: flex; }
     }
 </style>
 
-{% comment %}
-    STEP 3: This is the main HTML for the page.
-{% endcomment %}
-<div class="container" style="margin-top: 20px; margin-bottom: 20px;">
-    <h2>Interactive Property Map</h2>
-    <p>Explore all available properties. Click a pin to see details.</p>
+<div class="explorer-container" id="explorerContainer">
+    
+    <!-- LEFT: MAP -->
+    <div class="map-panel" id="mapPanel">
+        <div id="map"></div>
+    </div>
 
-    <div id="map"></div>
+    <!-- RIGHT: LIST -->
+    <div class="list-panel" id="listPanel">
+        <div class="list-header">
+            <h2 class="list-title">Explore Properties</h2>
+            <div class="list-count" id="propertyCount">Loading...</div>
+        </div>
+
+        <!-- List Content -->
+        <div id="propertyListContainer">
+            <div style="text-align:center; padding:40px; color:#94a3b8;">
+                <i class="fa-solid fa-circle-notch fa-spin fa-2x"></i>
+                <p style="margin-top:10px;">Finding properties...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- MOBILE TOGGLE -->
+    <button class="btn-map-toggle" id="toggleBtn">
+        <i class="fa-solid fa-map"></i> <span id="toggleText">View Map</span>
+    </button>
+
 </div>
 
-
-{% comment %}
-    STEP 4: This is the JavaScript "magic" that runs everything.
-{% endcomment %}
+<!-- LOGIC -->
 <script>
-    // Wait for the entire page to load
+    // Declare map variable globally so we can access it in toggle function
+    let map;
+
     document.addEventListener('DOMContentLoaded', function() {
         
-        // --- 1. Initialize the Map ---
+        // 1. Init Map
+        // Using a default center (Pakistan). Will update bounds later.
+        map = L.map('map', { zoomControl: false }).setView([30.3753, 69.3451], 5);
         
-        // We set the map's center to the middle of Pakistan
-        const map = L.map('map').setView([30.3753, 69.3451], 6); // [lat, lng], zoom level
+        // Move zoom control to top-right
+        L.control.zoom({ position: 'topright' }).addTo(map);
 
-        // --- 2. Add the Map "Tiles" (The map image) ---
-        
-        // We use OpenStreetMap, which is 100% free and requires no API key.
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            attribution: '&copy; OpenStreetMap'
         }).addTo(map);
 
-        
-        // --- 3. Get the Property Data from our API ---
-        
-        // === THIS IS THE FIX ===
-        // We are using the direct URL to your API.
-        // This avoids the Django template error completely.
-        const apiUrl = "/listings/api/properties/";
-        
+        // 2. Fetch Data
+        const apiUrl = "/listings/api/properties/"; 
+        const listContainer = document.getElementById('propertyListContainer');
+        const countDiv = document.getElementById('propertyCount');
+        const markers = []; 
+
         fetch(apiUrl)
             .then(response => response.json())
             .then(data => {
                 
-                // Now 'data' is our list of property objects from the view
-                
-                // --- 4. Loop Through Each Property and Add a Pin ---
-                data.forEach(function(property) {
-                    
-                    // Create the marker (the pin)
-                    const marker = L.marker([property.lat, property.lng]).addTo(map);
+                listContainer.innerHTML = '';
+                countDiv.textContent = `${data.length} Listings Found`;
 
-                    // --- 5. Create the Popup Content ---
-                    
-                    // Set a default image if no main_image is found
-                    const imageUrl = property.image_url ? property.image_url : 'https://via.placeholder.com/250x120.png?text=No+Image';
+                if (data.length === 0) {
+                    listContainer.innerHTML = '<div style="text-align:center; padding:40px; color:#94a3b8;">No properties found in this area.</div>';
+                    return;
+                }
 
-                    const popupContent = `
+                // 3. Loop Data
+                data.forEach(function(prop) {
+                    
+                    // --- A. Build Map Pin ---
+                    const img = prop.image_url ? prop.image_url : 'https://via.placeholder.com/300x200?text=No+Image';
+                    const detailUrl = prop.detail_url ? prop.detail_url : '#'; 
+
+                    const popupHtml = `
                         <div class="popup-card">
-                            <img src="${imageUrl}" alt="${property.title}">
-                            <h5>${property.title}</h5>
-                            <p><strong>${property.price}</strong></p>
-                            <p>${property.area_name}</p>
-                            <a href="${property.detail_url}">View Details</a>
+                            <img src="${img}" alt="Prop">
+                            <div class="popup-body">
+                                <div class="popup-price">PKR ${prop.price}</div>
+                                <div class="popup-title">${prop.title}</div>
+                                <a href="${detailUrl}" class="popup-btn">View Details</a>
+                            </div>
                         </div>
                     `;
 
-                    // Bind the popup to the marker
-                    marker.bindPopup(popupContent);
+                    const marker = L.marker([prop.lat, prop.lng])
+                        .addTo(map)
+                        .bindPopup(popupHtml);
+                    
+                    markers.push(marker);
+
+                    // --- B. Build List Card ---
+                    const cardHtml = `
+                        <div class="side-card" onclick="zoomToProperty(${prop.lat}, ${prop.lng})">
+                            <img src="${img}" class="side-img">
+                            <div class="side-info">
+                                <div class="side-price">PKR ${prop.price}</div>
+                                <div class="side-title">${prop.title}</div>
+                                <div class="side-loc"><i class="fa-solid fa-location-dot"></i> ${prop.area_name}</div>
+                            </div>
+                        </div>
+                    `;
+                    listContainer.innerHTML += cardHtml;
                 });
+
+                // 4. Fit Map
+                if (markers.length > 0) {
+                    const group = new L.featureGroup(markers);
+                    map.fitBounds(group.getBounds(), { padding: [50, 50] });
+                }
 
             })
             .catch(error => {
-                console.error('Error fetching property data:', error);
+                console.error('Error:', error);
+                listContainer.innerHTML = '<p style="text-align:center; color:red;">Failed to load properties.</p>';
             });
+
+        // --- TOGGLE LOGIC (Mobile) ---
+        const container = document.getElementById('explorerContainer');
+        const btn = document.getElementById('toggleBtn');
+        const btnText = document.getElementById('toggleText');
+        const btnIcon = btn.querySelector('i');
+
+        btn.addEventListener('click', function() {
+            // Toggle class on parent
+            container.classList.toggle('show-map');
+
+            if (container.classList.contains('show-map')) {
+                // We are now viewing the MAP
+                btnText.innerText = "View List";
+                btnIcon.classList.remove('fa-map');
+                btnIcon.classList.add('fa-list');
+                
+                // CRITICAL FIX: Tell Leaflet to resize now that it is visible
+                setTimeout(() => {
+                    map.invalidateSize();
+                }, 200);
+            } else {
+                // We are now viewing the LIST
+                btnText.innerText = "View Map";
+                btnIcon.classList.remove('fa-list');
+                btnIcon.classList.add('fa-map');
+            }
+        });
+
     });
+
+    // Helper: Zoom to property
+    window.zoomToProperty = function(lat, lng) {
+        // On mobile, auto-switch to map view
+        if (window.innerWidth <= 900) {
+            const container = document.getElementById('explorerContainer');
+            const btnText = document.getElementById('toggleText');
+            const btnIcon = document.querySelector('.btn-map-toggle i');
+            
+            container.classList.add('show-map');
+            btnText.innerText = "View List";
+            btnIcon.classList.remove('fa-map');
+            btnIcon.classList.add('fa-list');
+            
+            setTimeout(() => {
+                map.invalidateSize();
+            }, 100);
+        }
+        
+        map.flyTo([lat, lng], 16, {
+            animate: true,
+            duration: 1
+        });
+    };
 </script>
 
 {% endblock content %}

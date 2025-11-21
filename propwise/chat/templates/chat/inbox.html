@@ -1,42 +1,225 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block content %}
-<div class="container" style="margin-top: 20px;">
-    <div style="max-width: 800px; margin: auto;">
 
-        <h2 style="margin-bottom: 20px;">Your Chat Inbox</h2>
+<style>
+    /* --- PAGE CONTAINER --- */
+    .messenger-container {
+        max-width: 1100px;
+        margin: 40px auto;
+        padding: 0 20px;
+        height: calc(100vh - 140px); /* Fix height to viewport minus header */
+        min-height: 600px;
+    }
 
-        <div class="list-group">
-            {% for thread in threads %}
-                <a href="{% url 'chat_detail' thread_id=thread.id %}" class="list-group-item list-group-item-action" style="padding: 15px; border: 1px solid #ccc; border-radius: 8px; margin-bottom: 10px; text-decoration: none; color: inherit;">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <div>
-                            <h5 style="margin-bottom: 5px;">
-                                {% comment %} 
-                                  This logic finds the *other* person in the chat
-                                {% endcomment %}
-                                Chat with 
-                                {% if thread.buyer == user %}
-                                    <strong>{{ thread.agent.username }}</strong>
+    .messenger-card {
+        display: flex;
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.05);
+        border: 1px solid #f1f5f9;
+        height: 100%;
+        overflow: hidden;
+    }
+
+    /* --- LEFT SIDEBAR (CHAT LIST) --- */
+    .chat-sidebar {
+        width: 350px;
+        border-right: 1px solid #f1f5f9;
+        display: flex;
+        flex-direction: column;
+        background: #fff;
+    }
+
+    .sidebar-header {
+        padding: 20px;
+        border-bottom: 1px solid #f1f5f9;
+    }
+    .sidebar-title {
+        font-family: 'Playfair Display', serif;
+        font-size: 1.5rem;
+        color: var(--pw-navy);
+        font-weight: 700;
+        margin-bottom: 5px;
+    }
+    .sidebar-subtitle { color: #94a3b8; font-size: 0.9rem; }
+
+    /* Chat List */
+    .chat-list {
+        flex: 1;
+        overflow-y: auto;
+    }
+
+    .chat-item {
+        display: flex;
+        align-items: center;
+        padding: 15px 20px;
+        border-bottom: 1px solid #f8fafc;
+        transition: 0.2s;
+        text-decoration: none;
+        color: inherit;
+        cursor: pointer;
+    }
+    .chat-item:hover { background: #f8fafc; }
+    .chat-item.active { background: #eff6ff; border-left: 4px solid var(--pw-navy); }
+
+    /* Avatar */
+    .chat-avatar {
+        width: 50px; height: 50px;
+        border-radius: 50%;
+        background: #e2e8f0;
+        margin-right: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #64748b;
+        font-size: 1.2rem;
+        flex-shrink: 0;
+        overflow: hidden;
+    }
+    .chat-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+    /* Info */
+    .chat-info { flex: 1; min-width: 0; /* Text truncation fix */ }
+    
+    .chat-name {
+        font-weight: 600;
+        color: var(--pw-navy);
+        font-size: 0.95rem;
+        margin-bottom: 2px;
+        display: flex;
+        justify-content: space-between;
+    }
+    .chat-time { font-size: 0.75rem; color: #94a3b8; font-weight: 400; }
+
+    .chat-preview {
+        font-size: 0.85rem;
+        color: #64748b;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    .prop-tag {
+        background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; color: var(--pw-navy); font-weight: 600;
+    }
+
+    /* --- RIGHT SIDE: EMPTY STATE (Desktop) --- */
+    .chat-main-empty {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: #fcfcfc;
+        text-align: center;
+        padding: 40px;
+    }
+    .empty-icon {
+        font-size: 4rem;
+        color: #e2e8f0;
+        margin-bottom: 20px;
+    }
+    .empty-text h3 { color: var(--pw-navy); font-family: 'Playfair Display', serif; margin-bottom: 10px; }
+    .empty-text p { color: #94a3b8; font-size: 0.95rem; max-width: 300px; margin: 0 auto; }
+
+    /* --- SCROLLBAR --- */
+    .chat-list::-webkit-scrollbar { width: 6px; }
+    .chat-list::-webkit-scrollbar-track { background: transparent; }
+    .chat-list::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+
+    /* --- RESPONSIVE --- */
+    @media (max-width: 768px) {
+        .messenger-container { padding: 0; margin: 20px 0; height: auto; min-height: auto; }
+        .messenger-card { border-radius: 0; box-shadow: none; border: none; flex-direction: column; }
+        .chat-sidebar { width: 100%; border-right: none; }
+        .chat-main-empty { display: none; } /* Hide empty state on mobile list view */
+    }
+</style>
+
+<div class="messenger-container">
+    <div class="messenger-card">
+        
+        <!-- LEFT SIDEBAR: THREAD LIST -->
+        <div class="chat-sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-title">Messages</div>
+                <div class="sidebar-subtitle">Recent conversations</div>
+            </div>
+
+            <div class="chat-list">
+                {% for thread in threads %}
+                    <a href="{% url 'chat_detail' thread_id=thread.id %}" class="chat-item">
+                        
+                        <!-- Logic to find the 'other' user -->
+                        {% with other_user=thread.buyer %}
+                            {% if user == thread.buyer %}
+                                {% with other_user=thread.agent %}{% endwith %}
+                            {% endif %}
+                        
+                        <!-- Avatar -->
+                        <div class="chat-avatar">
+                            {% if user == thread.buyer %}
+                                <!-- If I am buyer, show Agent pic -->
+                                {% if thread.agent.profile_picture %}
+                                    <img src="{{ thread.agent.profile_picture.url }}" alt="">
                                 {% else %}
-                                    <strong>{{ thread.buyer.username }}</strong>
+                                    <i class="fa-solid fa-user-tie"></i>
                                 {% endif %}
-                            </h5>
-                            <p style="margin-bottom: 5px; color: #555;">
-                                Regarding: <strong>{{ thread.property.title|default:"Deleted Property" }}</strong>
-                            </p>
-                            <small style="color: #777;">Last activity: {{ thread.updated_at|timesince }} ago</small>
+                            {% else %}
+                                <!-- If I am agent, show Buyer pic -->
+                                {% if thread.buyer.profile_picture %}
+                                    <img src="{{ thread.buyer.profile_picture.url }}" alt="">
+                                {% else %}
+                                    <i class="fa-solid fa-user"></i>
+                                {% endif %}
+                            {% endif %}
                         </div>
 
-                        {% comment %} We will add unread message count here later {% endcomment %}
-                        <span style="background: #eee; padding: 5px 10px; border-radius: 8px;">View</span>
+                        <!-- Info -->
+                        <div class="chat-info">
+                            <div class="chat-name">
+                                {% if user == thread.buyer %}
+                                    {{ thread.agent.first_name|default:thread.agent.username }}
+                                {% else %}
+                                    {{ thread.buyer.first_name|default:thread.buyer.username }}
+                                {% endif %}
+                                <span class="chat-time">{{ thread.updated_at|timesince }}</span>
+                            </div>
+                            
+                            <div class="chat-preview">
+                                {% if thread.property %}
+                                    <span class="prop-tag">Prop: {{ thread.property.title|truncatechars:10 }}</span>
+                                {% endif %}
+                                Click to view chat
+                            </div>
+                        </div>
+                        {% endwith %}
+                    </a>
+                {% empty %}
+                    <div style="padding:40px; text-align:center; color:#94a3b8;">
+                        <i class="fa-regular fa-comments" style="font-size:2rem; margin-bottom:10px;"></i>
+                        <p>No messages yet.</p>
                     </div>
-                </a>
-            {% empty %}
-                <p>You have no active chat conversations.</p>
-            {% endfor %}
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- RIGHT SIDE: EMPTY STATE (Placeholder for when no chat is selected) -->
+        <div class="chat-main-empty">
+            <div class="empty-icon">
+                <i class="fa-brands fa-whatsapp"></i>
+            </div>
+            <div class="empty-text">
+                <h3>PropWise Messenger</h3>
+                <p>Select a conversation from the left to start chatting with agents or buyers.</p>
+            </div>
         </div>
 
     </div>
 </div>
-{% endblock content %}
+
+{% endblock %}

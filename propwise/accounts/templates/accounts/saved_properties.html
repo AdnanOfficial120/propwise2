@@ -1,73 +1,240 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block content %}
-<div class="container" style="margin-top: 20px;">
+
+<style>
+    /* --- PAGE CONTAINER --- */
+    .saved-container {
+        max-width: 1200px;
+        margin: 40px auto;
+        padding: 0 20px;
+        min-height: 60vh;
+    }
+
+    /* --- HEADER --- */
+    .saved-header {
+        text-align: center;
+        margin-bottom: 50px;
+        position: relative;
+    }
     
-    <h2>My Saved Properties</h2>
-    <p>All the listings you've saved, all in one place.</p>
+    .saved-title {
+        font-family: 'Playfair Display', serif;
+        font-size: 2.5rem;
+        color: var(--pw-navy);
+        margin-bottom: 10px;
+    }
+    .saved-subtitle {
+        color: #64748b;
+        font-size: 1rem;
+    }
+    
+    /* Decorative underline */
+    .saved-header::after {
+        content: '';
+        display: block;
+        width: 60px;
+        height: 3px;
+        background: var(--pw-gold);
+        margin: 20px auto 0;
+        border-radius: 2px;
+    }
 
-    <hr style="margin: 20px 0;">
+    /* --- GRID SYSTEM --- */
+    .property-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 30px;
+    }
 
-    <div class="property-list">
+    /* --- PREMIUM CARD --- */
+    .saved-card {
+        background: white;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+        border: 1px solid #f1f5f9;
+        transition: 0.3s;
+        position: relative;
+    }
+    .saved-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 15px 40px rgba(0,0,0,0.1);
+    }
+
+    /* Image Area */
+    .card-img-box {
+        position: relative;
+        height: 220px;
+        overflow: hidden;
+    }
+    .card-img {
+        width: 100%; height: 100%; object-fit: cover; transition: 0.5s;
+    }
+    .saved-card:hover .card-img { transform: scale(1.05); }
+
+    /* Remove Button (Overlay) */
+    .btn-remove {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        width: 35px; height: 35px;
+        background: rgba(255,255,255,0.9);
+        border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        color: #ef4444;
+        border: none;
+        cursor: pointer;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        transition: 0.2s;
+        font-size: 1rem;
+    }
+    .btn-remove:hover { background: #ef4444; color: white; transform: scale(1.1); }
+
+    /* Content */
+    .card-body { padding: 25px; }
+
+    .card-price {
+        font-size: 1.2rem;
+        color: var(--pw-gold);
+        font-weight: 700;
+        margin-bottom: 5px;
+    }
+
+    .card-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--pw-navy);
+        margin-bottom: 5px;
+        display: block;
+        text-decoration: none;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .card-title:hover { color: var(--pw-gold); }
+
+    .card-loc {
+        font-size: 0.85rem;
+        color: #94a3b8;
+        display: flex; align-items: center; gap: 5px;
+        margin-bottom: 15px;
+    }
+
+    .card-footer {
+        padding-top: 15px;
+        border-top: 1px solid #f1f5f9;
+        text-align: center;
+    }
+    
+    .btn-view {
+        display: inline-block;
+        padding: 8px 20px;
+        background: #f1f5f9;
+        color: var(--pw-navy);
+        border-radius: 6px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        text-decoration: none;
+        transition: 0.2s;
+    }
+    .btn-view:hover { background: var(--pw-navy); color: white; }
+
+    /* --- EMPTY STATE --- */
+    .empty-collection {
+        text-align: center;
+        padding: 80px 20px;
+        background: #f8fafc;
+        border-radius: 16px;
+        border: 2px dashed #e2e8f0;
+    }
+    .empty-icon {
+        font-size: 3.5rem;
+        color: #cbd5e1;
+        margin-bottom: 20px;
+    }
+    .btn-browse {
+        display: inline-block;
+        margin-top: 20px;
+        padding: 12px 30px;
+        background: var(--pw-navy);
+        color: white;
+        border-radius: 50px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: 0.3s;
+    }
+    .btn-browse:hover { background: var(--pw-gold); color: var(--pw-navy); transform: translateY(-3px); }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .property-grid { grid-template-columns: 1fr; }
+        .saved-title { font-size: 2rem; }
+    }
+</style>
+
+<div class="saved-container">
+    
+    <!-- Header -->
+    <div class="saved-header">
+        <h1 class="saved-title">My Collection</h1>
+        <p class="saved-subtitle">Your personal wishlist of saved properties.</p>
+    </div>
+
+    <!-- Grid -->
+    <div class="property-grid">
         {% for prop in properties %}
-            <div class="property-card">
+            <div class="saved-card">
                 
-                {% if prop.main_image %}
-                    <img src="{{ prop.main_image.url }}" alt="{{ prop.title }}">
-                {% endif %}
-                
-                <h4>
-                    <a href="{% url 'property_detail' pk=prop.pk %}">
-                        {{ prop.title }}
-                    </a>
-                </h4>
-
-                <p><strong>Price:</strong> PKR {{ prop.price }}</p>
-                <p><strong>Location:</strong> {{ prop.area }}</p>
-                <p><strong>Type:</strong> {{ prop.get_property_type_display }}</p>
-                
-                <p style="margin-top: 10px;">
-                    <a href="{% url 'property_detail' pk=prop.pk %}" style="
-                        display: inline-block;
-                        padding: 8px 16px;
-                        background-color: #0066cc;
-                        color: white;
-                        text-decoration: none;
-                        border-radius: 4px;
-                        font-size: 14px;
-                    ">
-                        View Details
-                    </a>
-                    
-                    {% comment %} 
-                      This is the same "Unsave" button from the other pages.
-                      It will work perfectly here.
-                    {% endcomment %}
-                    {% if user.is_authenticated and prop in user.favorites.all %}
-                        <form action="{% url 'remove_from_favorites' pk=prop.pk %}" method="POST" style="display: inline;">
-                            {% csrf_token %}
-                            <button type="submit" style="
-                                background: #dc3545; /* Red */
-                                color: white;
-                                padding: 5px 10px;
-                                border: none;
-                                border-radius: 4px;
-                                cursor: pointer;
-                                font-size: 14px;
-                                margin-left: 10px;
-                            ">
-                                Unsave
-                            </button>
-                        </form>
+                <div class="card-img-box">
+                    <!-- Main Image -->
+                    {% if prop.main_image %}
+                        <a href="{% url 'property_detail' pk=prop.pk %}">
+                            <img src="{{ prop.main_image.url }}" alt="{{ prop.title }}" class="card-img">
+                        </a>
+                    {% else %}
+                        <div style="width:100%; height:100%; background:#eee; display:flex; align-items:center; justify-content:center; color:#ccc;">
+                            <i class="fa-solid fa-image fa-2x"></i>
+                        </div>
                     {% endif %}
 
-                </p>
+                    <!-- Remove Button (Top Right) -->
+                    <form action="{% url 'remove_from_favorites' pk=prop.pk %}" method="POST" style="margin:0;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn-remove" title="Remove from Saved">
+                            <i class="fa-solid fa-heart-crack"></i>
+                        </button>
+                    </form>
+                </div>
+
+                <div class="card-body">
+                    <div class="card-price">PKR {{ prop.price }}</div>
+                    <a href="{% url 'property_detail' pk=prop.pk %}" class="card-title">{{ prop.title }}</a>
+                    
+                    <div class="card-loc">
+                        <i class="fa-solid fa-location-dot"></i> {{ prop.area }}
+                    </div>
+
+                    <div class="card-footer">
+                        <a href="{% url 'property_detail' pk=prop.pk %}" class="btn-view">View Details</a>
+                    </div>
+                </div>
+
             </div>
         {% empty %}
-            <p>You have not saved any properties yet.</p>
-            <p>Click the "Save" button on any listing to add it to this list.</p>
+            <!-- Empty State (Full Width) -->
+            <div style="grid-column: 1 / -1;">
+                <div class="empty-collection">
+                    <i class="fa-regular fa-heart empty-icon"></i>
+                    <h3 style="color:var(--pw-navy); font-family:'Playfair Display',serif;">Your collection is empty</h3>
+                    <p style="color:#64748b;">Start browsing to find your dream home.</p>
+                    <a href="{% url 'property_search' %}" class="btn-browse">Browse Properties</a>
+                </div>
+            </div>
         {% endfor %}
     </div>
 
 </div>
+
 {% endblock content %}
