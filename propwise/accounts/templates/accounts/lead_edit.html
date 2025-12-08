@@ -1,31 +1,154 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block content %}
-<div class="container" style="max-width: 600px; margin: 40px auto;">
+
+<style>
+    /* --- PAGE CONTAINER --- */
+    .edit-lead-container {
+        max-width: 600px;
+        margin: 60px auto;
+        padding: 0 20px;
+    }
+
+    /* --- CARD STYLE --- */
+    .edit-card {
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.05);
+        border: 1px solid #f1f5f9;
+        padding: 40px;
+        position: relative;
+    }
+
+    /* Header */
+    .form-header {
+        text-align: center;
+        margin-bottom: 30px;
+        border-bottom: 1px solid #f1f5f9;
+        padding-bottom: 20px;
+    }
+    .form-title {
+        font-family: 'Playfair Display', serif;
+        font-size: 1.8rem;
+        color: var(--pw-navy);
+        margin-bottom: 5px;
+        font-weight: 700;
+    }
+    .form-sub { color: #64748b; font-size: 0.9rem; }
+
+    /* --- FORM INPUTS --- */
+    .edit-form label {
+        display: block;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--pw-navy);
+        margin-bottom: 8px;
+        text-transform: uppercase;
+    }
+
+    .edit-form input, 
+    .edit-form select, 
+    .edit-form textarea {
+        width: 100%;
+        padding: 12px 15px;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        font-family: 'Poppins', sans-serif;
+        font-size: 1rem;
+        color: var(--pw-navy);
+        background: #f8fafc;
+        transition: all 0.3s;
+        box-sizing: border-box;
+        margin-bottom: 20px;
+    }
+
+    .edit-form input:focus, 
+    .edit-form select:focus, 
+    .edit-form textarea:focus {
+        background: white;
+        border-color: var(--pw-gold);
+        box-shadow: 0 0 0 4px rgba(212, 175, 55, 0.1);
+        outline: none;
+    }
+
+    /* Error Text */
+    .error-msg {
+        color: #ef4444;
+        font-size: 0.85rem;
+        margin-top: -15px;
+        margin-bottom: 15px;
+        display: block;
+    }
+
+    /* --- BUTTONS --- */
+    .btn-row {
+        display: flex;
+        gap: 15px;
+        margin-top: 10px;
+    }
+
+    .btn-save {
+        flex: 2;
+        padding: 14px;
+        background: var(--pw-navy);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: 0.3s;
+    }
+    .btn-save:hover {
+        background: var(--pw-gold);
+        transform: translateY(-2px);
+    }
+
+    .btn-cancel {
+        flex: 1;
+        padding: 14px;
+        background: #f1f5f9;
+        color: #64748b;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        text-align: center;
+        text-decoration: none;
+        transition: 0.3s;
+    }
+    .btn-cancel:hover { background: #e2e8f0; color: var(--pw-navy); }
+
+</style>
+
+<div class="edit-lead-container">
     
-    <h2>Edit Lead: {{ lead.contact_name }}</h2>
-    <p style="color: #666; margin-bottom: 20px;">Update the status or add notes for this client.</p>
-
-    <form method="POST" style="background: #f9f9f9; padding: 30px; border-radius: 8px; border: 1px solid #ddd;">
-        {% csrf_token %}
-        
-        {% comment %} Render the form simply {% endcomment %}
-        {% for field in form %}
-            <div style="margin-bottom: 15px;">
-                <label style="font-weight: bold; display: block; margin-bottom: 5px;">{{ field.label }}</label>
-                {{ field }}
-                {% if field.errors %}
-                    <div style="color: red; font-size: 0.9em;">{{ field.errors }}</div>
-                {% endif %}
-            </div>
-        {% endfor %}
-
-        <div style="margin-top: 20px; display: flex; justify-content: space-between; align-items: center;">
-            <a href="{% url 'my_leads' %}" style="color: #666; text-decoration: none;">Cancel</a>
-            <button type="submit" style="background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">
-                Save Changes
-            </button>
+    <div class="edit-card">
+        <div class="form-header">
+            <h2 class="form-title">Edit Lead</h2>
+            <p class="form-sub">Updating details for <strong>{{ lead.contact_name }}</strong></p>
         </div>
-    </form>
+
+        <form method="POST" class="edit-form">
+            {% csrf_token %}
+            
+            {% for field in form %}
+                <div>
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.errors %}
+                        <div class="error-msg">{{ field.errors.0 }}</div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+
+            <div class="btn-row">
+                <a href="{% url 'my_leads' %}" class="btn-cancel">Cancel</a>
+                <button type="submit" class="btn-save">Save Changes</button>
+            </div>
+        </form>
+    </div>
+
 </div>
+
 {% endblock content %}
