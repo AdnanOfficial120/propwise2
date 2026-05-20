@@ -371,6 +371,13 @@
             {% endif %}
         {% endwith %}
 
+        <!-- PASTE THE NEW MAP BOX HERE -->
+        <div class="section-box">
+            <h3 class="section-title">Location & Directions</h3>
+            <div id="map" style="height: 400px; width: 100%; border-radius: 12px; z-index: 1;"></div>
+        </div>
+        <!-- END OF NEW MAP BOX -->
+
         <!-- Nearby Amenities -->
         {% if nearby_amenities %}
         <div class="section-box">
@@ -486,10 +493,67 @@
 
 </div>
 
+<!-- Leaflet & Routing Machine CSS and JS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css" />
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
+
 <script>
-    // Simple script to change main image when thumbnail is clicked
+    // 1. Simple script to change main image when thumbnail is clicked
     function changeMainImage(src) {
         document.querySelector('.main-img').src = src;
+    }
+
+    // 2. Map and Routing Logic
+    // Grab the coordinates saved in your Django Property model
+    const latStr = "{{ property.latitude }}";
+    const lngStr = "{{ property.longitude }}";
+
+    // Only load the map if latitude and longitude exist
+    if (latStr && lngStr && latStr !== "None" && lngStr !== "None") {
+        const propertyLat = parseFloat(latStr);
+        const propertyLng = parseFloat(lngStr);
+
+        // Initialize the base map
+        var map = L.map('map').setView([propertyLat, propertyLng], 14);
+
+        // Add the free OpenStreetMap visual layer
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap'
+        }).addTo(map);
+
+        // Put a pin on the property location
+        L.marker([propertyLat, propertyLng]).addTo(map)
+            .bindPopup("<b>{{ property.title }}</b><br>Destination").openPopup();
+
+        // Ask for user location and draw the route
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                function(position) {
+                    const userLat = position.coords.latitude;
+                    const userLng = position.coords.longitude;
+
+                    // Draw the turn-by-turn route
+                    L.Routing.control({
+                        waypoints: [
+                            L.latLng(userLat, userLng),       // Start (User)
+                            L.latLng(propertyLat, propertyLng) // End (Property)
+                        ],
+                        routeWhileDragging: false,
+                        showAlternatives: false,
+                        fitSelectedRoutes: true,
+                        addWaypoints: false // prevents user from accidentally dragging the route lines
+                    }).addTo(map);
+                }, 
+                function(error) {
+                    console.log("Could not get user location. Displaying map without route.");
+                }
+            );
+        }
+    } else {
+        // Fallback if coordinates are missing from the admin panel
+        document.getElementById('map').innerHTML = "<p style='padding:20px; text-align:center; color:#64748b;'>Map data is not available for this property yet.</p>";
     }
 </script>
 
