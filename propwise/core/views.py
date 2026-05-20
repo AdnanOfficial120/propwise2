@@ -6,33 +6,41 @@ from properties.models import Property, PropertyStatus
 from properties.filters import PropertyFilter
 from django.utils import timezone
 
+# core/views.py
+ 
 def homepage(request):
     """
     View for the homepage.
-    NOW UPGRADED:
-    1. Fetches all *ACTIVE, FEATURED* properties for the top slider.
-    2. Fetches the 12 most recent *ACTIVE, VERIFIED, NON-FEATURED* properties.
-    3. Provides the filter form for the search box.
+    NOW UPGRADED WITH AJAX FILTERING.
     """
-    
     now = timezone.now()
     
     featured_properties = Property.objects.filter(
         is_verified=True,
         is_featured=True,
         featured_until__gte=now,
-        status=PropertyStatus.ACTIVE  # <-- 2. ADD THIS FILTER
+        status=PropertyStatus.ACTIVE 
     ).order_by('-created_at')
     
-    
-    latest_properties = Property.objects.filter(
+    # 1. Start with the base query for the latest properties
+    latest_qs = Property.objects.filter(
         is_verified=True,
         is_featured=False,
-        status=PropertyStatus.ACTIVE  # <-- 3. ADD THIS FILTER
-    ).order_by('-created_at')[:12]
+        status=PropertyStatus.ACTIVE
+    ).order_by('-created_at')
+
+    # 2. Check if a specific category was clicked
+    category = request.GET.get('category')
+    if category:
+        latest_qs = latest_qs.filter(property_type=category)
+
+    latest_properties = latest_qs[:12]
+
+    # 3. If this is an AJAX request from our JavaScript, ONLY return the property cards
+    if request.GET.get('ajax') == 'true':
+        return render(request, 'core/property_grid.html', {'latest_properties': latest_properties})
     
-    
-    # This logic for the filter form is perfect as-is
+    # 4. Otherwise, load the full page normally
     filter_form = PropertyFilter()
     
     context = {
